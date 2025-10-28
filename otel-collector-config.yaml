@@ -1,0 +1,46 @@
+receivers:
+  otlp:
+    protocols:
+      grpc:
+        endpoint: 0.0.0.0:4317
+      http:
+        endpoint: 0.0.0.0:4318
+
+processors:
+  batch: {}
+
+connectors:
+  spanmetrics:
+    histogram:
+      explicit:
+        buckets: [0.001, 0.005, 0.01, 0.05, 0.1, 0.5, 1, 5, 10]
+    dimensions:
+      - name: env
+      - name: component
+    dimensions_cache_size: 1000
+
+exporters:
+  prometheus:
+    endpoint: "0.0.0.0:8889"
+    namespace: "llm"
+    send_timestamps: true
+    const_labels:
+      service: "llm-collector"
+  logging:
+    verbosity: detailed
+
+service:
+  telemetry:
+    metrics:
+      address: 0.0.0.0:8888
+    logs:
+      level: debug
+  pipelines:
+    traces:
+      receivers: [otlp]
+      processors: [batch]
+      exporters: [spanmetrics, logging] # Send to spanmetrics connector
+    metrics:
+      receivers: [otlp, spanmetrics] # Receive from OTLP and spanmetrics
+      processors: [batch]
+      exporters: [prometheus, logging]
