@@ -1,32 +1,55 @@
 # Getting Started
 
-This application runs primarily off of the docker compose. To start run
+## Prerequisites
+
+- Docker and Docker Compose installed
+- (Optional) otel-cli for testing
+
+## Architecture
+
+```
+otel-cli → OTel Collector (OTLP receiver)
+           ↓
+       spanmetrics connector (converts spans to metrics)
+           ↓
+       Prometheus exporter (:8889)
+           ↓
+       Prometheus (scrapes every 5s)
+```
+
+## Starting the Application
+
+This application runs primarily off of the docker compose. To start run:
 
 ```bash
 docker compose up -d
 ```
 
-### Testing Locally without LLM via Otel CLI
+This will start:
 
-##### Mac OS Installation
+- **OTel Collector** on ports 4317 (gRPC), 4318 (HTTP), 8888 (internal metrics), 8889 (Prometheus exporter)
+- **Prometheus** on port 9090
+
+## Testing Locally without LLM via Otel CLI
+
+### Mac OS Installation
 
 ```bash
 brew install equinix-labs/otel-cli/otel-cli
 ```
 
-##### Linux Installation
+### Linux Installation
 
 ```bash
 curl -L https://github.com/equinix-labs/otel-cli/releases/latest/download/otel-cli-linux-amd64 -o /usr/local/bin/otel-cli
 chmod +x /usr/local/bin/otel-cli
-
 ```
 
-##### Windows Installation
+### Windows Installation
 
 Download from the [Github Releases Page](https://github.com/equinix-labs/otel-cli/releases)
 
-#### Send a Test Metric using Otel CLI
+## Send a Test Span using Otel CLI
 
 ```bash
 otel-cli span \
@@ -39,11 +62,15 @@ otel-cli span \
   --end "$(date -Iseconds)"
 ```
 
+## Verification Steps
+
+### 1. Verify Collector is Receiving Spans
+
 Run `docker compose logs -f otel-collector`
 
 Expected Output:
 
-```nginx
+```
 otel-collector  | Span #0
 otel-collector  |     Trace ID       : 9b7266251b277d8d9f131eaaa4073135
 otel-collector  |     Parent ID      :
@@ -60,32 +87,79 @@ otel-collector  |      -> component: Str(demo)
 otel-collector  | 	{"kind": "exporter", "data_type": "traces", "name": "logging"}
 ```
 
-#### Verify in the Collector Metrics
+### 2. Verify Collector Internal Metrics
+
+Visit `http://localhost:8888/metrics` and search for:
+
+```
+otelcol_receiver_accepted_spans
+```
+
+This counter should increment each time you send a span.
+
+### 3. Verify Span Metrics in Prometheus Exporter
 
 Visit `http://localhost:8889/metrics`
 
-Search for test metric
-`llm_calls_total`
+Search for the test metric `llm_calls_total`
 
-Expected Output
+Expected Output:
 
-```bash
+```
 # TYPE llm_calls_total counter
 llm_calls_total{component="demo",env="dev",job="otel-test",service="llm-collector",service_name="otel-test",span_kind="SPAN_KIND_CLIENT",span_name="demo-span",status_code="STATUS_CODE_UNSET"} 1 1761689870268
 ```
 
-#### Verify Prometheus
+### 4. Verify Prometheus is Scraping
+
+Visit `http://localhost:9090/targets`
+
+You should see two targets both showing as **UP**:
+
+- `otel-collector` (otel-collector:8889)
+- `otel-collector-internal` (otel-collector:8888)
+
+### 5. Query Metrics in Prometheus
 
 Visit `http://localhost:9090`
 
 Run a query:
 
-```nginx
+```promql
 llm_calls_total
 ```
 
 Expected Output:
 
-```nginx
+```
 llm_calls_total{component="demo", env="dev", exported_job="otel-test", instance="otel-collector:8889", job="otel-collector", service="llm-collector", service_name="otel-test", span_kind="SPAN_KIND_CLIENT", span_name="demo-span", status_code="STATUS_CODE_UNSET"}
 ```
+
+## Troubleshooting
+
+### Prometheus shows empty results
+
+- Check `http://localhost:9090/targets` - both targets should be UP
+- Verify metrics exist at `http://localhost:8889/metrics`
+- Wait 5-10 seconds after sending a span for Prometheus to scrape
+- Ensure you're using the `otel/opentelemetry-collector-contrib` image (not the base image)
+
+### Container fails to start
+
+Check logs for errors:
+
+```bash
+docker compose logs otel-collector
+docker compose logs prometheus
+```
+
+### Clear all data and restart
+
+```bash
+docker compose down -v
+docker compose up -d
+```
+
+### Metrics not appearing after collector restart
+
+Send a new span after restarting the collector - old spans won't persist across restarts unless you configure persistent storage.
