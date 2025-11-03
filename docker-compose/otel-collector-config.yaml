@@ -22,25 +22,31 @@ connectors:
 exporters:
   prometheus:
     endpoint: "0.0.0.0:8889"
-    namespace: "llm"
-    send_timestamps: true
-    const_labels:
-      service: "llm-collector"
-  logging:
+    namespace: llm
+    resource_to_telemetry_conversion:
+      enabled: true
+    enable_open_metrics: true
+  debug:
     verbosity: detailed
 
 service:
   telemetry:
     metrics:
-      address: 0.0.0.0:8888
+      level: detailed
+      readers:
+        - pull:
+            exporter:
+              prometheus:
+                host: 0.0.0.0
+                port: 8888
     logs:
       level: debug
   pipelines:
     traces:
       receivers: [otlp]
       processors: [batch]
-      exporters: [spanmetrics, logging] # Send to spanmetrics connector
+      exporters: [spanmetrics, debug] # Send to spanmetrics connector
     metrics:
       receivers: [otlp, spanmetrics] # Receive from OTLP and spanmetrics
       processors: [batch]
-      exporters: [prometheus, logging]
+      exporters: [prometheus, debug]

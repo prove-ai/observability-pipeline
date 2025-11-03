@@ -22,6 +22,7 @@ otel-cli → OTel Collector (OTLP receiver)
 This application runs primarily off of the docker compose. To start run:
 
 ```bash
+cd docker-compose
 docker compose up -d
 ```
 
@@ -29,6 +30,38 @@ This will start:
 
 - **OTel Collector** on ports 4317 (gRPC), 4318 (HTTP), 8888 (internal metrics), 8889 (Prometheus exporter)
 - **Prometheus** on port 9090
+- **Grafana** on port 3100 (admin/admin)
+
+## Using the Makefile
+
+This project includes a Makefile with convenient commands for managing the observability stack. Instead of manually navigating to the docker-compose directory and running docker compose commands, you can use these shortcuts:
+
+### Basic Commands
+
+```bash
+make up          # Start the observability stack
+make down        # Stop the observability stack
+make restart     # Restart the stack
+make status      # Check status of containers
+make clean       # Clean up containers and volumes
+```
+
+### Log Commands
+
+```bash
+make logs              # View logs from all services
+make logs-otel         # View logs from OTel Collector
+make logs-prometheus   # View logs from Prometheus
+make logs-grafana      # View logs from Grafana
+make logs-postgres     # View logs from PostgreSQL
+```
+
+### Additional Commands
+
+```bash
+make build      # Build custom images (if needed)
+make help       # Show all available commands
+```
 
 ## Testing Locally without LLM via Otel CLI
 
@@ -101,13 +134,13 @@ This counter should increment each time you send a span.
 
 Visit `http://localhost:8889/metrics`
 
-Search for the test metric `llm_calls_total`
+Search for the test metric `llm_traces_span_metrics_calls_total`
 
 Expected Output:
 
 ```
-# TYPE llm_calls_total counter
-llm_calls_total{component="demo",env="dev",job="otel-test",service="llm-collector",service_name="otel-test",span_kind="SPAN_KIND_CLIENT",span_name="demo-span",status_code="STATUS_CODE_UNSET"} 1 1761689870268
+# TYPE llm_traces_span_metrics_calls_total counter
+llm_traces_span_metrics_calls_total{component="demo",env="dev",job="otel-test",otel_scope_name="spanmetricsconnector",otel_scope_schema_url="",otel_scope_version="",service_name="otel-test",span_kind="SPAN_KIND_CLIENT",span_name="demo-span",status_code="STATUS_CODE_UNSET"} 1
 ```
 
 ### 4. Verify Prometheus is Scraping
@@ -126,14 +159,26 @@ Visit `http://localhost:9090`
 Run a query:
 
 ```promql
-llm_calls_total
+llm_traces_span_metrics_calls_total{}
 ```
 
 Expected Output:
 
 ```
-llm_calls_total{component="demo", env="dev", exported_job="otel-test", instance="otel-collector:8889", job="otel-collector", service="llm-collector", service_name="otel-test", span_kind="SPAN_KIND_CLIENT", span_name="demo-span", status_code="STATUS_CODE_UNSET"}
+llm_traces_span_metrics_calls_total{component="demo", env="dev", exported_job="otel-test", instance="otel-collector:8889", job="otel-collector", otel_scope_name="spanmetricsconnector", service_name="otel-test", span_kind="SPAN_KIND_CLIENT", span_name="demo-span", status_code="STATUS_CODE_UNSET"}
 ```
+
+### 6. Query Metrics in Grafana
+
+Visit `http://localhost:3100
+
+Click on Dashboards > + Create Dashboard > Add Visualization > Prometheus
+
+Query for metric `llm_traces_span_metrics_calls_total`
+
+You should see data in the panel
+
+Save Dashboard (optional)
 
 ## Troubleshooting
 
