@@ -1,0 +1,187 @@
+---
+- name: Deploy Observability Pipeline to AWS EC2
+  hosts: all
+  become: yes
+  vars:
+    deploy_user: "{{ ansible_user | default('ubuntu') }}"
+    deploy_path: "/opt/observability-pipeline"
+    
+  tasks:
+    - name: Update apt cache
+      apt:
+        update_cache: yes
+        cache_valid_time: 3600
+
+    - name: Install required packages
+      apt:
+        name:
+          - apt-transport-https
+          - ca-certificates
+          - curl
+          - gnupg
+          - lsb-release
+          - python3-pip
+        state: present
+
+    - name: Install Docker GPG key
+      apt_key:
+        url: https://download.docker.com/linux/ubuntu/gpg
+        state: present
+
+    - name: Add Docker repository
+      apt_repository:
+        repo: "deb [arch=amd64] https://download.docker.com/linux/ubuntu {{ ansible_distribution_release }} stable"
+        state: present
+
+    - name: Install Docker
+      apt:
+        name:
+          - docker-ce
+          - docker-ce-cli
+          - containerd.io
+          - docker-buildx-plugin
+          - docker-compose-plugin
+        state: present
+
+    - name: Start and enable Docker service
+      systemd:
+        name: docker
+        state: started
+        enabled: yes
+
+    - name: Add user to docker group
+      user:
+        name: "{{ deploy_user }}"
+        groups: docker
+        append: yes
+
+    - name: Ensure docker socket has correct permissions
+      file:
+        path: /var/run/docker.sock
+        group: docker
+        mode: '0664'
+        state: file
+
+    - name: Verify docker access
+      shell: sg docker -c "docker ps"
+      become_user: "{{ deploy_user }}"
+      register: docker_test
+      changed_when: false
+      failed_when: false
+      environment:
+        PATH: "/usr/local/bin:/usr/bin:/bin"
+
+    - name: Create deployment directory
+      file:
+        path: "{{ deploy_path }}"
+        state: directory
+        owner: "{{ deploy_user }}"
+        group: "{{ deploy_user }}"
+        mode: '0755'
+
+    - name: Create docker-compose subdirectory
+      file:
+        path: "{{ deploy_path }}/docker-compose"
+        state: directory
+        owner: "{{ deploy_user }}"
+        group: "{{ deploy_user }}"
+        mode: '0755'
+
+    - name: Copy docker-compose.yaml
+      copy:
+        src: "../docker-compose/docker-compose.yaml"
+        dest: "{{ deploy_path }}/docker-compose/docker-compose.yaml"
+        owner: "{{ deploy_user }}"
+        group: "{{ deploy_user }}"
+        mode: '0644'
+
+    - name: Copy otel-collector-config.yaml
+      copy:
+        src: "../docker-compose/otel-collector-config.yaml"
+        dest: "{{ deploy_path }}/docker-compose/otel-collector-config.yaml"
+        owner: "{{ deploy_user }}"
+        group: "{{ deploy_user }}"
+        mode: '0644'
+
+    - name: Copy prometheus.yaml
+      copy:
+        src: "../docker-compose/prometheus.yaml"
+        dest: "{{ deploy_path }}/docker-compose/prometheus.yaml"
+        owner: "{{ deploy_user }}"
+        group: "{{ deploy_user }}"
+        mode: '0644'
+
+    - name: Create Grafana provisioning directory
+      file:
+        path: "{{ deploy_path }}/docker-compose/grafana/provisioning/datasources"
+        state: directory
+        owner: "{{ deploy_user }}"
+        group: "{{ deploy_user }}"
+        mode: '0755'
+        recurse: yes
+
+    - name: Copy Grafana datasource configuration
+      copy:
+        src: "../docker-compose/grafana/provisioning/datasources/prometheus.yml"
+        dest: "{{ deploy_path }}/docker-compose/grafana/provisioning/datasources/prometheus.yml"
+        owner: "{{ deploy_user }}"
+        group: "{{ deploy_user }}"
+        mode: '0644'
+
+    - name: Check if Docker Compose services are already running
+      shell: sg docker -c "cd {{ deploy_path }}/docker-compose && docker compose ps"
+      register: compose_status
+      changed_when: false
+      failed_when: false
+      become_user: "{{ deploy_user }}"
+      environment:
+        PATH: "/usr/local/bin:/usr/bin:/bin"
+
+    - name: Stop existing containers (if any)
+      shell: sg docker -c "cd {{ deploy_path }}/docker-compose && docker compose down"
+      when: "'otel-collector' in compose_status.stdout"
+      become_user: "{{ deploy_user }}"
+      environment:
+        PATH: "/usr/local/bin:/usr/bin:/bin"
+
+    - name: Start Docker Compose services
+      shell: sg docker -c "cd {{ deploy_path }}/docker-compose && docker compose up -d"
+      become_user: "{{ deploy_user }}"
+      environment:
+        PATH: "/usr/local/bin:/usr/bin:/bin"
+
+    - name: Wait for services to be ready
+      wait_for:
+        port: "{{ item }}"
+        host: localhost
+        delay: 10
+        timeout: 60
+      loop:
+        - 4317  # OTLP gRPC
+        - 4318  # OTLP HTTP
+        - 9090  # Prometheus
+        - 3100  # Grafana
+
+    - name: Display service status
+      shell: sg docker -c "cd {{ deploy_path }}/docker-compose && docker compose ps"
+      register: final_status
+      become_user: "{{ deploy_user }}"
+      environment:
+        PATH: "/usr/local/bin:/usr/bin:/bin"
+
+    - name: Show service status
+      debug:
+        var: final_status.stdout_lines
+
+    - name: Display access information
+      debug:
+        msg:
+          - "Deployment completed successfully!"
+          - "Services are accessible at:"
+          - "  - Grafana: http://{{ ansible_host }}:3100 (admin/admin)"
+          - "  - Prometheus: http://{{ ansible_host }}:9090"
+          - "  - OTLP gRPC: {{ ansible_host }}:4317"
+          - "  - OTLP HTTP: {{ ansible_host }}:4318"
+          - ""
+          - "Note: Make sure your EC2 security group allows inbound traffic on these ports."
+

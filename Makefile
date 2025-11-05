@@ -1,4 +1,4 @@
-.PHONY: up down logs restart status clean
+.PHONY: up down logs restart status clean deploy ansible-ping ansible-check ansible-deploy-dry-run
 
 # Start the observability stack
 up:
@@ -41,9 +41,24 @@ clean:
 build:
 	cd docker-compose && docker compose build
 
+# Ansible deployment commands
+deploy:
+	cd playbooks && ansible-playbook deploy.yml
+
+ansible-ping:
+	cd playbooks && ansible all -m ping
+
+ansible-check:
+	cd playbooks && ansible-playbook deploy.yml --syntax-check
+
+ansible-deploy-dry-run:
+	cd playbooks && ansible-playbook deploy.yml --check --diff
+
 # Show help
 help:
 	@echo "Available commands:"
+	@echo ""
+	@echo "Local Docker Compose commands:"
 	@echo "  up          - Start the observability stack"
 	@echo "  down        - Stop the observability stack"
 	@echo "  logs        - View logs from all services"
@@ -55,4 +70,11 @@ help:
 	@echo "  status      - Check status of containers"
 	@echo "  clean       - Clean up containers and volumes"
 	@echo "  build       - Build custom images"
+	@echo ""
+	@echo "Ansible deployment commands:"
+	@echo "  deploy      - Deploy to EC2 using Ansible playbook"
+	@echo "  ansible-ping - Test SSH connectivity to EC2 instances"
+	@echo "  ansible-check - Check Ansible playbook syntax"
+	@echo "  ansible-deploy-dry-run - Run deployment in dry-run mode (check only)"
+	@echo ""
 	@echo "  help        - Show this help message"
