@@ -11,7 +11,7 @@ receivers:
         - job_name: "vllm-native-metrics"
           scrape_interval: 15s
           static_configs:
-            - targets: ["vllm-server:8000"] # add vllm server target
+            - targets: ["host.docker.internal:8000"] # add vllm server target
           metric_relabel_configs:
             # add consistent labeling to vllm metrics
             - source_labels: [__name__]
