@@ -1,4 +1,5 @@
 services:
+  # OpenTelemetry Collector - Receives OTLP traces and converts them to Prometheus metrics
   otel-collector:
     image: otel/opentelemetry-collector-contrib:0.138.0
     container_name: otel-collector
@@ -16,7 +17,12 @@ services:
     networks:
       - observability
     restart: unless-stopped
+    profiles:
+      - full
+      - no-prometheus
+      - no-grafana
 
+  # Prometheus - Scrapes metrics from the OTel Collector
   prometheus:
     image: prom/prometheus:latest
     container_name: prometheus
@@ -28,11 +34,17 @@ services:
       - prometheus_data:/prometheus
     ports:
       - "9090:9090"
+    # Note: For no-collector profile, ensure your external collector is running
+    # Prometheus will start and scrape once the collector is available
     depends_on:
       - otel-collector
     networks:
       - observability
+    profiles:
+      - full
+      - no-grafana
 
+  # PostgreSQL - Database backend for Grafana
   postgres:
     image: postgres:15-alpine
     container_name: grafana-postgres
@@ -51,7 +63,30 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+    profiles:
+      - full
+      - no-prometheus
+      - no-collector
 
+  # Prometheus (standalone) - For use when collector is external
+  prometheus-standalone:
+    image: prom/prometheus:latest
+    container_name: prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yaml'
+      - '--storage.tsdb.path=/prometheus'
+    volumes:
+      - ./prometheus.yaml:/etc/prometheus/prometheus.yaml:ro
+      - prometheus_data:/prometheus
+    ports:
+      - "9090:9090"
+    # No dependency on otel-collector since it's external
+    networks:
+      - observability
+    profiles:
+      - no-collector
+
+  # Grafana - Visualization and dashboards (for full profile)
   grafana:
     image: grafana/grafana:latest
     container_name: grafana
@@ -80,6 +115,71 @@ services:
         condition: service_started
     networks:
       - observability
+    profiles:
+      - full
+
+  # Grafana (for no-collector profile - depends on prometheus-standalone)
+  grafana-no-collector:
+    image: grafana/grafana:latest
+    container_name: grafana
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+      - GF_DATABASE_TYPE=postgres
+      - GF_DATABASE_HOST=postgres:5432
+      - GF_DATABASE_NAME=grafana
+      - GF_DATABASE_USER=grafana
+      - GF_DATABASE_PASSWORD=grafana_password
+      - GF_DATABASE_SSL_MODE=disable
+      - GF_USERS_ALLOW_SIGN_UP=false
+      - GF_USERS_AUTO_ASSIGN_ORG=true
+      - GF_USERS_AUTO_ASSIGN_ORG_ROLE=Admin
+      - GF_SECURITY_DISABLE_INITIAL_ADMIN_CREATION=false
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./grafana/provisioning:/etc/grafana/provisioning
+    ports:
+      - "3100:3000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      prometheus-standalone:
+        condition: service_started
+    networks:
+      - observability
+    profiles:
+      - no-collector
+
+  # Grafana (standalone) - For use when prometheus is external
+  grafana-standalone:
+    image: grafana/grafana:latest
+    container_name: grafana
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+      - GF_DATABASE_TYPE=postgres
+      - GF_DATABASE_HOST=postgres:5432
+      - GF_DATABASE_NAME=grafana
+      - GF_DATABASE_USER=grafana
+      - GF_DATABASE_PASSWORD=grafana_password
+      - GF_DATABASE_SSL_MODE=disable
+      - GF_USERS_ALLOW_SIGN_UP=false
+      - GF_USERS_AUTO_ASSIGN_ORG=true
+      - GF_USERS_AUTO_ASSIGN_ORG_ROLE=Admin
+      - GF_SECURITY_DISABLE_INITIAL_ADMIN_CREATION=false
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./grafana/provisioning:/etc/grafana/provisioning
+    ports:
+      - "3100:3000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    # No dependency on prometheus since it's external
+    networks:
+      - observability
+    profiles:
+      - no-prometheus
 
 volumes:
   prometheus_data:
