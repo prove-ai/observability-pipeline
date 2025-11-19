@@ -2,8 +2,8 @@
 
 ## Prerequisites
 
-- Docker and Docker Compose installed
-- (Optional) otel-cli for testing
+-   Docker and Docker Compose installed
+-   (Optional) otel-cli for testing
 
 ## Architecture
 
@@ -23,14 +23,40 @@ This application runs primarily off of the docker compose. To start run:
 
 ```bash
 cd docker-compose
-docker compose up -d
+docker compose --profile full up -d
 ```
 
 This will start:
 
-- **OTel Collector** on ports 4317 (gRPC), 4318 (HTTP), 8888 (internal metrics), 8889 (Prometheus exporter)
-- **Prometheus** on port 9090
-- **Grafana** on port 3100 (admin/admin)
+-   **OTel Collector** on ports 4317 (gRPC), 4318 (HTTP), 8888 (internal metrics), 8889 (Prometheus exporter)
+-   **Prometheus** on port 9090
+-   **Grafana** on port 3100 (admin/admin)
+
+### Docker Compose Profiles
+
+If you already have portions of the observability stack set up (Prometheus, OpenTelemetry Collector, or Grafana), you can use Docker Compose profiles to run only the services you need.
+
+Available profiles:
+
+-   `full` - Runs the complete stack (default)
+-   `no-prometheus` - Use when you already have Prometheus
+-   `no-collector` - Use when you already have an OpenTelemetry Collector
+-   `no-grafana` - Use when you already have Grafana
+
+For detailed information on each profile and required customer configuration, see [PROFILES.md](docker-compose/PROFILES.md).
+
+**Example usage:**
+
+```bash
+# Run only collector and grafana (you have Prometheus already)
+docker compose --profile no-prometheus up -d
+
+# Run only prometheus and grafana (you have Collector already)
+docker compose --profile no-collector up -d
+
+# Run only collector and prometheus (you have Grafana already)
+docker compose --profile no-grafana up -d
+```
 
 ## Using the Makefile
 
@@ -149,8 +175,8 @@ Visit `http://localhost:9090/targets`
 
 You should see two targets both showing as **UP**:
 
-- `otel-collector` (otel-collector:8889)
-- `otel-collector-internal` (otel-collector:8888)
+-   `otel-collector` (otel-collector:8889)
+-   `otel-collector-internal` (otel-collector:8888)
 
 ### 5. Query Metrics in Prometheus
 
@@ -184,10 +210,10 @@ Save Dashboard (optional)
 
 ### Prometheus shows empty results
 
-- Check `http://localhost:9090/targets` - both targets should be UP
-- Verify metrics exist at `http://localhost:8889/metrics`
-- Wait 5-10 seconds after sending a span for Prometheus to scrape
-- Ensure you're using the `otel/opentelemetry-collector-contrib` image (not the base image)
+-   Check `http://localhost:9090/targets` - both targets should be UP
+-   Verify metrics exist at `http://localhost:8889/metrics`
+-   Wait 5-10 seconds after sending a span for Prometheus to scrape
+-   Ensure you're using the `otel/opentelemetry-collector-contrib` image (not the base image)
 
 ### Container fails to start
 
