@@ -53,10 +53,12 @@ services:
   x-prometheus-base: &prometheus-base
     image: prom/prometheus:latest
     command:
-      - '--config.file=/etc/prometheus/prometheus.yaml'
-      - '--storage.tsdb.path=/prometheus'
+      - "--config.file=/etc/prometheus/prometheus.yaml"
+      - "--storage.tsdb.path=/prometheus"
+      - "--web.config.file=/etc/prometheus/web.config.yml"
     volumes:
       - ./prometheus.yaml:/etc/prometheus/prometheus.yaml:ro
+      - ./web.config.yml:/etc/prometheus/web.config.yml:ro
       - prometheus_data:/prometheus
     # Port 9090 is now exposed through Envoy proxy only
     # ports:
@@ -74,7 +76,7 @@ services:
       - victoriametrics
     profiles:
       - full # otel + prometheus + vm
-      
+
   prometheus-with-vm:
     <<: *prometheus-base
     depends_on:
@@ -99,8 +101,8 @@ services:
     image: victoriametrics/victoria-metrics:latest
     container_name: victoriametrics
     command:
-      - '-retentionPeriod=12'
-      - '-httpListenAddr=:8428'
+      - "-retentionPeriod=12"
+      - "-httpListenAddr=:8428"
     volumes:
       - victoriametrics_data:/victoria-metrics-data
     # Port 8428 is now exposed through Envoy proxy only
