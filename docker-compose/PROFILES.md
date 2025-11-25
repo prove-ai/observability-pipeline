@@ -14,6 +14,7 @@ Runs the complete observability stack:
 
 -   OpenTelemetry Collector
 -   Prometheus
+-   VictoriaMetrics (long-term storage)
 -   PostgreSQL
 -   Grafana
 
@@ -26,6 +27,12 @@ docker compose --profile full up -d
 
 **Note:** If no profile is specified, you must use the `--profile full` flag to start all services since all services are assigned to profiles.
 
+**VictoriaMetrics Integration:**
+
+-   Prometheus automatically remote_writes all metrics to VictoriaMetrics for long-term retention (12 months by default)
+-   Grafana queries VictoriaMetrics instead of Prometheus, providing access to all historical data
+-   VictoriaMetrics provides a Prometheus-compatible query API on port 8428
+
 ---
 
 ### `no-prometheus`
@@ -35,6 +42,7 @@ Use this profile when you already have Prometheus running in your environment.
 **Services included:**
 
 -   OpenTelemetry Collector
+-   VictoriaMetrics (long-term storage)
 -   PostgreSQL
 -   Grafana
 
@@ -72,28 +80,41 @@ docker compose --profile no-prometheus up -d
     - If running on the same Docker network, use the container name: `otel-collector:8889`
     - If running on the host network, use `localhost:8889` or the host's IP address
 
-2. **Update Grafana Data Source**
+2. **Configure Remote Write to VictoriaMetrics**
 
-    - Update the Grafana datasource configuration to point to your existing Prometheus instance
+    - Your existing Prometheus instance should be configured to remote_write metrics to VictoriaMetrics
+    - Add the following remote_write configuration to your Prometheus `prometheus.yml`:
+
+    ```yaml
+    remote_write:
+      - url: http://<victoriametrics-host>:8428/api/v1/write
+    ```
+
+    Replace `<victoriametrics-host>` with:
+
+    - The hostname or IP address where VictoriaMetrics is running
+    - If on the same Docker network, use the container name: `victoriametrics:8428`
+    - If external, use the full hostname or IP address
+
+3. **Update Grafana Data Source**
+
+    - Update the Grafana datasource configuration to point to VictoriaMetrics (which contains all historical data)
     - Edit `grafana/provisioning/datasources/prometheus.yml` and change the URL:
 
     ```yaml
-    url: http://<your-prometheus-host>:9090
+    url: http://victoriametrics:8428
     ```
 
-    Replace `<your-prometheus-host>` with:
+    - If VictoriaMetrics is external, use: `http://<victoriametrics-host>:8428`
 
-    - The hostname or IP address of your Prometheus instance
-    - If Prometheus is on the same Docker network, use the service name
-    - If Prometheus is external, use the full URL (e.g., `http://prometheus.example.com:9090`)
-
-3. **Network Configuration**
+4. **Network Configuration**
 
     - Ensure the OpenTelemetry Collector can be reached by your Prometheus instance
-    - If using Docker networks, ensure both services are on the same network or configure network connectivity
-    - If the collector is on a different host, ensure firewall rules allow access to ports 8888 and 8889
+    - Ensure VictoriaMetrics can be reached by your Prometheus instance for remote_write
+    - If using Docker networks, ensure all services are on the same network or configure network connectivity
+    - If services are on different hosts, ensure firewall rules allow access to required ports
 
-4. **Verify Connectivity**
+5. **Verify Connectivity**
     - Test that your Prometheus can reach the collector:
         ```bash
         curl http://<collector-host>:8889/metrics
@@ -109,6 +130,7 @@ Use this profile when you already have an OpenTelemetry Collector running in you
 **Services included:**
 
 -   Prometheus
+-   VictoriaMetrics (long-term storage)
 -   PostgreSQL
 -   Grafana
 
@@ -169,6 +191,11 @@ docker compose --profile no-collector up -d
     - Ensure your existing collector is configured to receive OTLP traces on ports 4317 (gRPC) and/or 4318 (HTTP)
     - Verify your applications are sending traces to the correct collector endpoint
 
+**VictoriaMetrics Integration:**
+
+-   Prometheus automatically remote_writes all metrics to VictoriaMetrics for long-term retention
+-   Grafana queries VictoriaMetrics instead of Prometheus, providing access to all historical data
+
 ---
 
 ### `no-grafana`
@@ -179,6 +206,7 @@ Use this profile when you already have Grafana running in your environment.
 
 -   OpenTelemetry Collector
 -   Prometheus
+-   VictoriaMetrics (long-term storage)
 
 **Services excluded:**
 
@@ -194,29 +222,31 @@ docker compose --profile no-grafana up -d
 
 #### Customer Configuration Required
 
-1. **Add Prometheus Data Source in Grafana**
+1. **Add VictoriaMetrics Data Source in Grafana**
 
-    - In your existing Grafana instance, add Prometheus as a data source
+    - In your existing Grafana instance, add Prometheus-compatible data source pointing to VictoriaMetrics
     - Go to Configuration → Data Sources → Add data source → Prometheus
-    - Set the URL to: `http://<prometheus-host>:9090`
+    - Set the URL to: `http://<victoriametrics-host>:8428`
 
-    Replace `<prometheus-host>` with:
+    Replace `<victoriametrics-host>` with:
 
-    - The hostname or IP address where Prometheus is running
-    - If Prometheus is on the same Docker network as Grafana, use the service name: `prometheus:9090`
-    - If Prometheus is external, use the full URL (e.g., `http://prometheus.example.com:9090`)
+    - The hostname or IP address where VictoriaMetrics is running
+    - If VictoriaMetrics is on the same Docker network as Grafana, use the service name: `victoriametrics:8428`
+    - If VictoriaMetrics is external, use the full URL (e.g., `http://victoriametrics.example.com:8428`)
+
+    **Note:** VictoriaMetrics provides a Prometheus-compatible query API, so it can be used as a Prometheus data source in Grafana. It contains all historical metrics written by Prometheus via remote_write.
 
 2. **Network Configuration**
 
-    - Ensure your Grafana instance can reach the Prometheus instance
+    - Ensure your Grafana instance can reach the VictoriaMetrics instance
     - If using Docker networks, ensure both services are on the same network or configure network connectivity
-    - If Grafana is on a different host, ensure firewall rules allow access to port 9090
+    - If Grafana is on a different host, ensure firewall rules allow access to port 8428
 
 3. **Verify Connectivity**
 
-    - Test that Grafana can reach Prometheus:
+    - Test that Grafana can reach VictoriaMetrics:
         ```bash
-        curl http://<prometheus-host>:9090/api/v1/query?query=up
+        curl http://<victoriametrics-host>:8428/api/v1/query?query=up
         ```
 
 4. **Create Dashboards**
@@ -227,12 +257,12 @@ docker compose --profile no-grafana up -d
 
 ## Profile Summary Table
 
-| Profile         | Collector | Prometheus | Grafana | PostgreSQL |
-| --------------- | --------- | ---------- | ------- | ---------- |
-| `full`          | ✅        | ✅         | ✅      | ✅         |
-| `no-prometheus` | ✅        | ❌         | ✅      | ✅         |
-| `no-collector`  | ❌        | ✅         | ✅      | ✅         |
-| `no-grafana`    | ✅        | ✅         | ❌      | ❌         |
+| Profile         | Collector | Prometheus | VictoriaMetrics | Grafana | PostgreSQL |
+| --------------- | --------- | ---------- | --------------- | ------- | ---------- |
+| `full`          | ✅        | ✅         | ✅              | ✅      | ✅         |
+| `no-prometheus` | ✅        | ❌         | ✅              | ✅      | ✅         |
+| `no-collector`  | ❌        | ✅         | ✅              | ✅      | ✅         |
+| `no-grafana`    | ✅        | ✅         | ✅              | ❌      | ❌         |
 
 ## Combining Profiles
 
@@ -271,4 +301,10 @@ docker compose --profile no-prometheus --profile no-collector up -d
 -   All services use the `observability` Docker network for internal communication
 -   Port mappings are configured to avoid conflicts with common service ports
 -   When using external services, ensure they are accessible from the Docker network or configure appropriate network bridges
--   Data volumes are preserved across container restarts for services that use them (Prometheus, PostgreSQL, Grafana)
+-   Data volumes are preserved across container restarts for services that use them (Prometheus, VictoriaMetrics, PostgreSQL, Grafana)
+-   **VictoriaMetrics Configuration:**
+    -   VictoriaMetrics is configured with 12 months retention by default (`-retentionPeriod=12`)
+    -   Prometheus automatically remote_writes all scraped metrics to VictoriaMetrics
+    -   Grafana queries VictoriaMetrics (port 8428) instead of Prometheus for all metrics
+    -   VictoriaMetrics provides a Prometheus-compatible query API, making it a drop-in replacement for Prometheus queries
+    -   This setup enables long-term metric retention without changing Prometheus scraping behavior
