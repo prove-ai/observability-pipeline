@@ -18,14 +18,12 @@ services:
       - observability
     restart: unless-stopped
     profiles:
-      - full
-      - no-prometheus
-      
+      - full # otel + prometheus + vm
+      - no-prometheus # otel + vm
+      - no-vm # otel + prometheus
 
-  # Prometheus - Scrapes metrics from the OTel Collector
-  prometheus:
+  x-prometheus-base: &prometheus-base
     image: prom/prometheus:latest
-    container_name: prometheus
     command:
       - '--config.file=/etc/prometheus/prometheus.yaml'
       - '--storage.tsdb.path=/prometheus'
@@ -34,15 +32,38 @@ services:
       - prometheus_data:/prometheus
     ports:
       - "9090:9090"
-    depends_on:
-      - otel-collector
-      - victoriametrics
     networks:
       - observability
     restart: unless-stopped
     profiles:
-      - full
+      - _never # This service is only an anchor, never start it directly
 
+  prometheus:
+    <<: *prometheus-base
+    depends_on:
+      - otel-collector
+      - victoriametrics
+    profiles:
+      - full # otel + prometheus + vm
+      
+  prometheus-with-vm:
+    <<: *prometheus-base
+    depends_on:
+      - victoriametrics
+    profiles:
+      - no-collector # prometheus + vm
+
+  prometheus-with-collector:
+    <<: *prometheus-base
+    depends_on:
+      - otel-collector
+    profiles:
+      - no-vm # prometheus + collector
+
+  prometheus-standalone:
+    <<: *prometheus-base
+    profiles:
+      - prom-only # prometheus
 
   # VictoriaMetrics - Long-term storage for Prometheus metrics
   victoriametrics:
@@ -59,26 +80,10 @@ services:
       - observability
     restart: unless-stopped
     profiles:
-      - full
-      - no-collector
-
-# Prometheus (standalone) - For use when collector is external
-  prometheus-standalone:
-    image: prom/prometheus:latest
-    container_name: prometheus
-    command:
-      - '--config.file=/etc/prometheus/prometheus.yaml'
-      - '--storage.tsdb.path=/prometheus'
-    volumes:
-      - ./prometheus.yaml:/etc/prometheus/prometheus.yaml:ro
-      - prometheus_data:/prometheus
-    ports:
-      - "9090:9090"
-    # No dependency on otel-collector since it's external
-    networks:
-      - observability
-    profiles:
-      - no-collector
+      - full # otel + prometheus + vm
+      - no-collector # prometheus + vm
+      - vm-only # vm
+      - no-prometheus # otel + vm
 
 volumes:
   prometheus_data:
