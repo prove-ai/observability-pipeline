@@ -5,6 +5,7 @@
   vars:
     deploy_user: "{{ ansible_user | default('ubuntu') }}"
     deploy_path: "/opt/observability-pipeline"
+    compose_profile: "full"
     
   tasks:
     - name: Update apt cache
@@ -111,25 +112,8 @@
         group: "{{ deploy_user }}"
         mode: '0644'
 
-    - name: Create Grafana provisioning directory
-      file:
-        path: "{{ deploy_path }}/docker-compose/grafana/provisioning/datasources"
-        state: directory
-        owner: "{{ deploy_user }}"
-        group: "{{ deploy_user }}"
-        mode: '0755'
-        recurse: yes
-
-    - name: Copy Grafana datasource configuration
-      copy:
-        src: "../docker-compose/grafana/provisioning/datasources/prometheus.yml"
-        dest: "{{ deploy_path }}/docker-compose/grafana/provisioning/datasources/prometheus.yml"
-        owner: "{{ deploy_user }}"
-        group: "{{ deploy_user }}"
-        mode: '0644'
-
     - name: Check if Docker Compose services are already running
-      shell: sg docker -c "cd {{ deploy_path }}/docker-compose && docker compose ps"
+      shell: sg docker -c "cd {{ deploy_path }}/docker-compose && docker compose --profile {{ compose_profile }} ps"
       register: compose_status
       changed_when: false
       failed_when: false
@@ -138,14 +122,25 @@
         PATH: "/usr/local/bin:/usr/bin:/bin"
 
     - name: Stop existing containers (if any)
-      shell: sg docker -c "cd {{ deploy_path }}/docker-compose && docker compose down"
-      when: "'otel-collector' in compose_status.stdout"
+      shell: sg docker -c "cd {{ deploy_path }}/docker-compose && docker compose --profile {{ compose_profile }} down"
+      when: "'otel-collector' in compose_status.stdout or 'prometheus' in compose_status.stdout"
       become_user: "{{ deploy_user }}"
       environment:
         PATH: "/usr/local/bin:/usr/bin:/bin"
 
+    - name: Clean up old Grafana and PostgreSQL volumes (if they exist)
+      shell: |
+        for vol in $(sg docker -c "docker volume ls -q | grep -E '(grafana_data|postgres_data)'"); do
+          sg docker -c "docker volume rm $vol" 2>/dev/null || true
+        done
+      become_user: "{{ deploy_user }}"
+      environment:
+        PATH: "/usr/local/bin:/usr/bin:/bin"
+      failed_when: false
+      changed_when: false
+
     - name: Start Docker Compose services
-      shell: sg docker -c "cd {{ deploy_path }}/docker-compose && docker compose up -d"
+      shell: sg docker -c "cd {{ deploy_path }}/docker-compose && docker compose --profile {{ compose_profile }} up -d"
       become_user: "{{ deploy_user }}"
       environment:
         PATH: "/usr/local/bin:/usr/bin:/bin"
@@ -160,10 +155,10 @@
         - 4317  # OTLP gRPC
         - 4318  # OTLP HTTP
         - 9090  # Prometheus
-        - 3100  # Grafana
+        - 8428  # VictoriaMetrics
 
     - name: Display service status
-      shell: sg docker -c "cd {{ deploy_path }}/docker-compose && docker compose ps"
+      shell: sg docker -c "cd {{ deploy_path }}/docker-compose && docker compose --profile {{ compose_profile }} ps"
       register: final_status
       become_user: "{{ deploy_user }}"
       environment:
@@ -178,10 +173,11 @@
         msg:
           - "Deployment completed successfully!"
           - "Services are accessible at:"
-          - "  - Grafana: http://{{ ansible_host }}:3100 (admin/admin)"
           - "  - Prometheus: http://{{ ansible_host }}:9090"
+          - "  - VictoriaMetrics: http://{{ ansible_host }}:8428 (Prometheus-compatible API)"
           - "  - OTLP gRPC: {{ ansible_host }}:4317"
           - "  - OTLP HTTP: {{ ansible_host }}:4318"
           - ""
           - "Note: Make sure your EC2 security group allows inbound traffic on these ports."
+          - "Note: VictoriaMetrics provides long-term storage (12 months retention) for all metrics."
 

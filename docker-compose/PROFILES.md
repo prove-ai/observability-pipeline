@@ -1,21 +1,39 @@
 # Docker Compose Profiles
 
-This document describes the available Docker Compose profiles for customers who already have portions of the observability stack set up.
+This document describes the available Docker Compose profiles and how to integrate them with components you may already have (Prometheus, OpenTelemetry Collector, VictoriaMetrics).
 
 ## Overview
 
-Docker Compose profiles allow you to selectively run only the services you need. This is useful when you already have some components of the observability stack running in your environment.
+Docker Compose profiles allow you to selectively run only the services you need.
+
+All services in `docker-compose.yaml` are assigned to one or more profiles, so you **must** specify a profile when starting the stack:
+
+```bash
+docker compose --profile <profile-name> up -d
+```
+
+```bash
+docker compose --profile <profile-name> down
+```
+
+**Prometheus:**
+
+-   Prometheus uses the shared prometheus.yaml configuration. For some profiles you will need to edit this file to match your environment (remote_write target, scrape targets, etc.), more info in [prometheus.yaml](/docker-compose/prometheus.yaml).
+
+**VictoriaMetrics Integration:**
+
+-   Prometheus automatically remote_writes all metrics to VictoriaMetrics for long-term retention (12 months by default)
+-   VictoriaMetrics provides a Prometheus-compatible query API on port 8428
 
 ## Available Profiles
 
-### `full` (Default)
+### `full`
 
 Runs the complete observability stack:
 
--   OpenTelemetry Collector
--   Prometheus
--   PostgreSQL
--   Grafana
+-   OpenTelemetry Collector (otel-collector)
+-   Prometheus (prometheus)
+-   VictoriaMetrics (victoriametrics)
 
 **Usage:**
 
@@ -24,23 +42,34 @@ cd docker-compose
 docker compose --profile full up -d
 ```
 
-**Note:** If no profile is specified, you must use the `--profile full` flag to start all services since all services are assigned to profiles.
+**What this profile does**
+
+-   Applications send OTLP telemetry to otel-collector (4317/4318).
+-   otel-collector exposes Prometheus metrics on :8889 (and internal metrics on :8888).
+-   Prometheus scrapes otel-collector.
+-   Prometheus remote_writes all metrics to VictoriaMetrics for long-term storage.
+
+**Prometheus config (prometheus.yaml)**
+
+-   remote_write block: leave enabled (points to internal victoriametrics).
+-   scrape_configs:
+    -   Keep the otel-collector jobs as-is.
+    -   Optionally add more jobs for other exporters/services.
+
+**Verification**
+
+-   Prometheus UI: http://localhost:9090
+-   VictoriaMetrics health: http://localhost:8428/health
+-   Collector health: http://localhost:13133/health/status
 
 ---
 
 ### `no-prometheus`
 
-Use this profile when you already have Prometheus running in your environment.
+Use this profile when you already have Prometheus and only want us to provide:
 
-**Services included:**
-
--   OpenTelemetry Collector
--   PostgreSQL
--   Grafana
-
-**Services excluded:**
-
--   Prometheus
+-   OpenTelemetry Collector (otel-collector)
+-   VictoriaMetrics (victoriametrics)
 
 **Usage:**
 
@@ -49,9 +78,15 @@ cd docker-compose
 docker compose --profile no-prometheus up -d
 ```
 
+**What this profile does**
+
+-   Starts otel-collector (OTLP in, Prometheus metrics out).
+-   Starts VictoriaMetrics for long-term storage.
+-   Does **not** start Prometheus; you use your own.
+
 #### Customer Configuration Required
 
-1. **Update Prometheus Configuration**
+1. **Scrape the collector**
 
     - Your existing Prometheus instance needs to scrape metrics from the OpenTelemetry Collector
     - Add the following scrape configuration to your Prometheus `prometheus.yml`:
@@ -68,30 +103,30 @@ docker compose --profile no-prometheus up -d
 
     Replace `<collector-host>` with:
 
-    - The hostname or IP address where the collector is running
-    - If running on the same Docker network, use the container name: `otel-collector:8889`
-    - If running on the host network, use `localhost:8889` or the host's IP address
+    - `otel-collector` if your Prometheus runs on the same Docker network,
+    - or the host/IP where the collector is exposed (e.g. localhost:8889).
 
-2. **Update Grafana Data Source**
+2. **Configure Remote Write to VictoriaMetrics**
 
-    - Update the Grafana datasource configuration to point to your existing Prometheus instance
-    - Edit `grafana/provisioning/datasources/prometheus.yml` and change the URL:
+    - Your existing Prometheus instance should be configured to remote_write metrics to VictoriaMetrics
+    - Add the following remote_write configuration to your Prometheus `prometheus.yml`:
 
     ```yaml
-    url: http://<your-prometheus-host>:9090
+    remote_write:
+        - url: http://<victoriametrics-host>:8428/api/v1/write
     ```
 
-    Replace `<your-prometheus-host>` with:
+    Replace `<victoriametrics-host>` with:
 
-    - The hostname or IP address of your Prometheus instance
-    - If Prometheus is on the same Docker network, use the service name
-    - If Prometheus is external, use the full URL (e.g., `http://prometheus.example.com:9090`)
+    - `victoriametrics` if on the same Docker network,
+    - or the host/IP where VM is exposed (e.g. `localhost:8428`).
 
 3. **Network Configuration**
 
     - Ensure the OpenTelemetry Collector can be reached by your Prometheus instance
-    - If using Docker networks, ensure both services are on the same network or configure network connectivity
-    - If the collector is on a different host, ensure firewall rules allow access to ports 8888 and 8889
+    - Ensure VictoriaMetrics can be reached by your Prometheus instance for remote_write
+    - If using Docker networks, ensure all services are on the same network or configure network connectivity
+    - If services are on different hosts, ensure firewall rules allow access to required ports
 
 4. **Verify Connectivity**
     - Test that your Prometheus can reach the collector:
@@ -102,6 +137,94 @@ docker compose --profile no-prometheus up -d
 
 ---
 
+### `no-vm`
+
+Use this profile when you already have a VictoriaMetrics instance and want us to provide:
+
+-   OpenTelemetry Collector (otel-collector)
+-   Prometheus (prometheus)
+
+**What this profile does**
+
+-   Starts otel-collector.
+-   Starts Prometheus.
+-   Does **not** start VictoriaMetrics; you use your own.
+
+**Usage:**
+
+```bash
+cd docker-compose
+docker compose --profile no-vm up -d
+```
+
+#### Customer Configuration Required
+
+1. **Configure Remote Write to VictoriaMetrics**
+
+    - In [Prometheus.yaml](./prometheus.yaml) configure remote_write metrics to your VictoriaMetrics address
+
+    ```yaml
+    remote_write:
+        - url: http://<victoriametrics-host>:8428/api/v1/write
+    ```
+
+    Replace `<victoriametrics-host>` with:
+
+    - The hostname or IP address where VictoriaMetrics is running
+    - If you do not want long-term storage, you can comment out / remove the remote_write block entirely.
+
+2. **Network Configuration**
+
+    - Ensure Prometheus can reach your existing VM
+    - If using Docker networks, ensure Prometheus can access the VM's network
+
+3. **Verify VictoriaMetrics Endpoint**
+
+    - Test that Prometheus can reach your VM:
+        ````bash
+        curl http://<your-VM-host>:8428/api/v1/write
+        ``` sending traces to the correct collector endpoint
+        ````
+
+---
+
+### `vm-only`
+
+Use this profile when you only want VictoriaMetrics and will use your own Prometheus / collectors.
+
+Services included:
+
+-   victoriametrics
+
+Services excluded:
+
+-   otel-collector
+-   prometheus
+
+**Usage:**
+
+```bash
+cd docker-compose
+docker compose --profile vm-only up -d
+```
+
+### Customer configuration required (your Prometheus)
+
+-   In [Prometheus.yaml](./prometheus.yaml) configure remote_write metrics to your VictoriaMetrics address
+
+    ```yaml
+    remote_write:
+        - url: http://<victoriametrics-host>:8428/api/v1/write
+    ```
+
+**Verification**
+
+curl http://localhost:8428/health
+
+> Note: prometheus.yaml in this repo is an example only and is not used in this profile.
+
+---
+
 ### `no-collector`
 
 Use this profile when you already have an OpenTelemetry Collector running in your environment.
@@ -109,8 +232,7 @@ Use this profile when you already have an OpenTelemetry Collector running in you
 **Services included:**
 
 -   Prometheus
--   PostgreSQL
--   Grafana
+-   VictoriaMetrics (long-term storage)
 
 **Services excluded:**
 
@@ -133,7 +255,7 @@ docker compose --profile no-collector up -d
 
 2. **Update Prometheus Configuration**
 
-    - Update `prometheus.yaml` to scrape from your existing collector instead of the containerized one
+    - Update [prometheus.yaml](./prometheus.yaml) to scrape from your existing collector instead of the containerized one
     - Modify the scrape targets:
 
     ```yaml
@@ -169,70 +291,70 @@ docker compose --profile no-collector up -d
     - Ensure your existing collector is configured to receive OTLP traces on ports 4317 (gRPC) and/or 4318 (HTTP)
     - Verify your applications are sending traces to the correct collector endpoint
 
+**VictoriaMetrics Integration:**
+
+-   Prometheus automatically remote_writes all metrics to VictoriaMetrics for long-term retention
+
 ---
 
-### `no-grafana`
+## `prom-only`
 
-Use this profile when you already have Grafana running in your environment.
+Use this profile when you only want Prometheus and no collector / no VictoriaMetrics.
 
 **Services included:**
 
--   OpenTelemetry Collector
--   Prometheus
+-   prometheus-standalone
 
-**Services excluded:**
+Services excluded:
 
--   PostgreSQL
--   Grafana
+-   otel-collector
+-   victoriametrics
 
 **Usage:**
 
 ```bash
 cd docker-compose
-docker compose --profile no-grafana up -d
+docker compose --profile prom-only up -d
 ```
 
-#### Customer Configuration Required
+#### Customer configuration required
 
-1. **Add Prometheus Data Source in Grafana**
+1. **Update, set the correct URL:**
 
-    - In your existing Grafana instance, add Prometheus as a data source
-    - Go to Configuration → Data Sources → Add data source → Prometheus
-    - Set the URL to: `http://<prometheus-host>:9090`
+```bash
+remote_write:
+-   url: http://<victoriametrics-host>:8428/api/v1/write
+```
 
-    Replace `<prometheus-host>` with:
+2. **Replace scrape targets**
 
-    - The hostname or IP address where Prometheus is running
-    - If Prometheus is on the same Docker network as Grafana, use the service name: `prometheus:9090`
-    - If Prometheus is external, use the full URL (e.g., `http://prometheus.example.com:9090`)
+Since our `otel-collector` is not running in this profile, you must point Prometheus at your own exporters:
 
-2. **Network Configuration**
+    ```bash
+    scrape_configs:
+    -   job_name: "your-services"
+        static_configs:
+        -   targets:
+            -   "your-app:9100"
+            -   "another-exporter:9200"
+    ```
 
-    - Ensure your Grafana instance can reach the Prometheus instance
-    - If using Docker networks, ensure both services are on the same network or configure network connectivity
-    - If Grafana is on a different host, ensure firewall rules allow access to port 9090
+3. **Verify**
 
-3. **Verify Connectivity**
-
-    - Test that Grafana can reach Prometheus:
-        ```bash
-        curl http://<prometheus-host>:9090/api/v1/query?query=up
-        ```
-
-4. **Create Dashboards**
-    - Import or create dashboards in your Grafana instance to visualize the metrics
-    - Query for metrics like `llm_traces_span_metrics_calls_total` that are exported by the collector
-
----
+```bash
+curl http://localhost:9090/-/ready
+```
 
 ## Profile Summary Table
 
-| Profile         | Collector | Prometheus | Grafana | PostgreSQL |
-| --------------- | --------- | ---------- | ------- | ---------- |
-| `full`          | ✅        | ✅         | ✅      | ✅         |
-| `no-prometheus` | ✅        | ❌         | ✅      | ✅         |
-| `no-collector`  | ❌        | ✅         | ✅      | ✅         |
-| `no-grafana`    | ✅        | ✅         | ❌      | ❌         |
+| Profile         | Collector | Prometheus | VictoriaMetrics |
+| --------------- | --------- | ---------- | --------------- |
+| `full`          | ✅        | ✅         | ✅              |
+| `no-prometheus` | ✅        | ❌         | ✅              |
+| `no-vm`         | ✅        | ✅         | ❌              |
+| `vm-only`       | ❌        | ❌         | ✅              |
+| `no-collector`  | ❌        | ✅         | ✅              |
+| `prom-only`     | ❌        | ✅         | ❌              |
 
 ## Combining Profiles
 
@@ -271,4 +393,9 @@ docker compose --profile no-prometheus --profile no-collector up -d
 -   All services use the `observability` Docker network for internal communication
 -   Port mappings are configured to avoid conflicts with common service ports
 -   When using external services, ensure they are accessible from the Docker network or configure appropriate network bridges
--   Data volumes are preserved across container restarts for services that use them (Prometheus, PostgreSQL, Grafana)
+-   Data volumes are preserved across container restarts for services that use them (Prometheus, VictoriaMetrics)
+-   **VictoriaMetrics Configuration:**
+    -   VictoriaMetrics is configured with 12 months retention by default (`-retentionPeriod=12`)
+    -   Prometheus automatically remote_writes all scraped metrics to VictoriaMetrics
+    -   VictoriaMetrics provides a Prometheus-compatible query API, making it a drop-in replacement for Prometheus queries
+    -   This setup enables long-term metric retention without changing Prometheus scraping behavior

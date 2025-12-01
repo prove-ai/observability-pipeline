@@ -2,7 +2,7 @@
 
 # Start the observability stack
 up:
-	cd docker-compose && docker compose up -d
+	cd docker-compose && docker compose --profile full up -d
 
 # Stop the observability stack
 down:
@@ -19,11 +19,8 @@ logs-otel:
 logs-prometheus:
 	cd docker-compose && docker compose logs -f prometheus
 
-logs-grafana:
-	cd docker-compose && docker compose logs -f grafana
-
-logs-postgres:
-	cd docker-compose && docker compose logs -f postgres
+logs-victoriametrics:
+	cd docker-compose && docker compose logs -f victoriametrics
 
 # Restart the stack
 restart:

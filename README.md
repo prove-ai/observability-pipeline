@@ -15,6 +15,8 @@ otel-cli → OTel Collector (OTLP receiver)
        Prometheus exporter (:8889)
            ↓
        Prometheus (scrapes every 5s)
+           ↓
+       VictoriaMetrics (long-term storage, 12 months retention)
 ```
 
 ## Starting the Application
@@ -30,32 +32,42 @@ This will start:
 
 -   **OTel Collector** on ports 4317 (gRPC), 4318 (HTTP), 8888 (internal metrics), 8889 (Prometheus exporter)
 -   **Prometheus** on port 9090
--   **Grafana** on port 3100 (admin/admin)
+-   **VictoriaMetrics** on port 8428 (long-term storage with 12 months retention)
 
 ### Docker Compose Profiles
 
-If you already have portions of the observability stack set up (Prometheus, OpenTelemetry Collector, or Grafana), you can use Docker Compose profiles to run only the services you need.
+If you already have portions of the observability stack set up (Prometheus, OpenTelemetry Collector, or VictoriaMetrics), you can use Docker Compose profiles to run only the services you need.
+
+**Important:** All services in `docker-compose.yaml` are assigned to profiles, so you **must** specify a profile when starting the stack.
 
 Available profiles:
 
--   `full` - Runs the complete stack (default)
--   `no-prometheus` - Use when you already have Prometheus
--   `no-collector` - Use when you already have an OpenTelemetry Collector
--   `no-grafana` - Use when you already have Grafana
+-   `full` - Runs the complete stack (Collector, Prometheus, VictoriaMetrics)
+-   `no-prometheus` - Use when you already have Prometheus (includes Collector and VictoriaMetrics)
+-   `no-collector` - Use when you already have an OpenTelemetry Collector (includes Prometheus and VictoriaMetrics)
+-   `no-vm` - Use when you already have VictoriaMetrics (includes Collector and Prometheus)
+-   `vm-only` - Use when you only want VictoriaMetrics (no Collector or Prometheus)
+-   `prom-only` - Use when you only want Prometheus (no Collector or VictoriaMetrics)
 
 For detailed information on each profile and required customer configuration, see [PROFILES.md](docker-compose/PROFILES.md).
 
 **Example usage:**
 
 ```bash
-# Run only collector and grafana (you have Prometheus already)
+# Run only collector and VictoriaMetrics (you have Prometheus already)
 docker compose --profile no-prometheus up -d
 
-# Run only prometheus and grafana (you have Collector already)
+# Run only prometheus and VictoriaMetrics (you have Collector already)
 docker compose --profile no-collector up -d
 
-# Run only collector and prometheus (you have Grafana already)
-docker compose --profile no-grafana up -d
+# Run only collector and prometheus (you have VictoriaMetrics already)
+docker compose --profile no-vm up -d
+
+# Run only VictoriaMetrics (you have your own Prometheus and Collector)
+docker compose --profile vm-only up -d
+
+# Run only Prometheus (you have your own Collector and storage)
+docker compose --profile prom-only up -d
 ```
 
 ## Using the Makefile
@@ -78,8 +90,7 @@ make clean       # Clean up containers and volumes
 make logs              # View logs from all services
 make logs-otel         # View logs from OTel Collector
 make logs-prometheus   # View logs from Prometheus
-make logs-grafana      # View logs from Grafana
-make logs-postgres     # View logs from PostgreSQL
+make logs-vm           # View logs from VictoriaMetrics
 ```
 
 ### Additional Commands
@@ -194,17 +205,13 @@ Expected Output:
 llm_traces_span_metrics_calls_total{component="demo", env="dev", exported_job="otel-test", instance="otel-collector:8889", job="otel-collector", otel_scope_name="spanmetricsconnector", service_name="otel-test", span_kind="SPAN_KIND_CLIENT", span_name="demo-span", status_code="STATUS_CODE_UNSET"}
 ```
 
-### 6. Query Metrics in Grafana
+### 6. Verify VictoriaMetrics is Receiving Metrics
 
-Visit `http://localhost:3100
+Visit `http://localhost:8428/health` to verify VictoriaMetrics is running.
 
-Click on Dashboards > + Create Dashboard > Add Visualization > Prometheus
+Prometheus automatically remote_writes all metrics to VictoriaMetrics for long-term storage (12 months retention).
 
-Query for metric `llm_traces_span_metrics_calls_total`
-
-You should see data in the panel
-
-Save Dashboard (optional)
+You can query metrics directly from VictoriaMetrics using its Prometheus-compatible API at `http://localhost:8428/api/v1/query`.
 
 ## Troubleshooting
 
@@ -227,8 +234,9 @@ docker compose logs prometheus
 ### Clear all data and restart
 
 ```bash
-docker compose down -v
-docker compose up -d
+cd docker-compose
+docker compose --profile full down -v
+docker compose --profile full up -d
 ```
 
 ### Metrics not appearing after collector restart
