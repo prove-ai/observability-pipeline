@@ -6,7 +6,7 @@
 
 This observability pipeline solves a common problem: **how to monitor distributed applications using OpenTelemetry traces**. Instead of instrumenting your application twice (once for traces, once for metrics), this pipeline automatically derives metrics from traces and stores them for long-term analysis.
 
-**In Plain English:**
+**At a Glance:**
 
 - Your application sends traces (using OpenTelemetry)
 - The pipeline converts those traces into useful metrics (request rate, errors, latency)
