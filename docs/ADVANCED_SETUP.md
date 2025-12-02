@@ -1,0 +1,98 @@
+# Advanced Setup Guide - Observability Pipeline
+
+Version: 1.0  
+Last Updated: December 2025  
+Target Audience: DevOps Engineers, Infrastructure Engineers, ML Engineers deploying inference workloads
+
+## Overview
+
+This guide provides comprehensive instructions for deploying and configuring the Observability Pipeline in production environments. The pipeline converts OpenTelemetry (OTLP) traces into Prometheus metrics, stores them in VictoriaMetrics for long-term retention, and provides flexible deployment options to integrate with your existing infrastructure.
+
+### What This Pipeline Does
+
+- Receives OTLP traces via gRPC (port 4317) and HTTP (port 4318)
+- Converts spans to metrics using the spanmetrics connector
+- Exports metrics to Prometheus format (port 8889)
+- Scrapes metrics into Prometheus (10-second interval)
+- Stores metrics long-term in VictoriaMetrics (12-month retention)
+- Exposes Prometheus-compatible query API via VictoriaMetrics
+
+### Prerequisites
+
+- **Familiarity with**: Docker, Prometheus, basic observability concepts
+- **Infrastructure**: Docker and Docker Compose installed (or Ansible for remote deployment)
+- **Network Access**: Appropriate firewall rules and security group configurations
+- **SSH Access**: For Ansible-based deployments to EC2 instances
+
+## Quick Start Decision Tree
+
+**Which guide do you need?**
+
+| If you want to...                                       | Start here                                                   |
+| ------------------------------------------------------- | ------------------------------------------------------------ |
+| Understand how the pipeline works                       | [Architecture Overview](guides/architecture.md)              |
+| Choose the right deployment profile                     | [Deployment Profiles Guide](guides/deployment-profiles.md)   |
+| Configure the collector, Prometheus, or VictoriaMetrics | [Configuration Reference](guides/configuration-reference.md) |
+| Deploy via Docker Compose or Ansible                    | [Deployment Methods](guides/deployment-methods.md)           |
+| Integrate with multi-region or Kubernetes               | [Integration Patterns](guides/integration-patterns.md)       |
+| Prepare for production (HA, backups, sizing)            | [Production Guide](guides/production-guide.md)               |
+| Secure your deployment (TLS, auth, firewalls)           | [Security Guide](guides/security.md)                         |
+| Look up metrics, ports, queries, or commands            | [Reference Guide](guides/reference.md)                       |
+
+## Documentation Structure
+
+### Core Setup Guides
+
+1. **[Architecture Overview](guides/architecture.md)**  
+   Understand the data flow, component responsibilities, and network architecture.
+
+2. **[Deployment Profiles Guide](guides/deployment-profiles.md)**  
+   Choose the right profile (full, no-prometheus, no-vm, no-collector, vm-only, prom-only) based on your existing infrastructure.
+
+3. **[Configuration Reference](guides/configuration-reference.md)**  
+   Detailed configuration options for OpenTelemetry Collector, Prometheus, and VictoriaMetrics.
+
+4. **[Deployment Methods](guides/deployment-methods.md)**  
+   Step-by-step instructions for deploying via Docker Compose locally or Ansible to AWS EC2.
+
+### Advanced Topics
+
+5. **[Integration Patterns](guides/integration-patterns.md)**  
+   Multi-region deployments, Kubernetes integration, and hybrid cloud scenarios.
+
+6. **[Production Guide](guides/production-guide.md)**  
+   High availability, resource sizing, data persistence, backup strategies, and performance tuning.
+
+7. **[Security Guide](guides/security.md)**  
+   TLS/SSL configuration, authentication, authorization, network security, and data privacy.
+
+### Reference
+
+8. **[Reference Guide](guides/reference.md)**  
+   Metric reference, example queries, port reference, useful commands, and common configurations.
+
+## Getting Started
+
+1. **New to this pipeline?** Start with [Architecture Overview](guides/architecture.md) to understand how it works.
+
+2. **Ready to deploy?** Go to [Deployment Profiles Guide](guides/deployment-profiles.md) to choose your profile, then follow [Deployment Methods](guides/deployment-methods.md).
+
+3. **Configuring for your use case?** See [Configuration Reference](guides/configuration-reference.md) for tuning options.
+
+4. **Preparing for production?** Review [Production Guide](guides/production-guide.md) and [Security Guide](guides/security.md).
+
+## Additional Resources
+
+- **Project README**: [../README.md](../README.md) - Quick start and basic usage
+- **Docker Compose Profiles**: [../docker-compose/PROFILES.md](../docker-compose/PROFILES.md) - Profile overview
+- **Ansible Playbooks**: [../playbooks/README.md](../playbooks/README.md) - Ansible deployment details
+
+## Support
+
+For additional support or questions, refer to the project README or contact your infrastructure team.
+
+---
+
+**Document Version**: 1.0  
+**Last Updated**: December 2025  
+**Maintainer**: Infrastructure Team
