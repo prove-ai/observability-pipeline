@@ -284,7 +284,7 @@ service:
 
 ### 3. Connectors: Spanmetrics (Traces → Metrics)
 
-**Purpose:** The heart of the pipeline - converts OpenTelemetry spans into Prometheus metrics.
+**Purpose:** The central component of the pipeline - converts OpenTelemetry spans into Prometheus metrics.
 
 **What You Get:**
 
