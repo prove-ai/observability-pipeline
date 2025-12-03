@@ -1,400 +1,375 @@
-# Production Guide
+# Production Deployment Guide
 
 [← Back to Advanced Setup](../ADVANCED_SETUP.md)
 
-This guide covers production considerations including high availability, resource sizing, data persistence, backups, and performance tuning.
+This guide walks you through evaluating your production requirements and directs you to the appropriate documentation for implementing your observability pipeline in production.
 
-## Table of Contents
+## Overview
 
-- [High Availability](#high-availability)
-- [Resource Sizing](#resource-sizing)
-- [Data Persistence](#data-persistence)
-- [Backup Strategy](#backup-strategy)
-- [Performance Tuning](#performance-tuning)
+Deploying to production requires careful consideration of several key areas:
 
----
+1. **Deployment Profile** - What components do you need?
+2. **Deployment Architecture** - Where and how will you deploy?
+3. **Security Requirements** - How will you secure your deployment?
+4. **Production Considerations** - High availability, performance, and operational needs
 
-## High Availability
-
-### Collector HA
-
-Deploy multiple collector instances behind a load balancer:
-
-```
-Load Balancer (4317/4318)
-↓
-├─ Collector 1
-├─ Collector 2
-└─ Collector 3
-```
-
-#### Implementation
-
-**1. Deploy Multiple Instances**:
-
-```bash
-# On host 1
-docker compose --profile full up -d
-
-# On host 2
-docker compose --profile full up -d
-
-# On host 3
-docker compose --profile full up -d
-```
-
-**2. Configure Load Balancer** (e.g., AWS ALB):
-
-- Target Group: Collectors on port 4317/4318
-- Health Check: `http://<collector>:13133/health/status`
-
-**3. Configure Applications to Send to Load Balancer**:
-
-```bash
-export OTEL_EXPORTER_OTLP_ENDPOINT=http://<load-balancer>:4318
-```
-
-### Prometheus HA
-
-For Prometheus high availability, deploy multiple instances with identical configuration:
-
-```bash
-# Prometheus 1
-docker compose --profile full up -d
-
-# Prometheus 2 (on different host)
-docker compose --profile full up -d
-```
-
-Both instances will:
-
-- Scrape the same targets
-- Remote write to VictoriaMetrics
-- VictoriaMetrics will deduplicate identical samples
-
-### VictoriaMetrics HA
-
-For VictoriaMetrics clustering (horizontal scaling), see the [VictoriaMetrics cluster documentation](https://docs.victoriametrics.com/Cluster-VictoriaMetrics.html).
+This guide will help you make informed decisions in each area and point you to the detailed implementation guides.
 
 ---
 
-## Resource Sizing
+## Step 1: Evaluate Your Infrastructure
 
-### OpenTelemetry Collector
+### What components do you already have?
 
-| Metric | Recommended Value | Notes                                 |
-| ------ | ----------------- | ------------------------------------- |
-| CPU    | 2-4 cores         | 1 core per 10k spans/sec              |
-| Memory | 2-4 GB            | Depends on batch size and cardinality |
-| Disk   | 10 GB             | For logs and temporary state          |
+Before deploying, assess what infrastructure you already have in place:
 
-**Scaling Guidelines**:
+| Question                             | If YES →                         | If NO →             |
+| ------------------------------------ | -------------------------------- | ------------------- |
+| Do you have Prometheus?              | Consider `no-prometheus` profile | Continue evaluation |
+| Do you have VictoriaMetrics?         | Consider `no-vm` profile         | Continue evaluation |
+| Do you have OpenTelemetry Collector? | Consider `no-collector` profile  | Continue evaluation |
+| Starting from scratch?               | Use `full` profile               | -                   |
 
-- **10k spans/sec**: 2 cores, 2 GB RAM
-- **50k spans/sec**: 4 cores, 4 GB RAM
-- **100k+ spans/sec**: Consider horizontal scaling with load balancer
+### Decision: Choose Your Deployment Profile
 
-### Prometheus
+Based on your existing infrastructure, select the appropriate profile:
 
-| Metric              | Formula                             | Example (100k active series) |
-| ------------------- | ----------------------------------- | ---------------------------- |
-| Memory              | `active_series * 1-3 KB`            | 100k \* 2 KB = 200 MB        |
-| Disk (2h retention) | `samples/sec * 2 bytes * 2h * 3600` | ~1 GB                        |
+| Your Situation                | Recommended Profile | What You Get                                                 |
+| ----------------------------- | ------------------- | ------------------------------------------------------------ |
+| **New/Greenfield deployment** | `full`              | Complete stack: Collector + Prometheus + VictoriaMetrics     |
+| **Have Prometheus**           | `no-prometheus`     | Collector + VictoriaMetrics (integrate with your Prometheus) |
+| **Have VictoriaMetrics**      | `no-vm`             | Collector + Prometheus (integrate with your VM)              |
+| **Have OTel Collector**       | `no-collector`      | Prometheus + VictoriaMetrics (integrate with your collector) |
+| **Need storage only**         | `vm-only`           | VictoriaMetrics only                                         |
+| **Need scraper only**         | `prom-only`         | Prometheus only                                              |
 
-**Scaling Guidelines**:
-
-- **100k series**: 2 cores, 4 GB RAM, 50 GB disk
-- **1M series**: 4 cores, 8 GB RAM, 200 GB disk
-- **10M+ series**: Consider federation or sharding
-
-### VictoriaMetrics
-
-| Metric | Recommended Value         | Notes                                  |
-| ------ | ------------------------- | -------------------------------------- |
-| CPU    | 2-8 cores                 | Scales with query concurrency          |
-| Memory | 8-32 GB                   | More memory = better query performance |
-| Disk   | See retention table below | ~50 GB per month per 1M series         |
-
-**Disk Usage Estimates**:
-
-| Retention Period | Disk Usage (1M active series) |
-| ---------------- | ----------------------------- |
-| 1 month          | ~50 GB                        |
-| 6 months         | ~300 GB                       |
-| 12 months        | ~600 GB                       |
-| 24 months        | ~1.2 TB                       |
+**📖 Next:** See the [Deployment Profiles Guide](deployment-profiles.md) for detailed information on each profile, configuration requirements, and integration steps.
 
 ---
 
-## Data Persistence
+## Step 2: Evaluate Your Deployment Architecture
 
-By default, Docker volumes are used for persistence:
+### Where will you deploy?
 
-```yaml
-volumes:
-  prometheus_data:
-  victoriametrics_data:
-```
+Choose your deployment method based on your infrastructure and operational requirements:
 
-### For Production: Mount to Host Directories
+| Deployment Method        | Best For                                         | Complexity | Automation |
+| ------------------------ | ------------------------------------------------ | ---------- | ---------- |
+| **Local Docker Compose** | Development, testing, single server              | Low        | Manual     |
+| **AWS EC2 via Ansible**  | Production, multi-server, repeatable deployments | Medium     | High       |
+| **Kubernetes**           | Container orchestration, auto-scaling            | High       | High       |
 
-Edit `docker-compose.yaml`:
+### Decision: Choose Your Deployment Method
 
-```yaml
-volumes:
-  prometheus_data:
-    driver: local
-    driver_opts:
-      type: none
-      o: bind
-      device: /mnt/data/prometheus
+**For Development/Testing:**
 
-  victoriametrics_data:
-    driver: local
-    driver_opts:
-      type: none
-      o: bind
-      device: /mnt/data/victoriametrics
-```
+- Use local Docker Compose
+- Quick setup (2 minutes)
+- Easy to iterate and test changes
 
-**Create the directories**:
+**For Production:**
 
-```bash
-sudo mkdir -p /mnt/data/prometheus
-sudo mkdir -p /mnt/data/victoriametrics
-sudo chown -R 65534:65534 /mnt/data/prometheus  # Prometheus runs as nobody
-sudo chown -R 1000:1000 /mnt/data/victoriametrics
-```
+- Use Ansible for AWS EC2 (recommended for most cases)
+- Repeatable, automated deployments
+- Infrastructure as code
 
-### Using EBS Volumes (AWS)
+**For Kubernetes Environments:**
 
-For AWS deployments, mount EBS volumes:
+- Deploy collector via Helm or OpenTelemetry Operator
+- Use our Prometheus + VictoriaMetrics for storage (`no-collector` profile)
 
-```bash
-# Attach EBS volume to EC2 instance
-aws ec2 attach-volume --volume-id vol-xxx --instance-id i-xxx --device /dev/sdf
-
-# Format and mount
-sudo mkfs.ext4 /dev/sdf
-sudo mkdir -p /mnt/data
-sudo mount /dev/sdf /mnt/data
-
-# Add to /etc/fstab for persistence
-echo '/dev/sdf /mnt/data ext4 defaults,nofail 0 2' | sudo tee -a /etc/fstab
-```
+**📖 Next:** See the [Deployment Methods Guide](deployment-methods.md) for step-by-step instructions on deploying using your chosen method.
 
 ---
 
-## Backup Strategy
+## Step 3: Evaluate Your Security Requirements
 
-### VictoriaMetrics Snapshots
+### What are your security and compliance needs?
 
-**1. Create Snapshot**:
+Consider these security aspects for your production deployment:
 
-```bash
-curl http://localhost:8428/snapshot/create
-# Response: {"status":"ok","snapshot":"20251201"}
+| Security Area          | Questions to Consider                        | Priority |
+| ---------------------- | -------------------------------------------- | -------- |
+| **Transport Security** | Do you need TLS/mTLS?                        | High     |
+| **Access Control**     | Who should access Prometheus/VM UIs?         | High     |
+| **Data Privacy**       | Do you need to scrub PII from traces?        | High     |
+| **Network Security**   | Should services be on private networks only? | Medium   |
+| **Compliance**         | GDPR, HIPAA, SOC 2 requirements?             | Varies   |
+| **Debug Endpoints**    | Should pprof/zpages be disabled?             | Medium   |
 
-# Snapshot stored in: /victoria-metrics-data/snapshots/20251201
-```
+### Security Checklist
 
-**2. Copy to Backup Location**:
+Before going to production, ensure you address:
 
-```bash
-rsync -av /mnt/data/victoriametrics/snapshots/20251201 s3://my-backup-bucket/
-```
+- [ ] **TLS Configuration** - Encrypt communication between components
+- [ ] **Authentication** - Protect Prometheus and VictoriaMetrics endpoints
+- [ ] **Network Restrictions** - Limit access via firewalls/security groups
+- [ ] **Debug Endpoints** - Disable or restrict pprof (1888) and zpages (55679)
+- [ ] **PII Scrubbing** - Remove sensitive data from traces
+- [ ] **Compliance Requirements** - Meet regulatory requirements
 
-**3. Automated Backups via Cron**:
-
-```bash
-#!/bin/bash
-# /usr/local/bin/backup-victoriametrics.sh
-
-SNAPSHOT=$(curl -s http://localhost:8428/snapshot/create | jq -r .snapshot)
-rsync -av /mnt/data/victoriametrics/snapshots/$SNAPSHOT /backup/victoriametrics/
-find /backup/victoriametrics/ -mtime +30 -delete  # Keep 30 days
-```
-
-Add to crontab:
-
-```bash
-# Daily backup at 2 AM
-0 2 * * * /usr/local/bin/backup-victoriametrics.sh
-```
-
-### Prometheus Snapshots
-
-**Enable Admin API** in `prometheus.yaml`:
-
-```yaml
-# Add to command in docker-compose.yaml
-command:
-  - "--config.file=/etc/prometheus/prometheus.yaml"
-  - "--storage.tsdb.path=/prometheus"
-  - "--web.enable-admin-api"
-```
-
-**Create Snapshot**:
-
-```bash
-curl -XPOST http://localhost:9090/api/v1/admin/tsdb/snapshot
-# Response includes snapshot path
-```
+**📖 Next:** See the [Security Guide](security.md) for detailed configuration instructions for TLS, authentication, network security, and PII scrubbing.
 
 ---
 
-## Performance Tuning
+## Step 4: Production Operational Considerations
 
-### Collector Tuning
+After choosing your profile, deployment method, and security configuration, consider these operational aspects:
 
-#### Batch Processor
+### High Availability
 
-Increase batch sizes for higher throughput:
+**Do you need redundancy?**
 
-```yaml
-processors:
-  batch:
-    timeout: 500ms # Longer timeout = larger batches
-    send_batch_size: 16384 # Increase batch size
-    send_batch_max_size: 32768
-```
+- **Collector HA**: Deploy multiple collector instances behind a load balancer
+- **Prometheus HA**: Run multiple Prometheus instances (VictoriaMetrics deduplicates)
+- **VictoriaMetrics HA**: Use VictoriaMetrics cluster mode for horizontal scaling
 
-**Metrics to Monitor**:
+**📖 Details:** See [High Availability section in ADVANCED_SETUP_DOCS.md](../../ADVANCED_SETUP_DOCS.md#high-availability)
 
-- `otelcol_processor_batch_batch_send_size` (histogram)
-- `otelcol_processor_batch_timeout_trigger_send` (counter)
+### Resource Sizing
 
-#### Memory Limiter
+**What resources do you need?**
 
-Prevent OOM crashes:
+Quick sizing guide for planning:
 
-```yaml
-processors:
-  memory_limiter:
-    check_interval: 1s
-    limit_mib: 4096 # 4 GB limit
-    spike_limit_mib: 512 # Allow 512 MB spikes
+| Component           | Small Workload   | Medium Workload   | Large Workload      |
+| ------------------- | ---------------- | ----------------- | ------------------- |
+| **Collector**       | 2 cores, 2GB RAM | 4 cores, 4GB RAM  | 8+ cores, 8GB+ RAM  |
+| **Prometheus**      | 2 cores, 4GB RAM | 4 cores, 8GB RAM  | 8+ cores, 16GB+ RAM |
+| **VictoriaMetrics** | 2 cores, 8GB RAM | 4 cores, 16GB RAM | 8+ cores, 32GB+ RAM |
 
-  batch: {}
+**Workload Definitions:**
 
-service:
-  pipelines:
-    traces:
-      receivers: [otlp]
-      processors: [memory_limiter, batch] # memory_limiter FIRST
-      exporters: [spanmetrics]
-```
+- **Small**: <10k spans/sec, <100k active time series
+- **Medium**: 10k-50k spans/sec, 100k-1M active time series
+- **Large**: >50k spans/sec, >1M active time series
 
-### Prometheus Tuning
+**📖 Details:** See [Resource Sizing section in ADVANCED_SETUP_DOCS.md](../../ADVANCED_SETUP_DOCS.md#resource-sizing)
 
-#### Scrape Performance
+### Data Persistence
 
-For high cardinality targets:
+**How will you store data?**
 
-```yaml
-scrape_configs:
-  - job_name: "otel-collector"
-    scrape_interval: 15s # Increase if needed
-    scrape_timeout: 10s # Must be < scrape_interval
-    static_configs:
-      - targets: ["otel-collector:8889"]
-    metric_relabel_configs:
-      # Drop high-cardinality metrics you don't need
-      - source_labels: [__name__]
-        regex: "go_gc_.*"
-        action: drop
-```
+- **Development**: Docker volumes (default)
+- **Production**: Host-mounted directories or EBS volumes
+- **Retention**: VictoriaMetrics default is 12 months (configurable)
 
-#### Query Performance with Recording Rules
+**📖 Details:** See [Data Persistence section in ADVANCED_SETUP_DOCS.md](../../ADVANCED_SETUP_DOCS.md#data-persistence)
 
-Use recording rules for expensive queries:
+### Backup Strategy
 
-```yaml
-# prometheus.yaml
-rule_files:
-  - "/etc/prometheus/rules.yml"
-```
+**What's your backup plan?**
 
-Create `rules.yml`:
+- **VictoriaMetrics**: Supports snapshot API for backups
+- **Prometheus**: Supports TSDB snapshots (requires admin API)
+- **Automation**: Implement automated backups via cron/scheduled tasks
 
-```yaml
-groups:
-  - name: spanmetrics
-    interval: 30s
-    rules:
-      # Pre-aggregate request rate
-      - record: job:llm_traces_span_metrics_calls:rate5m
-        expr: sum by (service_name, span_name) (rate(llm_traces_span_metrics_calls_total[5m]))
+**📖 Details:** See [Backup Strategy section in ADVANCED_SETUP_DOCS.md](../../ADVANCED_SETUP_DOCS.md#backup-strategy)
 
-      # Pre-aggregate p95 latency
-      - record: job:llm_traces_span_metrics_duration:p95
-        expr: histogram_quantile(0.95, sum by (service_name, span_name, le) (rate(llm_traces_span_metrics_duration_bucket[5m])))
-```
+### Performance Tuning
 
-Mount rules file:
+**Do you need to optimize for high throughput?**
 
-```yaml
-prometheus:
-  image: prom/prometheus:latest
-  volumes:
-    - ./prometheus.yaml:/etc/prometheus/prometheus.yaml:ro
-    - ./rules.yml:/etc/prometheus/rules.yml:ro # Add this
-```
+Key tuning areas:
 
-### VictoriaMetrics Tuning
+- **Batch Processor**: Adjust batch sizes and timeouts
+- **Memory Limiter**: Prevent OOM crashes under load
+- **Histogram Buckets**: Customize for your latency profile
+- **Prometheus Scraping**: Tune intervals and relabeling
 
-#### Memory Usage
-
-```yaml
-command:
-  - "-retentionPeriod=12"
-  - "-httpListenAddr=:8428"
-  - "-memory.allowedPercent=70" # Use 70% of system RAM
-  - "-search.maxMemoryPerQuery=0" # No limit (default: 1GB)
-```
-
-#### Ingestion Performance
-
-```yaml
-command:
-  - "-retentionPeriod=12"
-  - "-httpListenAddr=:8428"
-  - "-insert.maxQueueDuration=30s" # Queue samples for up to 30s during spikes
-```
-
-#### Query Performance
-
-```yaml
-command:
-  - "-retentionPeriod=12"
-  - "-httpListenAddr=:8428"
-  - "-search.maxConcurrentRequests=32" # Increase for more concurrent queries
-  - "-search.maxQueryDuration=120s" # Allow longer queries
-  - "-search.maxPointsPerTimeseries=30000" # Increase for finer resolution
-```
+**📖 Details:** See [Performance Tuning section in ADVANCED_SETUP_DOCS.md](../../ADVANCED_SETUP_DOCS.md#performance-tuning)
 
 ---
 
-## Production Checklist
+## Production Deployment Workflow
 
-Before going to production, ensure:
+Follow this recommended sequence for a successful production deployment:
 
-- [ ] **High Availability**: Multiple instances of critical components
-- [ ] **Resource Sizing**: Adequate CPU, memory, and disk for expected load
-- [ ] **Data Persistence**: Host-mounted volumes or EBS volumes
-- [ ] **Backups**: Automated backup strategy in place
-- [ ] **Monitoring**: Observability stack metrics are being collected
-- [ ] **Security**: TLS, authentication, and network restrictions (see [Security Guide](security.md))
-- [ ] **Performance Tuning**: Batch sizes, memory limits, and query optimizations applied
-- [ ] **Alerting**: Alerts configured for critical metrics
-- [ ] **Documentation**: Runbooks for common operations and troubleshooting
+```
+1. Choose Profile → 2. Configure Security → 3. Deploy → 4. Verify → 5. Monitor
+     (Step 1)           (Step 3)          (Step 2)   (Below)    (Below)
+```
+
+### Verification Checklist
+
+After deployment, verify everything is working:
+
+#### Infrastructure Checks
+
+- [ ] All expected services are running
+- [ ] No containers in "Restarting" or "Exited" state
+- [ ] Correct deployment profile is active
+
+#### Health Checks
+
+- [ ] Collector health: `curl http://<host>:13133/health/status`
+- [ ] Prometheus health: `curl http://<host>:9090/-/healthy`
+- [ ] VictoriaMetrics health: `curl http://<host>:8428/health`
+
+#### Data Flow Checks
+
+- [ ] Prometheus targets show "UP": `http://<host>:9090/targets`
+- [ ] Can send test traces to collector
+- [ ] Metrics appear in Prometheus
+- [ ] Metrics are stored in VictoriaMetrics
+
+#### Security Checks (Production Only)
+
+- [ ] Only required ports are open
+- [ ] Debug ports (1888, 55679) are NOT exposed publicly
+- [ ] TLS is enabled (if required)
+- [ ] Authentication is configured (if required)
+
+**📖 Details:** See [Post-Deployment Verification in Deployment Methods Guide](deployment-methods.md#post-deployment-verification)
+
+### Monitoring Your Observability Stack
+
+**Monitor the monitors:**
+
+- **Collector Metrics**: Available at `:8888/metrics`
+- **Prometheus Metrics**: Built-in self-monitoring
+- **VictoriaMetrics Metrics**: Available at `:8428/metrics`
+
+Key metrics to alert on:
+
+- Collector: `otelcol_receiver_refused_spans` (backpressure)
+- Prometheus: `prometheus_remote_storage_samples_failed_total` (remote write failures)
+- VictoriaMetrics: `vm_free_disk_space_bytes` (disk space)
+
+**📖 Details:** See [Monitoring the Observability Stack in ADVANCED_SETUP_DOCS.md](../../ADVANCED_SETUP_DOCS.md#monitoring-the-observability-stack)
 
 ---
 
-## Next Steps
+## Quick Start: Common Production Scenarios
 
-- **Secure your deployment**: [Security Guide](security.md)
-- **Reference materials**: [Reference Guide](reference.md)
-- **Return to main guide**: [Advanced Setup](../ADVANCED_SETUP.md)
+### Scenario 1: New Production Deployment (Full Stack)
+
+**You need:** Complete observability stack from scratch
+
+**Steps:**
+
+1. ✅ Choose **`full`** profile ([Deployment Profiles Guide](deployment-profiles.md))
+2. ✅ Deploy via **Ansible to AWS EC2** ([Deployment Methods Guide](deployment-methods.md))
+3. ✅ Configure **TLS and authentication** ([Security Guide](security.md))
+4. ✅ Set up **HA with load balancer** ([ADVANCED_SETUP_DOCS.md](../../ADVANCED_SETUP_DOCS.md#high-availability))
+5. ✅ Configure **backups** ([ADVANCED_SETUP_DOCS.md](../../ADVANCED_SETUP_DOCS.md#backup-strategy))
+
+### Scenario 2: Adding to Existing Prometheus
+
+**You have:** Prometheus already, need trace-to-metrics + long-term storage
+
+**Steps:**
+
+1. ✅ Choose **`no-prometheus`** profile ([Deployment Profiles Guide](deployment-profiles.md))
+2. ✅ Deploy **Collector + VictoriaMetrics**
+3. ✅ Configure your Prometheus to **scrape collector** and **remote_write to VM**
+4. ✅ Configure **security** ([Security Guide](security.md))
+
+### Scenario 3: Multi-Region Deployment
+
+**You need:** Collectors in multiple regions, centralized storage
+
+**Steps:**
+
+1. ✅ Choose **`no-vm`** profile for each region ([Deployment Profiles Guide](deployment-profiles.md))
+2. ✅ Deploy regional **Collector + Prometheus** in each region
+3. ✅ Deploy central **VictoriaMetrics** (`vm-only` profile)
+4. ✅ Configure all Prometheus instances to **remote_write to central VM**
+5. ✅ Add **external_labels** to identify regions
+
+**📖 Details:** See [Multi-Region Deployment Pattern in ADVANCED_SETUP_DOCS.md](../../ADVANCED_SETUP_DOCS.md#pattern-1-multi-region-deployment-with-central-storage)
+
+---
+
+## Troubleshooting Production Issues
+
+Common production issues and where to find solutions:
+
+| Issue                            | Likely Cause                       | Where to Look                                                            |
+| -------------------------------- | ---------------------------------- | ------------------------------------------------------------------------ |
+| High memory usage                | Cardinality explosion, batch sizes | [Performance Tuning](../../ADVANCED_SETUP_DOCS.md#performance-tuning)    |
+| Traces not converting to metrics | Spanmetrics config                 | [Troubleshooting](../../ADVANCED_SETUP_DOCS.md#advanced-troubleshooting) |
+| Connection refused               | Network/firewall rules             | [Deployment Methods Guide](deployment-methods.md#troubleshooting)        |
+| Authentication failing           | TLS/auth config                    | [Security Guide](security.md)                                            |
+| High disk usage                  | Retention settings, cardinality    | [Configuration Reference](configuration-reference.md)                    |
+
+**📖 Full Troubleshooting Guide:** See [Advanced Troubleshooting in ADVANCED_SETUP_DOCS.md](../../ADVANCED_SETUP_DOCS.md#advanced-troubleshooting)
+
+---
+
+## Production Readiness Checklist
+
+Use this final checklist before going live:
+
+### Deployment
+
+- [ ] Chosen appropriate deployment profile for your infrastructure
+- [ ] Deployed using repeatable method (Ansible/IaC)
+- [ ] Verified all services are running and healthy
+
+### Security
+
+- [ ] TLS configured for external endpoints (if required)
+- [ ] Authentication configured for Prometheus/VictoriaMetrics
+- [ ] Firewall rules restrict access to authorized networks
+- [ ] Debug endpoints disabled or secured
+- [ ] PII scrubbing configured (if handling sensitive data)
+
+### Operations
+
+- [ ] High availability configured (if required)
+- [ ] Resource sizing appropriate for expected load
+- [ ] Data persistence configured (host volumes/EBS)
+- [ ] Backup strategy implemented and tested
+- [ ] Monitoring configured for observability stack itself
+
+### Testing
+
+- [ ] End-to-end trace ingestion tested
+- [ ] Metrics appearing in Prometheus and VictoriaMetrics
+- [ ] Query performance acceptable
+- [ ] Failover tested (if HA configured)
+- [ ] Backup and restore tested
+
+### Documentation
+
+- [ ] Runbooks created for common operations
+- [ ] Escalation procedures documented
+- [ ] Configuration changes tracked in version control
+- [ ] Team trained on operations and troubleshooting
+
+---
+
+## Additional Resources
+
+### Detailed Implementation Guides
+
+- **[Deployment Profiles Guide](deployment-profiles.md)** - Choose the right profile for your infrastructure
+- **[Deployment Methods Guide](deployment-methods.md)** - Step-by-step deployment instructions
+- **[Security Guide](security.md)** - TLS, authentication, network security, PII scrubbing
+- **[Configuration Reference](configuration-reference.md)** - Detailed configuration options
+- **[ADVANCED_SETUP_DOCS.md](../../ADVANCED_SETUP_DOCS.md)** - Comprehensive reference with all implementation details
+
+### Architecture and Integration
+
+- **[Architecture Guide](architecture.md)** - System architecture and data flow
+- **[Integration Patterns](integration-patterns.md)** - Multi-region, Kubernetes, hybrid cloud patterns
+
+### Reference Materials
+
+- **[Reference Guide](reference.md)** - Metric reference, example queries, port reference
+
+---
+
+## Getting Help
+
+If you encounter issues or have questions:
+
+1. **Check the guides** linked throughout this document
+2. **Review troubleshooting sections** in the relevant guides
+3. **Consult the comprehensive guide**: [ADVANCED_SETUP_DOCS.md](../../ADVANCED_SETUP_DOCS.md)
+4. **Contact your infrastructure team** for environment-specific guidance
+
+---
 
 [← Back to Advanced Setup](../ADVANCED_SETUP.md)

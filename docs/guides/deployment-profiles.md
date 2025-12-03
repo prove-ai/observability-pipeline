@@ -63,7 +63,7 @@ curl http://localhost:8428/health
 
 ---
 
-## PROFILE 2: no-prometheus (Bring Your Own Prometheus)
+## PROFILE 2: no-prometheus (Integrate with Existing Prometheus)
 
 **Use When**: You have an existing Prometheus instance and want to add trace-to-metrics capability + long-term storage.
 
@@ -137,7 +137,7 @@ curl http://<victoriametrics-host>:8428/health
 
 ---
 
-## PROFILE 3: no-vm (Bring Your Own VictoriaMetrics)
+## PROFILE 3: no-vm (Integrate with Existing VictoriaMetrics)
 
 **Use When**: You have an existing VictoriaMetrics instance (or other long-term storage) and need Prometheus + Collector.
 
@@ -183,7 +183,7 @@ docker exec prometheus curl http://<your-vm-host>:8428/health
 
 ---
 
-## PROFILE 4: no-collector (Bring Your Own Collector)
+## PROFILE 4: no-collector (Integrate with Existing Collector)
 
 **Use When**: You have an existing OpenTelemetry Collector (perhaps in a Kubernetes daemonset or sidecar) and need Prometheus + VictoriaMetrics for storage.
 
