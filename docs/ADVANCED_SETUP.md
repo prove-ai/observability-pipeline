@@ -47,7 +47,7 @@ This guide provides comprehensive instructions for deploying and configuring the
    Detailed configuration options for OpenTelemetry Collector, Prometheus, and VictoriaMetrics.
 
 4. **[Deployment Guide](guides/deployment-guide.md)**  
-   Step-by-step instructions for deploying via Docker Compose locally or Ansible to AWS EC2.
+   Step-by-step instructions for deploying via Docker Compose.
 
 ### Advanced Topics
 

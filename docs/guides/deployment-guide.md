@@ -145,8 +145,8 @@ Use this checklist after deployment:
 
 ### Infrastructure Checks
 
-- [x] All expected services are running (`docker compose ps`)
-- [x] No containers in "Restarting" or "Exited" state
+- [ ] All expected services are running (`docker compose ps`)
+- [ ] No containers in "Restarting" or "Exited" state
 - [ ] Correct deployment profile is active
 
 ### Health Checks
@@ -234,7 +234,6 @@ docker exec prometheus wget -O- http://otel-collector:8889/metrics
 
 1. ✅ Deployment complete
 2. **Next:** [Send traces from your application](integration-patterns.md)
-3. **Then:** [Configure dashboards and alerts](../README.md)
 
 ### For Production Environments
 
