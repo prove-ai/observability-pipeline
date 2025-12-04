@@ -121,168 +121,7 @@ receivers:
 
 ---
 
-### 2. Processors (Batching & Filtering)
-
-**Purpose:** Control how traces are batched for efficiency and optionally filter unwanted spans.
-
-#### Batch Processor (Required)
-
-The batch processor groups spans together before exporting, reducing network overhead.
-
-**Default Configuration:**
-
-```yaml
-processors:
-  batch:
-    timeout: 200ms
-    send_batch_size: 8192
-    send_batch_max_size: 16384
-```
-
-#### Batch Processor Variables
-
-| Parameter             | Type     | Default | Description                   | Impact of Increasing               |
-| --------------------- | -------- | ------- | ----------------------------- | ---------------------------------- |
-| `timeout`             | duration | `200ms` | Max time before sending batch | Lower latency, more network calls  |
-| `send_batch_size`     | int      | `8192`  | Preferred batch size (spans)  | Better compression, higher latency |
-| `send_batch_max_size` | int      | `16384` | Maximum batch size (spans)    | Memory usage increases             |
-
-#### Batch Processor Tuning Guide
-
-Choose based on your latency vs. throughput requirements:
-
-| Use Case               | timeout | send_batch_size | send_batch_max_size | Best For                             |
-| ---------------------- | ------- | --------------- | ------------------- | ------------------------------------ |
-| **Low Latency**        | `100ms` | `1024`          | `2048`              | Real-time dashboards, debugging      |
-| **Balanced** (default) | `200ms` | `8192`          | `16384`             | Most production workloads            |
-| **High Throughput**    | `500ms` | `16384`         | `32768`             | Batch jobs, high-volume ML inference |
-| **Very High Volume**   | `1s`    | `32768`         | `65536`             | 100k+ spans/sec                      |
-
-**Example: High Throughput Configuration**
-
-```yaml
-processors:
-  batch:
-    timeout: 500ms
-    send_batch_size: 16384
-    send_batch_max_size: 32768
-```
-
----
-
-#### Optional Processors
-
-Add these to filter spans or enrich data:
-
-##### Filter Processor: Drop Health Check Spans
-
-**Use When:** Health checks create noise in metrics.
-
-```yaml
-processors:
-  batch: {}
-
-  filter/drop-health-checks:
-    spans:
-      exclude:
-        match_type: regexp
-        attributes:
-          - key: http.target
-            value: "/health.*"
-          - key: http.url
-            value: ".*/(health|ping|readiness|liveness).*"
-```
-
-**Add to pipeline:**
-
-```yaml
-pipelines:
-  traces:
-    receivers: [otlp]
-    processors: [filter/drop-health-checks, batch] # Filter before batch
-    exporters: [spanmetrics]
-```
-
-##### Resource Processor: Add Metadata
-
-**Use When:** You want to add cluster/environment labels to all spans.
-
-```yaml
-processors:
-  resource:
-    attributes:
-      - key: environment
-        value: "production"
-        action: upsert
-      - key: cluster
-        value: "us-east-1a"
-        action: upsert
-      - key: deployment.id
-        from_attribute: k8s.deployment.name
-        action: insert
-```
-
-##### Probabilistic Sampler: Reduce Volume
-
-**Use When:** Trace volume is too high (>10k spans/sec).
-
-```yaml
-processors:
-  probabilistic_sampler:
-    sampling_percentage: 10.0 # Keep 10% of traces
-```
-
-**Sampling Guidelines:**
-
-| Incoming Spans/Sec | Recommended Sampling % | Result                     |
-| ------------------ | ---------------------- | -------------------------- |
-| < 1,000            | 100% (no sampling)     | Keep everything            |
-| 1,000 - 10,000     | 50%                    | Half the volume            |
-| 10,000 - 50,000    | 10-20%                 | Manageable volume          |
-| > 50,000           | 1-5%                   | High-level visibility only |
-
-**Complete Example with All Processors:**
-
-```yaml
-processors:
-  # Always first: filter unwanted spans
-  filter/drop-health-checks:
-    spans:
-      exclude:
-        match_type: regexp
-        attributes:
-          - key: http.target
-            value: "/health.*"
-
-  # Then: add metadata
-  resource:
-    attributes:
-      - key: environment
-        value: "production"
-        action: upsert
-
-  # Then: sample if needed
-  probabilistic_sampler:
-    sampling_percentage: 20.0
-
-  # Finally: batch for efficiency
-  batch:
-    timeout: 200ms
-    send_batch_size: 8192
-
-# Use in pipeline (order matters!)
-service:
-  pipelines:
-    traces:
-      receivers: [otlp]
-      processors:
-        [filter/drop-health-checks, resource, probabilistic_sampler, batch]
-      exporters: [spanmetrics]
-```
-
----
-
-### 3. Connectors: Spanmetrics (Traces → Metrics)
+### 2. Connectors: Spanmetrics (Traces → Metrics)
 
 **Purpose:** The central component of the pipeline - converts OpenTelemetry spans into Prometheus metrics.
 
@@ -499,18 +338,6 @@ exporters:
     # Change to "basic" in production to reduce logs
 ```
 
-**Namespace Customization**:
-
-The `namespace` parameter prefixes all metric names:
-
-```yaml
-namespace: llm
-# Results in: llm_traces_span_metrics_calls_total
-
-namespace: inference
-# Results in: inference_traces_span_metrics_calls_total
-```
-
 ### Extensions
 
 ```yaml
@@ -612,19 +439,19 @@ pipelines:
 
 **File Location:** `docker-compose/prometheus.yaml`
 
-**When to Edit:** Scrape interval tuning, adding targets, configuring remote write
+**When to Edit:** Adjusting scrape intervals, configuring remote storage, or modifying scrape targets
 
 ### Configuration Overview
 
-Prometheus has 3 main sections:
+The Prometheus configuration has 3 main sections:
 
 ```
 ┌────────────────────────────────────┐
-│ 1. Global (Defaults for all jobs) │
+│ 1. Global (Scrape interval)        │
 ├────────────────────────────────────┤
-│ 2. Scrape Configs (What to scrape)│
+│ 2. Remote Write (VictoriaMetrics)  │
 ├────────────────────────────────────┤
-│ 3. Remote Write (Long-term storage)│
+│ 3. Scrape Configs (What to scrape) │
 └────────────────────────────────────┘
 ```
 
@@ -632,353 +459,245 @@ Prometheus has 3 main sections:
 
 ### 1. Global Configuration
 
-**Purpose:** Set defaults that apply to all scrape jobs.
+**Purpose:** Set the default scrape interval for all jobs.
 
-**Default Configuration:**
-
-```yaml
-global:
-  scrape_interval: 10s
-  scrape_timeout: 10s
-  evaluation_interval: 15s
-```
-
-#### Global Configuration Variables
-
-| Parameter             | Type     | Default | Description                 | Impact of Decreasing         |
-| --------------------- | -------- | ------- | --------------------------- | ---------------------------- |
-| `scrape_interval`     | duration | `10s`   | How often to scrape targets | Higher resolution, more load |
-| `scrape_timeout`      | duration | `10s`   | Max time for scrape request | More failures if too low     |
-| `evaluation_interval` | duration | `15s`   | How often to evaluate rules | Faster alerting, more CPU    |
-
-#### Scrape Interval Selection Guide
-
-Choose based on your monitoring requirements and scale:
-
-| Use Case                 | Interval | Resolution | Storage Impact | Best For                          |
-| ------------------------ | -------- | ---------- | -------------- | --------------------------------- |
-| **Development/Debug**    | `5s`     | High       | 2x default     | Debugging, real-time dashboards   |
-| **Production** (default) | `10s`    | Good       | Baseline       | Most production workloads         |
-| **High Scale**           | `30s`    | Medium     | 0.33x default  | Large deployments (100+ services) |
-| **Low Priority**         | `60s`    | Low        | 0.16x default  | Batch jobs, non-critical metrics  |
-
-**Storage Formula:**
-
-```
-Data points per day = (86400 / scrape_interval) × number_of_time_series
-
-Example with 10,000 series:
-- 5s interval:  172,800,000 points/day (~16 GB)
-- 10s interval:  86,400,000 points/day (~8 GB)
-- 30s interval:  28,800,000 points/day (~2.7 GB)
-```
-
-#### Adding External Labels
-
-External labels are added to ALL metrics scraped by this Prometheus instance:
+**Current Configuration:**
 
 ```yaml
 global:
   scrape_interval: 10s
-  external_labels:
-    cluster: "production-us-east-1"
-    environment: "production"
-    datacenter: "dc-1"
 ```
 
-**Use external labels for:**
+#### Scrape Interval Guide
 
-- Multi-cluster setups (identify which cluster)
-- Federated Prometheus (aggregate from multiple instances)
-- Remote write to shared storage (distinguish sources)
+| Parameter         | Current Value | Description                 | When to Change                |
+| ----------------- | ------------- | --------------------------- | ----------------------------- |
+| `scrape_interval` | `10s`         | How often to scrape targets | Adjust based on your use case |
 
-**Example: Multi-Region Setup**
+#### Choosing a Scrape Interval
+
+| Use Case         | Interval | Resolution | Storage Impact | Best For                         |
+| ---------------- | -------- | ---------- | -------------- | -------------------------------- |
+| **Development**  | `5s`     | High       | 2x default     | Debugging, testing               |
+| **Production**   | `10s`    | Good       | Baseline       | Most production workloads        |
+| **High Scale**   | `30s`    | Medium     | 0.33x default  | Large deployments, cost savings  |
+| **Low Priority** | `60s`    | Low        | 0.16x default  | Non-critical metrics, batch jobs |
+
+**Example: Change to 30s for cost savings**
 
 ```yaml
-# prometheus-us-east-1.yaml
 global:
-  scrape_interval: 10s
-  external_labels:
-    cluster: 'prod-use1'
-    region: 'us-east-1'
-
-# prometheus-eu-west-1.yaml
-global:
-  scrape_interval: 10s
-  external_labels:
-    cluster: 'prod-euw1'
-    region: 'eu-west-1'
+  scrape_interval: 30s
 ```
 
 ---
 
 ### 2. Remote Write Configuration
 
-**Purpose:** Send metrics to long-term storage (VictoriaMetrics).
+**Purpose:** Send metrics to VictoriaMetrics for long-term storage.
 
-**Default Configuration:**
-
-```yaml
-remote_write:
-  - url: http://victoriametrics:8428/api/v1/write
-```
-
-#### Remote Write Variables
-
-| Parameter                           | Type     | Default    | Description                | When to Change                              |
-| ----------------------------------- | -------- | ---------- | -------------------------- | ------------------------------------------- |
-| `url`                               | string   | (required) | VictoriaMetrics endpoint   | Change for external VM or different storage |
-| `queue_config.capacity`             | int      | `10000`    | Queue size before dropping | Increase for bursty workloads               |
-| `queue_config.max_shards`           | int      | `50`       | Max parallel connections   | Increase for high throughput                |
-| `queue_config.max_samples_per_send` | int      | `5000`     | Batch size                 | Increase for efficiency                     |
-| `queue_config.batch_send_deadline`  | duration | `5s`       | Max wait before sending    | Decrease for lower latency                  |
-
-#### Remote Write Tuning Guide
-
-Choose configuration based on your metrics volume:
-
-| Workload Scale       | Samples/Sec | capacity | max_shards | max_samples_per_send | Best For           |
-| -------------------- | ----------- | -------- | ---------- | -------------------- | ------------------ |
-| **Small**            | < 10k       | 10,000   | 50         | 5,000                | Small deployments  |
-| **Medium** (default) | 10k - 50k   | 20,000   | 100        | 5,000                | Most production    |
-| **Large**            | 50k - 100k  | 50,000   | 200        | 10,000               | High-scale systems |
-| **Very Large**       | > 100k      | 100,000  | 500        | 20,000               | Massive scale      |
-
-**How to measure your samples/sec:**
-
-```promql
-# Run this query in Prometheus
-rate(prometheus_tsdb_head_samples_appended_total[5m])
-```
-
-#### Complete Remote Write Examples
-
-**Example 1: Default (Balanced)**
+**Current Configuration:**
 
 ```yaml
 remote_write:
   - url: http://victoriametrics:8428/api/v1/write
-    queue_config:
-      capacity: 10000
-      max_shards: 50
-      min_shards: 1
-      max_samples_per_send: 5000
-      batch_send_deadline: 5s
-      min_backoff: 30ms
-      max_backoff: 5s
 ```
 
-**Example 2: High Throughput (>100k samples/sec)**
+#### When to Modify Remote Write
+
+| Scenario                      | Action                | Example                                               |
+| ----------------------------- | --------------------- | ----------------------------------------------------- |
+| **Using profiles with VM**    | Keep as-is            | No changes needed                                     |
+| **External VictoriaMetrics**  | Change URL            | `url: http://your-vm-host:8428/api/v1/write`          |
+| **Not using VictoriaMetrics** | Comment out or remove | See [Prometheus-only profile](deployment-profiles.md) |
+| **Using cloud storage**       | Replace URL           | Use your cloud provider's remote write endpoint       |
+
+#### Example: External VictoriaMetrics
 
 ```yaml
 remote_write:
-  - url: http://victoriametrics:8428/api/v1/write
-    queue_config:
-      capacity: 100000
-      max_shards: 500
-      min_shards: 10
-      max_samples_per_send: 20000
-      batch_send_deadline: 10s
-      min_backoff: 100ms
-      max_backoff: 30s
+  - url: http://your-vm-host:8428/api/v1/write
+    # Optional: Add authentication
+    # basic_auth:
+    #   username: prometheus-writer
+    #   password: your-secure-password
 ```
 
-**Example 3: Low Latency (Real-time)**
+#### Example: Disable Remote Write (Prometheus-only)
 
 ```yaml
-remote_write:
-  - url: http://victoriametrics:8428/api/v1/write
-    queue_config:
-      capacity: 5000
-      max_shards: 20
-      min_shards: 5
-      max_samples_per_send: 1000
-      batch_send_deadline: 1s # Send quickly
+# Comment out the entire remote_write block if not using VictoriaMetrics
+# remote_write:
+#   - url: http://victoriametrics:8428/api/v1/write
 ```
 
-#### Filtering Metrics (Write Relabeling)
+---
 
-Reduce storage costs by filtering out unwanted metrics:
+### 3. Scrape Configurations
 
-**Example: Drop Go Runtime Metrics**
+**Purpose:** Define which services to scrape metrics from.
 
-```yaml
-remote_write:
-  - url: http://victoriametrics:8428/api/v1/write
-    write_relabel_configs:
-      # Drop Go internal metrics
-      - source_labels: [__name__]
-        regex: "go_.*"
-        action: drop
-
-      # Drop process metrics
-      - source_labels: [__name__]
-        regex: "process_.*"
-        action: drop
-```
-
-**Example: Only Send Specific Metrics**
-
-```yaml
-remote_write:
-  - url: http://victoriametrics:8428/api/v1/write
-    write_relabel_configs:
-      # Only keep metrics starting with "llm_traces"
-      - source_labels: [__name__]
-        regex: "llm_traces_.*"
-        action: keep
-```
-
-**Example: Drop High-Cardinality Labels**
-
-```yaml
-remote_write:
-  - url: http://victoriametrics:8428/api/v1/write
-    write_relabel_configs:
-      # Remove user_id label (high cardinality)
-      - regex: "user_id"
-        action: labeldrop
-```
-
-#### Authentication for Remote Storage
-
-**Basic Auth:**
-
-```yaml
-remote_write:
-  - url: http://victoriametrics:8428/api/v1/write
-    basic_auth:
-      username: prometheus-writer
-      password: your-secure-password
-```
-
-**Bearer Token:**
-
-```yaml
-remote_write:
-  - url: http://victoriametrics:8428/api/v1/write
-    bearer_token: your-api-token
-```
-
-**Bearer Token from File (More Secure):**
-
-```yaml
-remote_write:
-  - url: http://victoriametrics:8428/api/v1/write
-    bearer_token_file: /etc/prometheus/token
-```
-
-#### Multiple Remote Write Endpoints
-
-Send to multiple storage backends:
-
-```yaml
-remote_write:
-  # Primary storage: VictoriaMetrics
-  - url: http://victoriametrics:8428/api/v1/write
-    queue_config:
-      capacity: 10000
-
-  # Secondary storage: Cloud provider
-  - url: https://prometheus-remote-write.example.com/api/v1/write
-    basic_auth:
-      username: prometheus
-      password: secret
-    queue_config:
-      capacity: 5000
-```
-
-### Scrape Configurations
+**Current Configuration:**
 
 ```yaml
 scrape_configs:
-  # Scrape spanmetrics from OTel Collector
   - job_name: "otel-collector"
     static_configs:
       - targets: ["otel-collector:8889"]
-    # Optional: Add labels to all metrics from this job
-    # relabel_configs:
-    #   - target_label: environment
-    #     replacement: production
 
-  # Scrape collector internal metrics
   - job_name: "otel-collector-internal"
     static_configs:
       - targets: ["otel-collector:8888"]
-
-  # Scrape Prometheus itself (useful for monitoring)
-  - job_name: "prometheus"
-    static_configs:
-      - targets: ["localhost:9090"]
-
-  # Scrape VictoriaMetrics metrics
-  - job_name: "victoriametrics"
-    static_configs:
-      - targets: ["victoriametrics:8428"]
 ```
 
-### Service Discovery
+#### Default Scrape Jobs
 
-Prometheus supports multiple service discovery mechanisms:
+| Job Name                  | Target                | Metrics                      | When to Use                               |
+| ------------------------- | --------------------- | ---------------------------- | ----------------------------------------- |
+| `otel-collector`          | `otel-collector:8889` | Spanmetrics (traces→metrics) | When using the OTel Collector service     |
+| `otel-collector-internal` | `otel-collector:8888` | Collector internal metrics   | Optional, for monitoring collector health |
+
+#### Profile-Specific Guidance
+
+**If using "full" profiles** (with `otel-collector` service):
+
+- Keep the `otel-collector` job as-is
+- The collector service name matches the Docker Compose service
+
+**If NOT using the OTel Collector** (Prometheus-only profile):
+
+- Remove or comment out the `otel-collector` jobs
+- Add your own scrape targets (see examples below)
+
+#### Adding Your Own Scrape Targets
+
+**Example: Scrape your application exporters**
 
 ```yaml
 scrape_configs:
-  # File-based discovery
-  - job_name: "file-sd"
-    file_sd_configs:
-      - files:
-          - "/etc/prometheus/targets/*.json"
-        refresh_interval: 30s
-
-  # Consul discovery
-  - job_name: "consul-sd"
-    consul_sd_configs:
-      - server: "consul.service.consul:8500"
-        services: ["otel-collector", "my-app"]
-
-  # EC2 discovery
-  - job_name: "ec2-sd"
-    ec2_sd_configs:
-      - region: us-east-1
-        access_key: YOUR_ACCESS_KEY
-        secret_key: YOUR_SECRET_KEY
-        port: 8889
+  # Your custom services
+  - job_name: "your-services"
+    static_configs:
+      - targets:
+          - "your-app:9100"
+          - "another-exporter:9200"
 ```
 
-### Recording Rules
-
-Use recording rules for expensive queries:
+**Example: Multiple targets with labels**
 
 ```yaml
-# prometheus.yaml
-rule_files:
-  - "/etc/prometheus/rules.yml"
+scrape_configs:
+  - job_name: "my-apps"
+    static_configs:
+      - targets: ["app1:8080"]
+        labels:
+          env: "production"
+          tier: "frontend"
+      - targets: ["app2:8080"]
+        labels:
+          env: "production"
+          tier: "backend"
 ```
 
-Create `rules.yml`:
+---
+
+### Complete Configuration Examples
+
+#### Example 1: Default (Full Profile with OTel Collector)
 
 ```yaml
-groups:
-  - name: spanmetrics
-    interval: 30s
-    rules:
-      # Pre-aggregate request rate
-      - record: job:llm_traces_span_metrics_calls:rate5m
-        expr: sum by (service_name, span_name) (rate(llm_traces_span_metrics_calls_total[5m]))
+global:
+  scrape_interval: 10s
 
-      # Pre-aggregate p95 latency
-      - record: job:llm_traces_span_metrics_duration:p95
-        expr: histogram_quantile(0.95, sum by (service_name, span_name, le) (rate(llm_traces_span_metrics_duration_bucket[5m])))
+remote_write:
+  - url: http://victoriametrics:8428/api/v1/write
+
+scrape_configs:
+  - job_name: "otel-collector"
+    static_configs:
+      - targets: ["otel-collector:8889"]
+
+  - job_name: "otel-collector-internal"
+    static_configs:
+      - targets: ["otel-collector:8888"]
 ```
 
-Mount rules file in Docker Compose:
+#### Example 2: External VictoriaMetrics
 
 ```yaml
-prometheus:
-  image: prom/prometheus:latest
-  volumes:
-    - ./prometheus.yaml:/etc/prometheus/prometheus.yaml:ro
-    - ./rules.yml:/etc/prometheus/rules.yml:ro # Add this
+global:
+  scrape_interval: 10s
+
+remote_write:
+  - url: http://external-vm.example.com:8428/api/v1/write
+    basic_auth:
+      username: prometheus
+      password: secure-password
+
+scrape_configs:
+  - job_name: "otel-collector"
+    static_configs:
+      - targets: ["otel-collector:8889"]
+```
+
+#### Example 3: Prometheus-Only (No VictoriaMetrics, Custom Targets)
+
+```yaml
+global:
+  scrape_interval: 15s
+
+# No remote_write - using Prometheus local storage only
+
+scrape_configs:
+  - job_name: "my-application"
+    static_configs:
+      - targets:
+          - "app-server-1:9090"
+          - "app-server-2:9090"
+
+  - job_name: "node-exporters"
+    static_configs:
+      - targets:
+          - "node1:9100"
+          - "node2:9100"
+```
+
+---
+
+### Common Configuration Tasks
+
+#### Task 1: Reduce Storage Costs
+
+Increase scrape interval to collect fewer data points:
+
+```yaml
+global:
+  scrape_interval: 30s # Was 10s
+```
+
+#### Task 2: Add External VictoriaMetrics
+
+Update remote write URL:
+
+```yaml
+remote_write:
+  - url: http://your-external-vm:8428/api/v1/write
+```
+
+#### Task 3: Scrape Additional Services
+
+Add new jobs to `scrape_configs`:
+
+```yaml
+scrape_configs:
+  - job_name: "otel-collector"
+    static_configs:
+      - targets: ["otel-collector:8889"]
+
+  # Add your services here
+  - job_name: "my-app"
+    static_configs:
+      - targets: ["my-app:8080"]
 ```
 
 ---
@@ -1247,6 +966,12 @@ victoriametrics:
 
 ---
 
+### Additional VictoriaMetrics Resources
+
+For more advanced configuration options and detailed information, refer to the [official VictoriaMetrics documentation](https://docs.victoriametrics.com/).
+
+---
+
 ## Configuration Summary Table
 
 Quick reference for all three components:
@@ -1272,8 +997,8 @@ Now it's time to deploy and integrate:
 
 ### Need Help?
 
-- **Metrics not appearing?** Check [Architecture Guide - Troubleshooting](architecture.md#troubleshooting)
-- **Performance issues?** See [Production Guide - Performance Tuning](production-guide.md)
+- **Metrics not appearing?** Check [Production Guide - Troubleshooting](production-guide.md#troubleshooting-production-issues)
+- **Performance issues?** See [Production Guide - Performance Tuning](production-guide.md#performance-tuning)
 - **High cardinality problems?** Review [Dimensions Configuration](#dimensions-configuration) above
 
 ---

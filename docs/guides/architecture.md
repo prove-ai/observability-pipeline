@@ -4,7 +4,7 @@
 
 ## What This Pipeline Does
 
-This observability pipeline solves a common problem: **how to monitor distributed applications using OpenTelemetry traces**. Instead of instrumenting your application twice (once for traces, once for metrics), this pipeline automatically derives metrics from traces and stores them for long-term analysis.
+This observability pipeline, using our full (complete stack) Docker profile, solves a common problem: **how to monitor distributed applications using OpenTelemetry traces**. Instead of instrumenting your application twice (once for traces, once for metrics), this pipeline automatically derives metrics from traces and stores them for long-term analysis.
 
 **At a Glance:**
 
@@ -216,8 +216,8 @@ External Applications
 ┌─────────────────────────────────────────┐
 │  observability Docker network           │
 │                                         │
-│  otel-collector ←→ prometheus ←→ VM    │
-│  (4317,4318)       (9090)      (8428)  │
+│  otel-collector ←→ prometheus ←→ VM     │
+│  (4317,4318)       (9090)      (8428)   │
 │                                         │
 └─────────────────────────────────────────┘
 ```
@@ -230,11 +230,9 @@ External Applications
 
 ### Option 1: Full Stack (Recommended for New Setups)
 
-**Use when:** You have no existing monitoring infrastructure.
+Deploy a complete, self-contained observability stack with no external dependencies. Best for greenfield projects or when starting from scratch.
 
-**Command:** `docker compose --profile full up -d`
-
-**What you get:** Collector + Prometheus + VictoriaMetrics
+**→ [View full stack setup guide](deployment-profiles.md#profile-1-full-complete-stack)**
 
 **Next steps:** [Skip to Testing & Verification](#testing--verification)
 
@@ -242,69 +240,41 @@ External Applications
 
 ### Option 2: I Already Have Prometheus
 
-**Use when:** You have an existing Prometheus instance.
+Add trace-to-metrics capability and long-term storage to your existing Prometheus deployment. Requires configuring your Prometheus to scrape the collector and write to VictoriaMetrics.
 
-**Command:** `docker compose --profile no-prometheus up -d`
-
-**What you get:** Collector + VictoriaMetrics
-
-**Required configuration:** Add these scrape targets to your existing Prometheus:
-
-```yaml
-# In your prometheus.yml
-scrape_configs:
-  - job_name: "otel-collector"
-    static_configs:
-      - targets: ["localhost:8889"] # spanmetrics
-
-  - job_name: "otel-collector-internal"
-    static_configs:
-      - targets: ["localhost:8888"] # collector health metrics
-```
-
-**Next steps:** [Deployment Profiles Guide](deployment-profiles.md#profile-2-no-prometheus-bring-your-own-prometheus)
+**→ [View integration with existing Prometheus](deployment-profiles.md#profile-2-no-prometheus-integrate-with-existing-prometheus)**
 
 ---
 
 ### Option 3: I Already Have VictoriaMetrics
 
-**Use when:** You have an existing VictoriaMetrics or other long-term storage.
+Deploy the collector and Prometheus while integrating with your existing VictoriaMetrics instance for long-term storage.
 
-**Command:** `docker compose --profile no-vm up -d`
-
-**What you get:** Collector + Prometheus
-
-**Required configuration:** Point Prometheus to your VictoriaMetrics by editing `docker-compose/prometheus.yaml`:
-
-```yaml
-remote_write:
-  - url: http://your-victoriametrics-host:8428/api/v1/write
-```
-
-**Next steps:** [Deployment Profiles Guide](deployment-profiles.md#profile-3-no-vm-bring-your-own-victoriametrics)
+**→ [View integration with existing VictoriaMetrics](deployment-profiles.md#profile-3-no-vm-integrate-with-existing-victoriametrics)**
 
 ---
 
 ### Option 4: I Already Have an OpenTelemetry Collector
 
-**Use when:** You have an existing OTel Collector (e.g., in Kubernetes).
+Deploy Prometheus and VictoriaMetrics to complement your existing collector deployment (e.g., Kubernetes daemonset or service mesh sidecar).
 
-**Command:** `docker compose --profile no-collector up -d`
-
-**What you get:** Prometheus + VictoriaMetrics
-
-**Required configuration:** Configure your existing collector to export Prometheus metrics on port 8889.
-
-**Next steps:** [Deployment Profiles Guide](deployment-profiles.md#profile-4-no-collector-bring-your-own-collector)
+**→ [View integration with existing OpenTelemetry Collector](deployment-profiles.md#profile-4-no-collector-integrate-with-existing-collector)**
 
 ---
 
-### Option 5: Other Combinations
+### Option 5: VictoriaMetrics Only
 
-See the complete [Deployment Profiles Guide](deployment-profiles.md) for:
+Deploy only VictoriaMetrics as a centralized long-term storage backend for multiple Prometheus instances.
 
-- `vm-only` - Only VictoriaMetrics
-- `prom-only` - Only Prometheus
+**→ [View VictoriaMetrics standalone setup](deployment-profiles.md#profile-5-vm-only-victoriametrics-standalone)**
+
+---
+
+### Option 6: Prometheus Only
+
+Deploy Prometheus standalone for scraping and querying, optionally with external storage backends like Thanos, Cortex, or M3DB.
+
+**→ [View Prometheus standalone setup](deployment-profiles.md#profile-6-prom-only-prometheus-standalone)**
 
 ---
 
@@ -418,49 +388,6 @@ The spanmetrics connector automatically generates **RED metrics** from traces:
 
 ---
 
-## Troubleshooting
-
-### Containers won't start
-
-```bash
-# Check logs for errors
-docker compose logs otel-collector
-docker compose logs prometheus
-docker compose logs victoriametrics
-
-# Common issue: Ports already in use
-# Solution: Stop conflicting services or change ports in docker-compose.yaml
-```
-
-### Prometheus shows no metrics
-
-1. **Check targets:** Visit `http://localhost:9090/targets` - both should be "UP"
-2. **Check collector exports metrics:** `curl http://localhost:8889/metrics`
-3. **Wait for scrape interval:** Default is 10 seconds
-4. **Send a new trace:** Old traces before collector restart won't persist
-
-### Metrics not appearing in VictoriaMetrics
-
-```bash
-# Check Prometheus can reach VictoriaMetrics
-docker exec prometheus curl http://victoriametrics:8428/health
-
-# Check Prometheus remote_write config
-docker exec prometheus cat /etc/prometheus/prometheus.yaml | grep -A5 remote_write
-```
-
-### Reset everything
-
-```bash
-# Stop containers and delete all data
-docker compose down -v
-
-# Start fresh
-docker compose --profile full up -d
-```
-
----
-
 ## Next Steps
 
 ### For New Users
@@ -479,8 +406,8 @@ docker compose --profile full up -d
 
 ### For Advanced Scenarios
 
-- **Multi-region setup** → [Integration Patterns](integration-patterns.md#multi-region-deployments)
-- **Kubernetes integration** → [Integration Patterns](integration-patterns.md#kubernetes-integration)
+- **Multi-region setup** → [Integration Patterns](integration-patterns.md#pattern-1-multi-region-deployment-with-central-storage)
+- **Kubernetes integration** → [Integration Patterns](integration-patterns.md#pattern-2-kubernetes-integration)
 - **High availability** → [Production Guide](production-guide.md#high-availability)
 
 ---
