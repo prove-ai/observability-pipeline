@@ -4,7 +4,7 @@
 
 ## What This Pipeline Does
 
-This observability pipeline, using our full (complete stack) Docker profile, solves a common problem: **how to monitor distributed applications using OpenTelemetry traces**. Instead of instrumenting your application twice (once for traces, once for metrics), this pipeline automatically derives metrics from traces and stores them for long-term analysis.
+This observability pipeline, when deployed with the [full deployment profile](deployment-profiles.md#profile-1-full-complete-stack), solves a common problem: **how to monitor distributed applications using OpenTelemetry traces**. Instead of instrumenting your application twice (once for traces, once for metrics), this pipeline automatically derives metrics from traces and stores them for long-term analysis.
 
 **At a Glance:**
 
@@ -104,8 +104,6 @@ open http://localhost:9090
 # Run this query in the Prometheus UI
 llm_traces_span_metrics_calls_total{service_name="my-app"}
 ```
-
-You should see your test span converted into a metric! 🎉
 
 ---
 
@@ -400,7 +398,7 @@ The spanmetrics connector automatically generates **RED metrics** from traces:
 ### For Production Deployments
 
 1. **Choose your deployment profile** → [Deployment Profiles Guide](deployment-profiles.md)
-2. **Deploy to servers** → [Deployment Methods](deployment-methods.md) (Docker Compose or Ansible)
+2. **Deploy to servers** → [Deployment Guide](deployment-guide.md) (Docker Compose or Ansible)
 3. **Secure your deployment** → [Security Guide](security.md)
 4. **Configure for production** → [Production Guide](production-guide.md)
 

@@ -27,7 +27,7 @@ This guide provides comprehensive instructions for deploying and configuring the
 | Understand how the pipeline works                       | [Architecture Overview](guides/architecture.md)              |
 | Choose the right deployment profile                     | [Deployment Profiles Guide](guides/deployment-profiles.md)   |
 | Configure the collector, Prometheus, or VictoriaMetrics | [Configuration Reference](guides/configuration-reference.md) |
-| Deploy via Docker Compose or Ansible                    | [Deployment Methods](guides/deployment-methods.md)           |
+| Deploy via Docker Compose                               | [Deployment Guide](guides/deployment-guide.md)               |
 | Integrate with multi-region or Kubernetes               | [Integration Patterns](guides/integration-patterns.md)       |
 | Prepare for production (HA, backups, sizing)            | [Production Guide](guides/production-guide.md)               |
 | Secure your deployment (TLS, auth, firewalls)           | [Security Guide](guides/security.md)                         |
@@ -46,7 +46,7 @@ This guide provides comprehensive instructions for deploying and configuring the
 3. **[Configuration Reference](guides/configuration-reference.md)**  
    Detailed configuration options for OpenTelemetry Collector, Prometheus, and VictoriaMetrics.
 
-4. **[Deployment Methods](guides/deployment-methods.md)**  
+4. **[Deployment Guide](guides/deployment-guide.md)**  
    Step-by-step instructions for deploying via Docker Compose locally or Ansible to AWS EC2.
 
 ### Advanced Topics
@@ -69,7 +69,7 @@ This guide provides comprehensive instructions for deploying and configuring the
 
 1. **New to this pipeline?** Start with [Architecture Overview](guides/architecture.md) to understand how it works.
 
-2. **Ready to deploy?** Go to [Deployment Profiles Guide](guides/deployment-profiles.md) to choose your profile, then follow [Deployment Methods](guides/deployment-methods.md).
+2. **Ready to deploy?** Go to [Deployment Profiles Guide](guides/deployment-profiles.md) to choose your profile, then follow [Deployment Guide](guides/deployment-guide.md).
 
 3. **Configuring for your use case?** See [Configuration Reference](guides/configuration-reference.md) for tuning options.
 

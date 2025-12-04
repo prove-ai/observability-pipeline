@@ -522,6 +522,6 @@ service:
 ## Next Steps
 
 - **Return to main guide**: [Advanced Setup](../ADVANCED_SETUP.md)
-- **Deploy your stack**: [Deployment Methods](deployment-methods.md)
+- **Deploy your stack**: [Deployment Guide](deployment-guide.md)
 
 [← Back to Advanced Setup](../ADVANCED_SETUP.md)

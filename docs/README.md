@@ -17,7 +17,7 @@ The documentation is organized into 8 focused guides in the `guides/` directory:
 1. **[architecture.md](guides/architecture.md)** - Data flow, component responsibilities, and network architecture
 2. **[deployment-profiles.md](guides/deployment-profiles.md)** - Choose the right profile for your infrastructure (full, no-prometheus, no-vm, etc.)
 3. **[configuration-reference.md](guides/configuration-reference.md)** - Detailed configuration for OpenTelemetry Collector, Prometheus, and VictoriaMetrics
-4. **[deployment-methods.md](guides/deployment-methods.md)** - Docker Compose and Ansible deployment instructions
+4. **[deployment-guide.md](guides/deployment-guide.md)** - Docker Compose instructions
 
 #### Advanced Topics
 
@@ -35,7 +35,7 @@ The documentation is organized into 8 focused guides in the `guides/` directory:
 
 - **Understand how it works** → [architecture.md](guides/architecture.md)
 - **Choose a deployment profile** → [deployment-profiles.md](guides/deployment-profiles.md)
-- **Deploy the stack** → [deployment-methods.md](guides/deployment-methods.md)
+- **Deploy the stack** → [deployment-guide.md](guides/deployment-guide.md)
 - **Configure components** → [configuration-reference.md](guides/configuration-reference.md)
 - **Prepare for production** → [production-guide.md](guides/production-guide.md)
 - **Secure my deployment** → [security.md](guides/security.md)

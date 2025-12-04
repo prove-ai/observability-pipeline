@@ -990,7 +990,7 @@ Quick reference for all three components:
 
 Now it's time to deploy and integrate:
 
-1. **Deploy:** [Deployment Methods Guide](deployment-methods.md)
+1. **Deploy:** [Deployment Guide](deployment-guide.md)
 2. **Integrate Applications:** [Integration Patterns](integration-patterns.md)
 3. **Production Readiness:** [Production Guide](production-guide.md)
 4. **Security:** [Security Guide](security.md)

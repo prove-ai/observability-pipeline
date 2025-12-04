@@ -777,7 +777,7 @@ command: - '-retentionPeriod=12' - '-httpListenAddr=:8428' - '-dedup.minScrapeIn
 
 ═══════════════════════════════════════════════════════════════════════════════
 
-5. DEPLOYMENT METHODS
+5. DEPLOYMENT
 
 LOCAL DOCKER COMPOSE DEPLOYMENT
 

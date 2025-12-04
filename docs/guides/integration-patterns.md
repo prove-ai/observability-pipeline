@@ -4,7 +4,109 @@
 
 This guide describes advanced deployment patterns for integrating the Observability Pipeline with complex infrastructure scenarios.
 
-## Pattern 1: Multi-Region Deployment with Central Storage
+## Pattern 1: Hybrid Cloud (On-Prem + Cloud)
+
+**Scenario**: On-premises applications send traces to cloud-hosted Observability Pipeline.
+
+### Architecture
+
+```
+On-Premises:
+  Apps → On-Prem Collector →
+↓ (Secure tunnel: VPN / Direct Connect)
+Cloud (AWS):
+  Central Collector → Prometheus → VictoriaMetrics
+```
+
+### Implementation
+
+#### 1. Deploy On-Prem Collector with Forward Exporter
+
+Configure the on-prem collector to forward to cloud:
+
+```yaml
+exporters:
+  otlp:
+    endpoint: <cloud-collector>:4317
+    tls:
+      insecure: false
+      cert_file: /etc/otel/certs/client.crt
+      key_file: /etc/otel/certs/client.key
+
+service:
+  pipelines:
+    traces:
+      receivers: [otlp]
+      processors: [batch]
+      exporters: [otlp] # Forward to cloud
+```
+
+#### 2. Deploy Cloud Collector with Full Stack
+
+```bash
+docker compose --profile full up -d
+```
+
+#### 3. Configure Network Connectivity
+
+- Set up VPN or AWS Direct Connect between on-prem and cloud
+- Ensure security groups allow OTLP traffic (4317)
+- Consider TLS for data in transit
+
+---
+
+**⚠️ Note:** The following integration patterns are untested and may be removed. Testing and validation required.
+
+---
+
+## Pattern 2: Edge-to-Core Aggregation
+
+**Scenario**: Multiple edge locations send metrics to a central core for aggregation.
+
+### Architecture
+
+```
+Edge Location 1:
+  Apps → Collector → Local Prometheus →
+Edge Location 2:
+  Apps → Collector → Local Prometheus →
+Edge Location N:
+  Apps → Collector → Local Prometheus →
+↓ remote_write
+Core (Central):
+  VictoriaMetrics (aggregates all edges)
+```
+
+### Implementation
+
+#### 1. Deploy at Each Edge (use no-vm profile)
+
+```bash
+docker compose --profile no-vm up -d
+```
+
+#### 2. Configure Edge Prometheus to Remote Write to Core
+
+```yaml
+global:
+  external_labels:
+    edge_location: location-1 # Unique per edge
+    environment: production
+
+remote_write:
+  - url: http://<core-vm>:8428/api/v1/write
+    queue_config:
+      capacity: 100000
+      max_shards: 200
+```
+
+#### 3. Deploy Core VictoriaMetrics
+
+```bash
+docker compose --profile vm-only up -d
+```
+
+## Pattern 3: Multi-Region Deployment with Central Storage
 
 **Scenario**: Deploy collectors in multiple AWS regions, scrape with regional Prometheus instances, aggregate in central VictoriaMetrics.
 
@@ -63,9 +165,7 @@ sum by (service_name) (llm_traces_span_metrics_calls_total)
 llm_traces_span_metrics_calls_total{region="us-east-1"}
 ```
 
----
-
-## Pattern 2: Kubernetes Integration
+## Pattern 4: Kubernetes Integration
 
 **Scenario**: Deploy collectors in Kubernetes, use the Observability Pipeline for storage and querying.
 
@@ -156,104 +256,6 @@ docker compose --profile no-collector up -d
 ```
 
 ---
-
-## Pattern 3: Hybrid Cloud (On-Prem + Cloud)
-
-**Scenario**: On-premises applications send traces to cloud-hosted Observability Pipeline.
-
-### Architecture
-
-```
-On-Premises:
-  Apps → On-Prem Collector →
-↓ (Secure tunnel: VPN / Direct Connect)
-Cloud (AWS):
-  Central Collector → Prometheus → VictoriaMetrics
-```
-
-### Implementation
-
-#### 1. Deploy On-Prem Collector with Forward Exporter
-
-Configure the on-prem collector to forward to cloud:
-
-```yaml
-exporters:
-  otlp:
-    endpoint: <cloud-collector>:4317
-    tls:
-      insecure: false
-      cert_file: /etc/otel/certs/client.crt
-      key_file: /etc/otel/certs/client.key
-
-service:
-  pipelines:
-    traces:
-      receivers: [otlp]
-      processors: [batch]
-      exporters: [otlp] # Forward to cloud
-```
-
-#### 2. Deploy Cloud Collector with Full Stack
-
-```bash
-docker compose --profile full up -d
-```
-
-#### 3. Configure Network Connectivity
-
-- Set up VPN or AWS Direct Connect between on-prem and cloud
-- Ensure security groups allow OTLP traffic (4317)
-- Consider TLS for data in transit
-
----
-
-## Pattern 4: Edge-to-Core Aggregation
-
-**Scenario**: Multiple edge locations send metrics to a central core for aggregation.
-
-### Architecture
-
-```
-Edge Location 1:
-  Apps → Collector → Local Prometheus →
-Edge Location 2:
-  Apps → Collector → Local Prometheus →
-Edge Location N:
-  Apps → Collector → Local Prometheus →
-↓ remote_write
-Core (Central):
-  VictoriaMetrics (aggregates all edges)
-```
-
-### Implementation
-
-#### 1. Deploy at Each Edge (use no-vm profile)
-
-```bash
-docker compose --profile no-vm up -d
-```
-
-#### 2. Configure Edge Prometheus to Remote Write to Core
-
-```yaml
-global:
-  external_labels:
-    edge_location: location-1 # Unique per edge
-    environment: production
-
-remote_write:
-  - url: http://<core-vm>:8428/api/v1/write
-    queue_config:
-      capacity: 100000
-      max_shards: 200
-```
-
-#### 3. Deploy Core VictoriaMetrics
-
-```bash
-docker compose --profile vm-only up -d
-```
 
 #### 4. Query Across Edge Locations
 

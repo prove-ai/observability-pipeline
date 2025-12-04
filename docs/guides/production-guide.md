@@ -49,36 +49,11 @@ Based on your existing infrastructure, select the appropriate profile:
 
 ## Step 2: Evaluate Your Deployment Architecture
 
-### Where will you deploy?
+| Deployment Method                               | Best For                            | Complexity | Automation |
+| ----------------------------------------------- | ----------------------------------- | ---------- | ---------- |
+| **[Local Docker Compose](deployment-guide.md)** | Development, testing, single server | Low        | Manual     |
 
-Choose your deployment method based on your infrastructure and operational requirements:
-
-| Deployment Method        | Best For                                         | Complexity | Automation |
-| ------------------------ | ------------------------------------------------ | ---------- | ---------- |
-| **Local Docker Compose** | Development, testing, single server              | Low        | Manual     |
-| **AWS EC2 via Ansible**  | Production, multi-server, repeatable deployments | Medium     | High       |
-| **Kubernetes**           | Container orchestration, auto-scaling            | High       | High       |
-
-### Decision: Choose Your Deployment Method
-
-**For Development/Testing:**
-
-- Use local Docker Compose
-- Quick setup (2 minutes)
-- Easy to iterate and test changes
-
-**For Production:**
-
-- Use Ansible for AWS EC2 (recommended for most cases)
-- Repeatable, automated deployments
-- Infrastructure as code
-
-**For Kubernetes Environments:**
-
-- Deploy collector via Helm or OpenTelemetry Operator
-- Use our Prometheus + VictoriaMetrics for storage (`no-collector` profile)
-
-**📖 Next:** See the [Deployment Methods Guide](deployment-methods.md) for step-by-step instructions on deploying using your chosen method.
+**📖 Next:** See the [Deployment Guide](deployment-guide.md) for step-by-step instructions on deploying with Docker Compose.
 
 ---
 
@@ -220,7 +195,7 @@ After deployment, verify everything is working:
 - [ ] TLS is enabled (if required)
 - [ ] Authentication is configured (if required)
 
-**📖 Details:** See [Post-Deployment Verification in Deployment Methods Guide](deployment-methods.md#post-deployment-verification)
+**📖 Details:** See [Post-Deployment Verification in Deployment Guide](deployment-guide.md#post-deployment-verification)
 
 ### Monitoring Your Observability Stack
 
@@ -249,10 +224,9 @@ Key metrics to alert on:
 **Steps:**
 
 1. ✅ Choose **`full`** profile ([Deployment Profiles Guide](deployment-profiles.md))
-2. ✅ Deploy via **Ansible to AWS EC2** ([Deployment Methods Guide](deployment-methods.md))
-3. ✅ Configure **TLS and authentication** ([Security Guide](security.md))
-4. ✅ Set up **HA with load balancer** ([ADVANCED_SETUP_DOCS.md](../../ADVANCED_SETUP_DOCS.md#high-availability))
-5. ✅ Configure **backups** ([ADVANCED_SETUP_DOCS.md](../../ADVANCED_SETUP_DOCS.md#backup-strategy))
+2. ✅ Configure **TLS and authentication** ([Security Guide](security.md))
+3. ✅ Set up **HA with load balancer** ([ADVANCED_SETUP_DOCS.md](../../ADVANCED_SETUP_DOCS.md#high-availability))
+4. ✅ Configure **backups** ([ADVANCED_SETUP_DOCS.md](../../ADVANCED_SETUP_DOCS.md#backup-strategy))
 
 ### Scenario 2: Adding to Existing Prometheus
 
@@ -289,7 +263,7 @@ Common production issues and where to find solutions:
 | -------------------------------- | ---------------------------------- | ------------------------------------------------------------------------ |
 | High memory usage                | Cardinality explosion, batch sizes | [Performance Tuning](../../ADVANCED_SETUP_DOCS.md#performance-tuning)    |
 | Traces not converting to metrics | Spanmetrics config                 | [Troubleshooting](../../ADVANCED_SETUP_DOCS.md#advanced-troubleshooting) |
-| Connection refused               | Network/firewall rules             | [Deployment Methods Guide](deployment-methods.md#troubleshooting)        |
+| Connection refused               | Network/firewall rules             | [Deployment Guide](deployment-guide.md#troubleshooting)                  |
 | Authentication failing           | TLS/auth config                    | [Security Guide](security.md)                                            |
 | High disk usage                  | Retention settings, cardinality    | [Configuration Reference](configuration-reference.md)                    |
 
@@ -345,7 +319,7 @@ Use this final checklist before going live:
 ### Detailed Implementation Guides
 
 - **[Deployment Profiles Guide](deployment-profiles.md)** - Choose the right profile for your infrastructure
-- **[Deployment Methods Guide](deployment-methods.md)** - Step-by-step deployment instructions
+- **[Deployment Guide](deployment-guide.md)** - Step-by-step deployment instructions
 - **[Security Guide](security.md)** - TLS, authentication, network security, PII scrubbing
 - **[Configuration Reference](configuration-reference.md)** - Detailed configuration options
 - **[ADVANCED_SETUP_DOCS.md](../../ADVANCED_SETUP_DOCS.md)** - Comprehensive reference with all implementation details

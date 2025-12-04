@@ -23,36 +23,13 @@ The Observability Pipeline supports six deployment profiles to accommodate vario
 
 **Services**: OpenTelemetry Collector, Prometheus, VictoriaMetrics
 
-**Command**:
-
-```bash
-cd docker-compose
-docker compose --profile full up -d
-```
+**Command**: [Start the profile](#cmd-start-profile) with `--profile full`
 
 **Configuration Required**: None (uses defaults)
 
-**Data Flow**:
+**Data Flow**: See [Architecture Guide - Data Flow](architecture.md#data-flow)
 
-```
-Apps → Collector (4317/4318) → Prometheus (9090) → VictoriaMetrics (8428)
-```
-
-**Verification**:
-
-```bash
-# Check all services are running
-docker compose ps
-
-# Verify collector health
-curl http://localhost:13133/health/status
-
-# Verify Prometheus targets
-curl http://localhost:9090/api/v1/targets
-
-# Verify VictoriaMetrics health
-curl http://localhost:8428/health
-```
+**Verification**: [Check service status](#cmd-check-status), then verify with [Health Checks](#ref-health-checks) and [Metrics Validation](#ref-metrics-validation).
 
 **Use Cases**:
 
@@ -69,65 +46,13 @@ curl http://localhost:8428/health
 
 **Services**: OpenTelemetry Collector, VictoriaMetrics
 
-**Command**:
-
-```bash
-cd docker-compose
-docker compose --profile no-prometheus up -d
-```
+**Command**: [Start the profile](#cmd-start-profile) with `--profile no-prometheus`
 
 **Configuration Required**:
 
-### 1. Add Collector Scrape Targets to Your Prometheus
-
-Edit your existing `prometheus.yml`:
-
-```yaml
-scrape_configs:
-  # Scrape spanmetrics (converted from traces)
-  - job_name: "otel-collector"
-    static_configs:
-      - targets: ["<collector-host>:8889"]
-
-  # Scrape collector internal metrics (optional but recommended)
-  - job_name: "otel-collector-internal"
-    static_configs:
-      - targets: ["<collector-host>:8888"]
-```
-
-Replace `<collector-host>` with:
-
-- `otel-collector` if your Prometheus is on the same Docker network
-- `localhost` if your Prometheus runs on the same host
-- The EC2 instance IP/DNS if Prometheus is external
-
-### 2. Configure Remote Write to VictoriaMetrics
-
-```yaml
-remote_write:
-  - url: http://<victoriametrics-host>:8428/api/v1/write
-    # Optional: Configure queue settings for high-throughput scenarios
-    queue_config:
-      capacity: 10000
-      max_shards: 50
-      min_shards: 1
-      max_samples_per_send: 5000
-      batch_send_deadline: 5s
-```
-
-Replace `<victoriametrics-host>` with:
-
-- `victoriametrics` if on the same Docker network
-- The container/host IP if external
-
-### 3. Network Connectivity
-
-Test from your Prometheus host:
-
-```bash
-curl http://<collector-host>:8889/metrics
-curl http://<victoriametrics-host>:8428/health
-```
+1. **Add Collector Scrape Targets**: Apply [Collector Scrape Configuration](#ref-collector-scrape) to your existing `prometheus.yaml`
+2. **Configure Remote Write**: Apply [VictoriaMetrics Remote Write Configuration](#ref-vm-remote-write) to your existing `prometheus.yaml`
+3. **Verify Connectivity**: Test from your Prometheus host using the Collector and VictoriaMetrics [Health Checks](#ref-health-checks)
 
 **Common Scenarios**:
 
@@ -143,35 +68,12 @@ curl http://<victoriametrics-host>:8428/health
 
 **Services**: OpenTelemetry Collector, Prometheus
 
-**Command**:
-
-```bash
-cd docker-compose
-docker compose --profile no-vm up -d
-```
+**Command**: [Start the profile](#cmd-start-profile) with `--profile no-vm`
 
 **Configuration Required**:
 
-### 1. Point Prometheus to Your VictoriaMetrics
-
-Edit `docker-compose/prometheus.yaml`:
-
-```yaml
-remote_write:
-  - url: http://<your-victoriametrics-host>:8428/api/v1/write
-    # Optional: Add authentication if your VM requires it
-    # basic_auth:
-    #   username: your-username
-    #   password: your-password
-```
-
-### 2. Network Connectivity
-
-Test from the Prometheus container:
-
-```bash
-docker exec prometheus curl http://<your-vm-host>:8428/health
-```
+1. **Configure Remote Write**: Edit `docker-compose/prometheus.yaml` and apply [VictoriaMetrics Remote Write Configuration](#ref-vm-remote-write) (add basic auth if needed)
+2. **Verify Connectivity**: Test from Prometheus container using [Verify from container](#cmd-verify-from-container) command
 
 **Alternative**: If you don't want long-term storage at all, comment out the `remote_write` block entirely.
 
@@ -189,16 +91,187 @@ docker exec prometheus curl http://<your-vm-host>:8428/health
 
 **Services**: Prometheus, VictoriaMetrics
 
-**Command**:
-
-```bash
-cd docker-compose
-docker compose --profile no-collector up -d
-```
+**Command**: [Start the profile](#cmd-start-profile) with `--profile no-collector`
 
 **Configuration Required**:
 
-### 1. Update Your Existing Collector Config
+1. **Update Your Collector**: Ensure your existing collector config includes [Collector Configuration](#ref-collector-config) (includes OTLP receivers, Prometheus exporter, and internal metrics)
+2. **Configure Prometheus Scraping**: Edit `docker-compose/prometheus.yaml` and apply [Collector Scrape Configuration](#ref-collector-scrape)
+
+**Common Scenarios**:
+
+- Kubernetes with OpenTelemetry Operator
+- Multi-cluster environments with centralized collectors
+- Service mesh with sidecar collectors (Istio + OTel)
+
+---
+
+## PROFILE 5: vm-only (VictoriaMetrics Standalone)
+
+**Use When**: You only need VictoriaMetrics for long-term storage and have your own Prometheus + Collector elsewhere.
+
+**Services**: VictoriaMetrics
+
+**Command**: [Start the profile](#cmd-start-profile) with `--profile vm-only`
+
+**Configuration Required**:
+
+Apply [VictoriaMetrics Remote Write Configuration](#ref-vm-remote-write) to your external Prometheus instance.
+
+**Verification**: Use VictoriaMetrics [Health Checks](#ref-health-checks) and [Metrics Validation](#ref-metrics-validation)
+
+**Common Scenarios**:
+
+- Consolidating multiple Prometheus instances into one storage backend
+- Replacing aging Prometheus storage with VictoriaMetrics
+- Cost reduction by centralizing long-term storage
+
+---
+
+## PROFILE 6: prom-only (Prometheus Standalone)
+
+**Use When**: You only need Prometheus for scraping and querying, with external storage or no long-term retention.
+
+**Services**: Prometheus
+
+**Command**: [Start the profile](#cmd-start-profile) with `--profile prom-only`
+
+**Configuration Required**:
+
+Edit `docker-compose/prometheus.yaml`:
+
+1. **For external storage**: Apply [VictoriaMetrics Remote Write Configuration](#ref-vm-remote-write) (or configure for your storage backend)
+2. **For no long-term storage**: Comment out the `remote_write` block
+3. **Configure scrape targets**: Since the collector is not included, point Prometheus at your own exporters:
+
+```yaml
+scrape_configs:
+  - job_name: "your-application"
+    static_configs:
+      - targets:
+          - "your-app-host:9100"
+          - "another-app:8080"
+```
+
+If you have an external OTel Collector, apply [Collector Scrape Configuration](#ref-collector-scrape)
+
+**Common Scenarios**:
+
+- Testing Prometheus configurations
+- Temporary monitoring setups
+- Development environments with no persistence requirements
+
+---
+
+## Command Reference
+
+The commands below are referenced throughout the profile configurations.
+
+### <a id="cmd-start-profile"></a>Start a Profile
+
+```bash
+cd docker-compose
+docker compose --profile <profile-name> up -d
+```
+
+Replace `<profile-name>` with: `full`, `no-prometheus`, `no-vm`, `no-collector`, `vm-only`, or `prom-only`
+
+### <a id="cmd-stop-profile"></a>Stop a Profile
+
+```bash
+cd docker-compose
+docker compose --profile <profile-name> down
+```
+
+### <a id="cmd-check-status"></a>Check Service Status
+
+```bash
+docker compose ps
+```
+
+### <a id="cmd-view-logs"></a>View Service Logs
+
+```bash
+# View all logs
+docker compose --profile <profile-name> logs -f
+
+# View specific service logs
+docker compose logs -f <service-name>
+```
+
+Replace `<service-name>` with: `otel-collector`, `prometheus`, or `victoriametrics`
+
+### <a id="cmd-verify-from-container"></a>Verify from Container
+
+```bash
+# Test connectivity from Prometheus container
+docker exec prometheus curl http://<your-vm-host>:8428/health
+
+# Test connectivity from any container
+docker exec <container-name> curl <target-url>
+```
+
+---
+
+## Configuration Reference Blocks
+
+The configuration templates below are referenced throughout the profile configurations. Use these when integrating with your existing infrastructure.
+
+### <a id="ref-collector-scrape"></a>Collector Scrape Configuration
+
+Add this to your Prometheus `scrape_configs`:
+
+```yaml
+scrape_configs:
+  # Scrape spanmetrics (converted from traces)
+  - job_name: "otel-collector"
+    static_configs:
+      - targets: ["<collector-host>:8889"]
+
+  # Scrape collector internal metrics (optional but recommended)
+  - job_name: "otel-collector-internal"
+    static_configs:
+      - targets: ["<collector-host>:8888"]
+```
+
+**Host Resolution for `<collector-host>`:**
+
+- `otel-collector` if on the same Docker network
+- `localhost` if running on the same host
+- EC2 instance IP/DNS if external
+
+### <a id="ref-vm-remote-write"></a>VictoriaMetrics Remote Write Configuration
+
+Add this to your Prometheus configuration:
+
+```yaml
+remote_write:
+  - url: http://<victoriametrics-host>:8428/api/v1/write
+    # Optional: Add authentication if your VM requires it
+    # basic_auth:
+    #   username: your-username
+    #   password: your-password
+
+    # Optional: Configure queue settings for high-throughput scenarios
+    # queue_config:
+    #   capacity: 10000
+    #   max_shards: 50
+    #   min_shards: 1
+    #   max_samples_per_send: 5000
+    #   batch_send_deadline: 5s
+```
+
+**Host Resolution for `<victoriametrics-host>`:**
+
+- `victoriametrics` if on the same Docker network
+- Container/host IP if external
+
+**Common Options:**
+
+- Use `basic_auth` when connecting to external/managed VictoriaMetrics instances
+- Use `queue_config` to tune performance for high-throughput scenarios
+
+### <a id="ref-collector-config"></a>Collector Configuration
 
 Ensure your collector config includes:
 
@@ -210,6 +283,14 @@ exporters:
     resource_to_telemetry_conversion:
       enabled: true
     enable_open_metrics: true
+
+receivers:
+  otlp:
+    protocols:
+      grpc:
+        endpoint: 0.0.0.0:4317
+      http:
+        endpoint: 0.0.0.0:4318
 
 service:
   telemetry:
@@ -227,145 +308,62 @@ service:
       exporters: [prometheus]
 ```
 
-### 2. Configure Prometheus to Scrape Your Collector
+### <a id="ref-health-checks"></a>Health Checks
 
-Edit `docker-compose/prometheus.yaml`:
+Verify that each service is running and responsive:
 
-```yaml
-scrape_configs:
-  - job_name: "otel-collector"
-    static_configs:
-      - targets: ["<your-collector-host>:8889"]
-
-  - job_name: "otel-collector-internal"
-    static_configs:
-      - targets: ["<your-collector-host>:8888"]
-```
-
-### 3. Ensure OTLP Receivers Are Configured
-
-```yaml
-receivers:
-  otlp:
-    protocols:
-      grpc:
-        endpoint: 0.0.0.0:4317
-      http:
-        endpoint: 0.0.0.0:4318
-```
-
-**Common Scenarios**:
-
-- Kubernetes with OpenTelemetry Operator
-- Multi-cluster environments with centralized collectors
-- Service mesh with sidecar collectors (Istio + OTel)
-
----
-
-## PROFILE 5: vm-only (VictoriaMetrics Standalone)
-
-**Use When**: You only need VictoriaMetrics for long-term storage and have your own Prometheus + Collector elsewhere.
-
-**Services**: VictoriaMetrics
-
-**Command**:
+**Collector:**
 
 ```bash
-cd docker-compose
-docker compose --profile vm-only up -d
+curl http://localhost:13133/health/status
+# Expected: {"status":"Server available","upSince":"..."}
 ```
 
-**Configuration Required**:
-
-### Configure Your Prometheus to Remote Write
-
-```yaml
-remote_write:
-  - url: http://<victoriametrics-host>:8428/api/v1/write
-```
-
-**Verification**:
+**Prometheus:**
 
 ```bash
-# Health check
+curl http://localhost:9090/-/healthy
+# Expected: HTTP 200 OK with "Prometheus Server is Healthy."
+```
+
+**VictoriaMetrics:**
+
+```bash
 curl http://localhost:8428/health
-
-# Query metrics via Prometheus-compatible API
-curl 'http://localhost:8428/api/v1/query?query=up'
+# Expected: OK
 ```
 
-**Common Scenarios**:
+### <a id="ref-metrics-validation"></a>Metrics Validation
 
-- Consolidating multiple Prometheus instances into one storage backend
-- Replacing aging Prometheus storage with VictoriaMetrics
-- Cost reduction by centralizing long-term storage
+Verify that metrics are being collected and flowing through the pipeline:
 
----
-
-## PROFILE 6: prom-only (Prometheus Standalone)
-
-**Use When**: You only need Prometheus for scraping and querying, with external storage or no long-term retention.
-
-**Services**: Prometheus
-
-**Command**:
+**Collector Spanmetrics:**
 
 ```bash
-cd docker-compose
-docker compose --profile prom-only up -d
+curl http://localhost:8889/metrics
+# Should return Prometheus-formatted metrics including llm_traces_span_metrics_*
 ```
 
-**Configuration Required**:
+**Prometheus Scrape Targets:**
 
-### 1. Edit Prometheus Config
-
-Edit `docker-compose/prometheus.yaml`:
-
-**a. If you have external storage:**
-
-```yaml
-remote_write:
-  - url: http://<your-storage-backend>:8428/api/v1/write
+```bash
+curl http://localhost:9090/api/v1/targets
+# Check that otel-collector targets show "health":"up"
 ```
 
-**b. If you don't need long-term storage:**
+**VictoriaMetrics Data:**
 
-```yaml
-# Comment out or remove the remote_write block
-# remote_write:
-#   - url: ...
+```bash
+curl 'http://localhost:8428/api/v1/query?query=up'
+# Verify metrics are stored and queryable
 ```
-
-### 2. Configure Scrape Targets
-
-Since the collector is not included, point Prometheus at your own exporters:
-
-```yaml
-scrape_configs:
-  - job_name: "your-application"
-    static_configs:
-      - targets:
-          - "your-app-host:9100"
-          - "another-app:8080"
-
-  # If you have an external OTel Collector
-  - job_name: "otel-collector"
-    static_configs:
-      - targets: ["<external-collector>:8889"]
-```
-
-**Common Scenarios**:
-
-- Testing Prometheus configurations
-- Temporary monitoring setups
-- Development environments with no persistence requirements
 
 ---
 
 ## Next Steps
 
 - **Configure your chosen profile**: [Configuration Reference](configuration-reference.md)
-- **Deploy the stack**: [Deployment Methods](deployment-methods.md)
+- **Deploy the stack**: [Deployment Guide](deployment-guide.md)
 - **Prepare for production**: [Production Guide](production-guide.md)
 
 [← Back to Advanced Setup](../ADVANCED_SETUP.md)
