@@ -57,7 +57,7 @@ This guide provides comprehensive instructions for deploying and configuring the
    **⚠️ TODO:** Multi-region, Kubernetes and edge scenarios patterns are untested and may be removed. Testing and validation required.
 
 6. **[Production Guide](guides/production-guide.md)**  
-   High availability, resource sizing, data persistence, backup strategies, and performance tuning.
+   Resource sizing, data persistence, backup strategies, and performance tuning.
 
 7. **[Security Guide](guides/security.md)**  
    TLS/SSL configuration, authentication, authorization, network security, and data privacy.

@@ -980,6 +980,8 @@ For more advanced configuration options and detailed information, refer to the [
 
 ---
 
+---
+
 ## Configuration Summary Table
 
 Quick reference for all three components:

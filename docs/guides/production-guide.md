@@ -11,7 +11,7 @@ Deploying to production requires careful consideration of several key areas:
 1. **Deployment Profile** - What components do you need?
 2. **Deployment Architecture** - Where and how will you deploy?
 3. **Security Requirements** - How will you secure your deployment?
-4. **Production Considerations** - High availability, performance, and operational needs
+4. **Production Considerations** - Performance, and operational needs
 
 This guide will help you make informed decisions in each area and point you to the detailed implementation guides.
 
@@ -49,9 +49,9 @@ Based on your existing infrastructure, select the appropriate profile:
 
 ## Step 2: Evaluate Your Deployment Architecture
 
-| Deployment Method                               | Best For                            | Complexity | Automation |
-| ----------------------------------------------- | ----------------------------------- | ---------- | ---------- |
-| **[Local Docker Compose](deployment-guide.md)** | Development, testing, single server | Low        | Manual     |
+| Deployment Method    | Best For                            | Complexity | Automation |
+| -------------------- | ----------------------------------- | ---------- | ---------- |
+| Local Docker Compose | Development, testing, single server | Low        | Manual     |
 
 **📖 Next:** See the [Deployment Guide](deployment-guide.md) for step-by-step instructions on deploying with Docker Compose.
 
@@ -91,16 +91,6 @@ Before going to production, ensure you address:
 
 After choosing your profile, deployment method, and security configuration, consider these operational aspects:
 
-### High Availability
-
-**Do you need redundancy?**
-
-- **Collector HA**: Deploy multiple collector instances behind a load balancer
-- **Prometheus HA**: Run multiple Prometheus instances (VictoriaMetrics deduplicates)
-- **VictoriaMetrics HA**: Use VictoriaMetrics cluster mode for horizontal scaling
-
-**📖 Details:** See [High Availability section in ADVANCED_SETUP_DOCS.md](../../ADVANCED_SETUP_DOCS.md#high-availability)
-
 ### Resource Sizing
 
 **What resources do you need?**
@@ -119,8 +109,6 @@ Quick sizing guide for planning:
 - **Medium**: 10k-50k spans/sec, 100k-1M active time series
 - **Large**: >50k spans/sec, >1M active time series
 
-**📖 Details:** See [Resource Sizing section in ADVANCED_SETUP_DOCS.md](../../ADVANCED_SETUP_DOCS.md#resource-sizing)
-
 ### Data Persistence
 
 **How will you store data?**
@@ -129,8 +117,6 @@ Quick sizing guide for planning:
 - **Production**: Host-mounted directories or EBS volumes
 - **Retention**: VictoriaMetrics default is 12 months (configurable)
 
-**📖 Details:** See [Data Persistence section in ADVANCED_SETUP_DOCS.md](../../ADVANCED_SETUP_DOCS.md#data-persistence)
-
 ### Backup Strategy
 
 **What's your backup plan?**
@@ -138,8 +124,6 @@ Quick sizing guide for planning:
 - **VictoriaMetrics**: Supports snapshot API for backups
 - **Prometheus**: Supports TSDB snapshots (requires admin API)
 - **Automation**: Implement automated backups via cron/scheduled tasks
-
-**📖 Details:** See [Backup Strategy section in ADVANCED_SETUP_DOCS.md](../../ADVANCED_SETUP_DOCS.md#backup-strategy)
 
 ### Performance Tuning
 
@@ -151,8 +135,6 @@ Key tuning areas:
 - **Memory Limiter**: Prevent OOM crashes under load
 - **Histogram Buckets**: Customize for your latency profile
 - **Prometheus Scraping**: Tune intervals and relabeling
-
-**📖 Details:** See [Performance Tuning section in ADVANCED_SETUP_DOCS.md](../../ADVANCED_SETUP_DOCS.md#performance-tuning)
 
 ---
 
@@ -211,8 +193,6 @@ Key metrics to alert on:
 - Prometheus: `prometheus_remote_storage_samples_failed_total` (remote write failures)
 - VictoriaMetrics: `vm_free_disk_space_bytes` (disk space)
 
-**📖 Details:** See [Monitoring the Observability Stack in ADVANCED_SETUP_DOCS.md](../../ADVANCED_SETUP_DOCS.md#monitoring-the-observability-stack)
-
 ---
 
 ## Quick Start: Common Production Scenarios
@@ -225,8 +205,8 @@ Key metrics to alert on:
 
 1. ✅ Choose **`full`** profile ([Deployment Profiles Guide](deployment-profiles.md))
 2. ✅ Configure **TLS and authentication** ([Security Guide](security.md))
-3. ✅ Set up **HA with load balancer** ([ADVANCED_SETUP_DOCS.md](../../ADVANCED_SETUP_DOCS.md#high-availability))
-4. ✅ Configure **backups** ([ADVANCED_SETUP_DOCS.md](../../ADVANCED_SETUP_DOCS.md#backup-strategy))
+3. ✅ Set up **HA with load balancer**
+4. ✅ Configure **backups**
 
 ### Scenario 2: Adding to Existing Prometheus
 
@@ -251,8 +231,6 @@ Key metrics to alert on:
 4. ✅ Configure all Prometheus instances to **remote_write to central VM**
 5. ✅ Add **external_labels** to identify regions
 
-**📖 Details:** See [Multi-Region Deployment Pattern in ADVANCED_SETUP_DOCS.md](../../ADVANCED_SETUP_DOCS.md#pattern-1-multi-region-deployment-with-central-storage)
-
 ---
 
 ## Troubleshooting Production Issues
@@ -266,8 +244,6 @@ Common production issues and where to find solutions:
 | Connection refused               | Network/firewall rules             | [Deployment Guide](deployment-guide.md#troubleshooting)                  |
 | Authentication failing           | TLS/auth config                    | [Security Guide](security.md)                                            |
 | High disk usage                  | Retention settings, cardinality    | [Configuration Reference](configuration-reference.md)                    |
-
-**📖 Full Troubleshooting Guide:** See [Advanced Troubleshooting in ADVANCED_SETUP_DOCS.md](../../ADVANCED_SETUP_DOCS.md#advanced-troubleshooting)
 
 ---
 
@@ -291,7 +267,6 @@ Use this final checklist before going live:
 
 ### Operations
 
-- [ ] High availability configured (if required)
 - [ ] Resource sizing appropriate for expected load
 - [ ] Data persistence configured (host volumes/EBS)
 - [ ] Backup strategy implemented and tested
@@ -332,17 +307,6 @@ Use this final checklist before going live:
 ### Reference Materials
 
 - **[Reference Guide](reference.md)** - Metric reference, example queries, port reference
-
----
-
-## Getting Help
-
-If you encounter issues or have questions:
-
-1. **Check the guides** linked throughout this document
-2. **Review troubleshooting sections** in the relevant guides
-3. **Consult the comprehensive guide**: [ADVANCED_SETUP_DOCS.md](../../ADVANCED_SETUP_DOCS.md)
-4. **Contact your infrastructure team** for environment-specific guidance
 
 ---
 

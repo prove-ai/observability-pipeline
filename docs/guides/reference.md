@@ -403,40 +403,6 @@ service:
       level: debug
 ```
 
-### Configuration 5: Production (High Availability)
-
-```yaml
-# prometheus.yaml
-global:
-  scrape_interval: 10s
-  external_labels:
-    cluster: production
-    region: us-east-1
-
-remote_write:
-  - url: http://victoriametrics:8428/api/v1/write
-    queue_config:
-      capacity: 50000
-      max_shards: 200
-      min_shards: 10
-
-# otel-collector-config.yaml
-processors:
-  memory_limiter:
-    check_interval: 1s
-    limit_mib: 4096
-    spike_limit_mib: 512
-
-  batch:
-    timeout: 200ms
-    send_batch_size: 8192
-
-service:
-  telemetry:
-    logs:
-      level: info # Less verbose
-```
-
 ---
 
 ## Additional Resources

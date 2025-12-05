@@ -408,8 +408,6 @@ The spanmetrics connector automatically generates **RED metrics** from traces:
 
 **⚠️ TODO:** Should this be included in Phase 1?
 
-- **High availability** → [Production Guide](production-guide.md#high-availability)
-
 ---
 
 ## Quick Reference
