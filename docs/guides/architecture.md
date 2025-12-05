@@ -10,7 +10,7 @@ This observability pipeline, when deployed with the [full deployment profile](de
 
 - Your application sends traces (using OpenTelemetry)
 - The pipeline converts those traces into useful metrics (request rate, errors, latency)
-- You can query and visualize these metrics in any Prometheus-compatible tool
+- You can query and visualize these metrics using the ProveAI client
 - All metrics are stored for 12 months with efficient compression
 
 ## Quick Start (5 Minutes)
@@ -162,7 +162,7 @@ Your Application
 
 - **Image**: `otel/opentelemetry-collector-contrib:0.138.0`
 - **Primary Role**: Receive traces, convert to metrics, export to Prometheus
-- **Key Feature**: Spanmetrics connector transforms traces into RED metrics
+- **Key Feature**: Spanmetrics connector transforms traces into [RED metrics](#red-metrics)
 
 **Ports:**
 
@@ -353,7 +353,7 @@ curl 'http://localhost:8428/api/v1/query?query=up' | jq
 
 <a id="red-metrics"></a>
 
-The spanmetrics connector automatically generates **[RED metrics](#red-metrics)** from traces:
+The spanmetrics connector automatically generates **RED metrics** from traces:
 
 - **Rate**: `llm_traces_span_metrics_calls_total` (requests per second)
 - **Errors**: Filtered by `status_code="STATUS_CODE_ERROR"`

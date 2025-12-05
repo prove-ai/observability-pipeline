@@ -29,6 +29,7 @@ Before making changes, understand the impact:
 ## OpenTelemetry Collector Configuration
 
 **File Location:** `docker-compose/otel-collector-config.yaml`
+**Collector Version:** `otel/opentelemetry-collector-contrib:0.138.0` (Core `v1.44.0`)
 
 **When to Edit:** Initial setup, adding dimensions, performance tuning
 
@@ -38,17 +39,17 @@ The collector has 5 main sections:
 
 ```
 ┌─────────────────────────────────────┐
-│ 1. Receivers (How traces come in)  │
+│ 1. Receivers (How traces come in)   │
 ├─────────────────────────────────────┤
-│ 2. Processors (How traces are      │
+│ 2. Processors (How traces are       │
 │    batched and filtered)            │
 ├─────────────────────────────────────┤
-│ 3. Connectors (Spanmetrics:        │
+│ 3. Connectors (Spanmetrics:         │
 │    traces → metrics)                │
 ├─────────────────────────────────────┤
-│ 4. Exporters (Where data goes)     │
+│ 4. Exporters (Where data goes)      │
 ├─────────────────────────────────────┤
-│ 5. Service Pipelines (Connect      │
+│ 5. Service Pipelines (Connect       │
 │    everything together)             │
 └─────────────────────────────────────┘
 ```
@@ -93,6 +94,8 @@ receivers:
         max_concurrent_streams: 200
 ```
 
+[OTLP Receiver Configuration Source (Go Struct)](https://pkg.go.dev/go.opentelemetry.io/collector/config/configgrpc#section-readme)
+
 **Scenario 2: Browser-Based Applications (CORS)**
 
 ```yaml
@@ -109,6 +112,8 @@ receivers:
             - "Content-Type"
 ```
 
+[OpenTelemetry Collector HTTP Server Config (CORS)](https://github.com/open-telemetry/opentelemetry-collector/blob/main/config/confighttp/README.md#server-configuration)
+
 **Scenario 3: Localhost-Only Access**
 
 ```yaml
@@ -118,6 +123,8 @@ receivers:
       grpc:
         endpoint: 127.0.0.1:4317 # Only local connections
 ```
+
+[OpenTelemetry Collector Networking Best Practices](https://opentelemetry.io/docs/security/config-best-practices/#network-configuration)
 
 ---
 
