@@ -86,6 +86,8 @@ chmod +x /usr/local/bin/otel-cli
 
 Send a test trace:
 
+<a id="send-test-trace-command"></a>
+
 ```bash
 otel-cli span \
   --service "my-app" \
@@ -317,14 +319,7 @@ open http://localhost:9090/targets
 
 ### Step 4: Send a Test Trace
 
-```bash
-otel-cli span \
-  --service "test-service" \
-  --name "test-operation" \
-  --endpoint http://localhost:4318/v1/traces \
-  --protocol http/protobuf \
-  --attrs "env=dev"
-```
+See the example in [Send Your First Trace](#send-test-trace-command) above.
 
 ### Step 5: Verify Metrics Appear
 
@@ -336,7 +331,7 @@ curl 'http://localhost:9090/api/v1/query?query=llm_traces_span_metrics_calls_tot
 
 # Or open Prometheus UI
 open http://localhost:9090
-# Then run: llm_traces_span_metrics_calls_total{service_name="test-service"}
+# Then run: llm_traces_span_metrics_calls_total{service_name="my-app"}
 ```
 
 ### Step 6: Verify VictoriaMetrics
@@ -356,7 +351,9 @@ curl 'http://localhost:8428/api/v1/query?query=up' | jq
 
 ### Why Spanmetrics?
 
-The spanmetrics connector automatically generates **RED metrics** from traces:
+<a id="red-metrics"></a>
+
+The spanmetrics connector automatically generates **[RED metrics](#red-metrics)** from traces:
 
 - **Rate**: `llm_traces_span_metrics_calls_total` (requests per second)
 - **Errors**: Filtered by `status_code="STATUS_CODE_ERROR"`
@@ -398,14 +395,19 @@ The spanmetrics connector automatically generates **RED metrics** from traces:
 ### For Production Deployments
 
 1. **Choose your deployment profile** → [Deployment Profiles Guide](deployment-profiles.md)
-2. **Deploy to servers** → [Deployment Guide](deployment-guide.md) (Docker Compose or Ansible)
+2. **Deploy to servers** → [Deployment Guide](deployment-guide.md) (Docker Compose)
 3. **Secure your deployment** → [Security Guide](security.md)
 4. **Configure for production** → [Production Guide](production-guide.md)
 
 ### For Advanced Scenarios
 
+**⚠️ TODO:** Multi-region, Kubernetes and edge scenarios patterns are untested and may be removed. Testing and validation required.
+
 - **Multi-region setup** → [Integration Patterns](integration-patterns.md#pattern-1-multi-region-deployment-with-central-storage)
 - **Kubernetes integration** → [Integration Patterns](integration-patterns.md#pattern-2-kubernetes-integration)
+
+**⚠️ TODO:** Should this be included in Phase 1?
+
 - **High availability** → [Production Guide](production-guide.md#high-availability)
 
 ---

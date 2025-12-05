@@ -28,7 +28,7 @@ This guide provides comprehensive instructions for deploying and configuring the
 | Choose the right deployment profile                     | [Deployment Profiles Guide](guides/deployment-profiles.md)   |
 | Configure the collector, Prometheus, or VictoriaMetrics | [Configuration Reference](guides/configuration-reference.md) |
 | Deploy via Docker Compose                               | [Deployment Guide](guides/deployment-guide.md)               |
-| Integrate with multi-region or Kubernetes               | [Integration Patterns](guides/integration-patterns.md)       |
+| Integrate via Hybrid Cloud (On-Prem + Cloud)            | [Integration Patterns](guides/integration-patterns.md)       |
 | Prepare for production (HA, backups, sizing)            | [Production Guide](guides/production-guide.md)               |
 | Secure your deployment (TLS, auth, firewalls)           | [Security Guide](guides/security.md)                         |
 | Look up metrics, ports, queries, or commands            | [Reference Guide](guides/reference.md)                       |
@@ -52,7 +52,8 @@ This guide provides comprehensive instructions for deploying and configuring the
 ### Advanced Topics
 
 5. **[Integration Patterns](guides/integration-patterns.md)**  
-   Multi-region deployments, Kubernetes integration, and hybrid cloud scenarios.
+   Hybrid cloud scenarios, multi-region deployments, and Kubernetes integration.
+   **⚠️ TODO:** Multi-region, Kubernetes and edge scenarios patterns are untested and may be removed. Testing and validation required.
 
 6. **[Production Guide](guides/production-guide.md)**  
    High availability, resource sizing, data persistence, backup strategies, and performance tuning.

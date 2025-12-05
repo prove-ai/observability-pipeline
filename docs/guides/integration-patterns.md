@@ -55,7 +55,7 @@ docker compose --profile full up -d
 
 ---
 
-**⚠️ Note:** The following integration patterns are untested and may be removed. Testing and validation required.
+**⚠️ TODO:** The following integration patterns are untested and may be removed. Testing and validation required.
 
 ---
 
