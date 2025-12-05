@@ -53,6 +53,7 @@ This guide provides comprehensive instructions for deploying and configuring the
 
 5. **[Integration Patterns](guides/integration-patterns.md)**  
    Hybrid cloud scenarios, multi-region deployments, and Kubernetes integration.
+
    **⚠️ TODO:** Multi-region, Kubernetes and edge scenarios patterns are untested and may be removed. Testing and validation required.
 
 6. **[Production Guide](guides/production-guide.md)**  

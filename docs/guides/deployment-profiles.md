@@ -58,6 +58,9 @@ The Observability Pipeline supports six deployment profiles to accommodate vario
 
 - Central Prometheus scraping multiple clusters
 - Kubernetes clusters with existing Prometheus Operator
+
+**⚠️ TODO:** May be removed. Kubernetes testing and validation required.
+
 - Organizations with standardized Prometheus deployments
 
 ---
@@ -101,6 +104,9 @@ The Observability Pipeline supports six deployment profiles to accommodate vario
 **Common Scenarios**:
 
 - Kubernetes with OpenTelemetry Operator
+
+**⚠️ TODO:** May be removed. Kubernetes testing and validation required.
+
 - Multi-cluster environments with centralized collectors
 - Service mesh with sidecar collectors (Istio + OTel)
 

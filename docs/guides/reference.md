@@ -456,8 +456,6 @@ service:
   CLI tool for sending test spans
 - **PromLens**: https://promlens.com/  
   Query builder for PromQL
-- **Grafana**: https://grafana.com/  
-  Visualization platform (compatible with this stack)
 
 - **Promtool**: Built into Prometheus
   ```bash

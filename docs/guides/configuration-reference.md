@@ -29,6 +29,7 @@ Before making changes, understand the impact:
 ## OpenTelemetry Collector Configuration
 
 **File Location:** `docker-compose/otel-collector-config.yaml`
+
 **Collector Version:** `otel/opentelemetry-collector-contrib:0.138.0` (Core `v1.44.0`)
 
 **When to Edit:** Initial setup, adding dimensions, performance tuning
