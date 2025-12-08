@@ -55,10 +55,6 @@ docker compose --profile full up -d
 
 ---
 
-**⚠️ TODO:** The following integration patterns are untested and may be removed. Testing and validation required.
-
----
-
 ## Pattern 2: Edge-to-Core Aggregation
 
 **Scenario**: Multiple edge locations send metrics to a central core for aggregation.
@@ -105,6 +101,18 @@ remote_write:
 ```bash
 docker compose --profile vm-only up -d
 ```
+
+#### 4. Query Across Edge Locations
+
+```promql
+# Query all edges
+sum by (service_name) (llm_traces_span_metrics_calls_total)
+
+# Query specific edge
+llm_traces_span_metrics_calls_total{edge_location="location-1"}
+```
+
+---
 
 ## Pattern 3: Multi-Region Deployment with Central Storage
 
@@ -165,170 +173,20 @@ sum by (service_name) (llm_traces_span_metrics_calls_total)
 llm_traces_span_metrics_calls_total{region="us-east-1"}
 ```
 
-## Pattern 4: Kubernetes Integration
-
-**Scenario**: Deploy collectors in Kubernetes, use the Observability Pipeline for storage and querying.
-
-### Architecture
-
-```
-Kubernetes Cluster:
-  Pods → OTel Collector (DaemonSet) →
-↓
-External:
-  Prometheus (scrapes via NodePort/LoadBalancer)
-  VictoriaMetrics (long-term storage)
-```
-
-### Implementation
-
-#### 1. Deploy OTel Collector in Kubernetes
-
-Use the OpenTelemetry Operator or deploy as a DaemonSet:
-
-```yaml
-apiVersion: apps/v1
-kind: DaemonSet
-metadata:
-  name: otel-collector
-  namespace: observability
-spec:
-  selector:
-    matchLabels:
-      app: otel-collector
-  template:
-    metadata:
-      labels:
-        app: otel-collector
-    spec:
-      containers:
-        - name: otel-collector
-          image: otel/opentelemetry-collector-contrib:0.138.0
-          ports:
-            - containerPort: 4317 # OTLP gRPC
-            - containerPort: 8889 # Prometheus metrics
-          volumeMounts:
-            - name: config
-              mountPath: /etc/otel
-      volumes:
-        - name: config
-          configMap:
-            name: otel-collector-config
-```
-
-#### 2. Expose Collector via Service
-
-```yaml
-apiVersion: v1
-kind: Service
-metadata:
-  name: otel-collector
-  namespace: observability
-spec:
-  type: NodePort
-  selector:
-    app: otel-collector
-  ports:
-    - name: otlp-grpc
-      port: 4317
-      targetPort: 4317
-      nodePort: 30317
-    - name: metrics
-      port: 8889
-      targetPort: 8889
-      nodePort: 30889
-```
-
-#### 3. Configure External Prometheus to Scrape Kubernetes Collector
-
-```yaml
-scrape_configs:
-  - job_name: "k8s-otel-collector"
-    static_configs:
-      - targets: ["<k8s-node-ip>:30889"]
-```
-
-#### 4. Deploy External Storage
-
-```bash
-# Deploy Prometheus + VictoriaMetrics externally
-docker compose --profile no-collector up -d
-```
-
 ---
 
-#### 4. Query Across Edge Locations
-
-```promql
-# Query all edges
-sum by (service_name) (llm_traces_span_metrics_calls_total)
-
-# Query specific edge
-llm_traces_span_metrics_calls_total{edge_location="location-1"}
-```
-
----
-
-## Pattern 5: Service Mesh Integration (Istio)
-
-**Scenario**: Integrate with Istio service mesh for automatic trace collection.
-
-### Architecture
-
-```
-Kubernetes with Istio:
-  Pods → Envoy Sidecars (generate traces) →
-↓
-OTel Collector (receives Zipkin/Jaeger) →
-↓
-Observability Pipeline (Prometheus + VictoriaMetrics)
-```
-
-### Implementation
-
-#### 1. Configure Istio to Send Traces to OTel Collector
-
-```yaml
-apiVersion: install.istio.io/v1alpha1
-kind: IstioOperator
-spec:
-  meshConfig:
-    defaultConfig:
-      tracing:
-        zipkin:
-          address: otel-collector.observability:9411
-    enableTracing: true
-    sampling: 100.0 # Adjust sampling rate
-```
-
-#### 2. Configure OTel Collector with Zipkin Receiver
-
-```yaml
-receivers:
-  zipkin:
-    endpoint: 0.0.0.0:9411
-
-service:
-  pipelines:
-    traces:
-      receivers: [zipkin, otlp]
-      processors: [batch]
-      exporters: [spanmetrics, debug]
-```
-
-#### 3. Expose Zipkin Port in Docker Compose
-
-```yaml
-otel-collector:
-  ports:
-    - 9411:9411 # Zipkin
-```
-
----
-
-## Pattern 6: Multi-Tenant Isolation
+## Pattern 4: Multi-Tenant Isolation
 
 **Scenario**: Separate metrics by tenant/customer for isolation and billing.
+
+### Architecture
+
+```
+Application (multi-tenant):
+  App with tenant context → OTel Collector →
+  Prometheus (with tenant labels) →
+  VictoriaMetrics (tenant-isolated metrics)
+```
 
 ### Implementation
 

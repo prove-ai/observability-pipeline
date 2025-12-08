@@ -57,10 +57,6 @@ The Observability Pipeline supports six deployment profiles to accommodate vario
 **Common Scenarios**:
 
 - Central Prometheus scraping multiple clusters
-- Kubernetes clusters with existing Prometheus Operator
-
-**⚠️ TODO:** May be removed. Kubernetes testing and validation required.
-
 - Organizations with standardized Prometheus deployments
 
 ---
@@ -90,7 +86,7 @@ The Observability Pipeline supports six deployment profiles to accommodate vario
 
 ## PROFILE 4: no-collector (Integrate with Existing Collector)
 
-**Use When**: You have an existing OpenTelemetry Collector (perhaps in a Kubernetes daemonset or sidecar) and need Prometheus + VictoriaMetrics for storage.
+**Use When**: You have an existing OpenTelemetry Collector and need Prometheus + VictoriaMetrics for storage.
 
 **Services**: Prometheus, VictoriaMetrics
 
@@ -103,12 +99,8 @@ The Observability Pipeline supports six deployment profiles to accommodate vario
 
 **Common Scenarios**:
 
-- Kubernetes with OpenTelemetry Operator
-
-**⚠️ TODO:** May be removed. Kubernetes testing and validation required.
-
 - Multi-cluster environments with centralized collectors
-- Service mesh with sidecar collectors (Istio + OTel)
+- Distributed systems with multiple collector instances
 
 ---
 

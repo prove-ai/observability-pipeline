@@ -256,7 +256,7 @@ Deploy the collector and Prometheus while integrating with your existing Victori
 
 ### Option 4: I Already Have an OpenTelemetry Collector
 
-Deploy Prometheus and VictoriaMetrics to complement your existing collector deployment (e.g., Kubernetes daemonset or service mesh sidecar).
+Deploy Prometheus and VictoriaMetrics to complement your existing collector deployment.
 
 **→ [View integration with existing OpenTelemetry Collector](deployment-profiles.md#profile-4-no-collector-integrate-with-existing-collector)**
 
@@ -375,7 +375,7 @@ The spanmetrics connector automatically generates **RED metrics** from traces:
 ### Why Keep Prometheus?
 
 - **Ecosystem**: Vast tooling and integrations
-- **Service Discovery**: Built-in for Kubernetes, AWS, Consul, etc.
+- **Service Discovery**: Built-in for AWS, Consul, DNS, and more
 - **Recording Rules**: Pre-compute expensive queries
 - **Buffering**: If VictoriaMetrics goes down, Prometheus retains recent data
 
@@ -401,12 +401,8 @@ The spanmetrics connector automatically generates **RED metrics** from traces:
 
 ### For Advanced Scenarios
 
-**⚠️ TODO:** Multi-region, Kubernetes and edge scenarios patterns are untested and may be removed. Testing and validation required.
-
-- **Multi-region setup** → [Integration Patterns](integration-patterns.md#pattern-1-multi-region-deployment-with-central-storage)
-- **Kubernetes integration** → [Integration Patterns](integration-patterns.md#pattern-2-kubernetes-integration)
-
-**⚠️ TODO:** Should this be included in Phase 1?
+- **Multi-region setup** → [Integration Patterns](integration-patterns.md#pattern-3-multi-region-deployment-with-central-storage)
+- **Hybrid cloud patterns** → [Integration Patterns](integration-patterns.md#pattern-1-hybrid-cloud-on-prem--cloud)
 
 ---
 

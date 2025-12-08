@@ -95,14 +95,6 @@ After choosing your profile, deployment method, and security configuration, cons
 
 **What resources do you need?**
 
-Quick sizing guide for planning:
-
-| Component           | Small Workload   | Medium Workload   | Large Workload      |
-| ------------------- | ---------------- | ----------------- | ------------------- |
-| **Collector**       | 2 cores, 2GB RAM | 4 cores, 4GB RAM  | 8+ cores, 8GB+ RAM  |
-| **Prometheus**      | 2 cores, 4GB RAM | 4 cores, 8GB RAM  | 8+ cores, 16GB+ RAM |
-| **VictoriaMetrics** | 2 cores, 8GB RAM | 4 cores, 16GB RAM | 8+ cores, 32GB+ RAM |
-
 **Workload Definitions:**
 
 - **Small**: <10k spans/sec, <100k active time series
@@ -302,7 +294,7 @@ Use this final checklist before going live:
 ### Architecture and Integration
 
 - **[Architecture Guide](architecture.md)** - System architecture and data flow
-- **[Integration Patterns](integration-patterns.md)** - Multi-region, Kubernetes, hybrid cloud patterns
+- **[Integration Patterns](integration-patterns.md)** - Multi-region and hybrid cloud patterns
 
 ### Reference Materials
 
