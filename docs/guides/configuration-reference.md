@@ -447,11 +447,11 @@ pipelines:
 
 **File Location:** `docker-compose/prometheus.yaml`
 
-**When to Edit:** Adjusting scrape intervals, configuring remote storage, or modifying scrape targets
+**When to Edit:** Adjusting scrape intervals, configuring remote storage, or modifying scrape targets based on your deployment profile
 
 ### Configuration Overview
 
-The Prometheus configuration has 3 main sections:
+The Prometheus configuration has 3 main sections that correspond to the scenarios outlined in the config file:
 
 ```
 ┌────────────────────────────────────┐
@@ -467,36 +467,17 @@ The Prometheus configuration has 3 main sections:
 
 ### 1. Global Configuration
 
-**Purpose:** Set the default scrape interval for all jobs.
-
-**Current Configuration:**
+**Current Default:**
 
 ```yaml
 global:
   scrape_interval: 10s
 ```
 
-#### Scrape Interval Guide
+The `scrape_interval` determines how often Prometheus scrapes metrics from targets. The default of `10s` is suitable for most production workloads. Adjust this value based on your needs:
 
-| Parameter         | Current Value | Description                 | When to Change                |
-| ----------------- | ------------- | --------------------------- | ----------------------------- |
-| `scrape_interval` | `10s`         | How often to scrape targets | Adjust based on your use case |
-
-#### Choosing a Scrape Interval
-
-| Use Case         | Interval | Resolution | Storage Impact | Best For                         |
-| ---------------- | -------- | ---------- | -------------- | -------------------------------- |
-| **Development**  | `5s`     | High       | 2x default     | Debugging, testing               |
-| **Production**   | `10s`    | Good       | Baseline       | Most production workloads        |
-| **High Scale**   | `30s`    | Medium     | 0.33x default  | Large deployments, cost savings  |
-| **Low Priority** | `60s`    | Low        | 0.16x default  | Non-critical metrics, batch jobs |
-
-**Example: Change to 30s for cost savings**
-
-```yaml
-global:
-  scrape_interval: 30s
-```
+- Lower values (e.g., `5s`) provide higher resolution but increase storage
+- Higher values (e.g., `30s` or `60s`) reduce storage at the cost of resolution
 
 ---
 
@@ -504,37 +485,35 @@ global:
 
 **Purpose:** Send metrics to VictoriaMetrics for long-term storage.
 
-**Current Configuration:**
+**Current Default:**
 
 ```yaml
 remote_write:
   - url: http://victoriametrics:8428/api/v1/write
 ```
 
-#### When to Modify Remote Write
+#### When to Modify
 
-| Scenario                      | Action                | Example                                               |
-| ----------------------------- | --------------------- | ----------------------------------------------------- |
-| **Using profiles with VM**    | Keep as-is            | No changes needed                                     |
-| **External VictoriaMetrics**  | Change URL            | `url: http://your-vm-host:8428/api/v1/write`          |
-| **Not using VictoriaMetrics** | Comment out or remove | See [Prometheus-only profile](deployment-profiles.md) |
-| **Using cloud storage**       | Replace URL           | Use your cloud provider's remote write endpoint       |
+**Scenario 1: Using profiles that include the `victoriametrics` service**
 
-#### Example: External VictoriaMetrics
+- Keep the configuration as-is
+- The default URL `http://victoriametrics:8428/api/v1/write` points to the VictoriaMetrics container in the Docker Compose stack
+
+**Scenario 2: Using an external VictoriaMetrics instance**
+
+- Replace `victoriametrics` with your VictoriaMetrics host/DNS:
 
 ```yaml
 remote_write:
   - url: http://your-vm-host:8428/api/v1/write
-    # Optional: Add authentication
-    # basic_auth:
-    #   username: prometheus-writer
-    #   password: your-secure-password
 ```
 
-#### Example: Disable Remote Write (Prometheus-only)
+**Scenario 3: NOT using VictoriaMetrics**
+
+- Comment out or remove the entire `remote_write` block
+- Prometheus will use local storage only
 
 ```yaml
-# Comment out the entire remote_write block if not using VictoriaMetrics
 # remote_write:
 #   - url: http://victoriametrics:8428/api/v1/write
 ```
@@ -543,9 +522,9 @@ remote_write:
 
 ### 3. Scrape Configurations
 
-**Purpose:** Define which services to scrape metrics from.
+**Purpose:** Define which services Prometheus scrapes metrics from.
 
-**Current Configuration:**
+**Current Default:**
 
 ```yaml
 scrape_configs:
@@ -558,32 +537,22 @@ scrape_configs:
       - targets: ["otel-collector:8888"]
 ```
 
-#### Default Scrape Jobs
+#### When to Modify
 
-| Job Name                  | Target                | Metrics                      | When to Use                               |
-| ------------------------- | --------------------- | ---------------------------- | ----------------------------------------- |
-| `otel-collector`          | `otel-collector:8889` | Spanmetrics (traces→metrics) | When using the OTel Collector service     |
-| `otel-collector-internal` | `otel-collector:8888` | Collector internal metrics   | Optional, for monitoring collector health |
+**Scenario 1: Using "full" profiles where `otel-collector` is part of the stack**
 
-#### Profile-Specific Guidance
+- Keep the `otel-collector` jobs as-is
+- These jobs scrape:
+  - Port `8889`: Spanmetrics (traces converted to metrics)
+  - Port `8888`: Internal collector metrics (optional, for monitoring collector health)
 
-**If using "full" profiles** (with `otel-collector` service):
+**Scenario 2: NOT running the OTel Collector from this compose file**
 
-- Keep the `otel-collector` job as-is
-- The collector service name matches the Docker Compose service
-
-**If NOT using the OTel Collector** (Prometheus-only profile):
-
-- Remove or comment out the `otel-collector` jobs
-- Add your own scrape targets (see examples below)
-
-#### Adding Your Own Scrape Targets
-
-**Example: Scrape your application exporters**
+- Remove the `otel-collector` jobs
+- Add your own scrape targets for your collector or exporters:
 
 ```yaml
 scrape_configs:
-  # Your custom services
   - job_name: "your-services"
     static_configs:
       - targets:
@@ -591,122 +560,11 @@ scrape_configs:
           - "another-exporter:9200"
 ```
 
-**Example: Multiple targets with labels**
-
-```yaml
-scrape_configs:
-  - job_name: "my-apps"
-    static_configs:
-      - targets: ["app1:8080"]
-        labels:
-          env: "production"
-          tier: "frontend"
-      - targets: ["app2:8080"]
-        labels:
-          env: "production"
-          tier: "backend"
-```
-
 ---
 
-### Complete Configuration Examples
+### Additional Resources
 
-#### Example 1: Default (Full Profile with OTel Collector)
-
-```yaml
-global:
-  scrape_interval: 10s
-
-remote_write:
-  - url: http://victoriametrics:8428/api/v1/write
-
-scrape_configs:
-  - job_name: "otel-collector"
-    static_configs:
-      - targets: ["otel-collector:8889"]
-
-  - job_name: "otel-collector-internal"
-    static_configs:
-      - targets: ["otel-collector:8888"]
-```
-
-#### Example 2: External VictoriaMetrics
-
-```yaml
-global:
-  scrape_interval: 10s
-
-remote_write:
-  - url: http://external-vm.example.com:8428/api/v1/write
-    basic_auth:
-      username: prometheus
-      password: secure-password
-
-scrape_configs:
-  - job_name: "otel-collector"
-    static_configs:
-      - targets: ["otel-collector:8889"]
-```
-
-#### Example 3: Prometheus-Only (No VictoriaMetrics, Custom Targets)
-
-```yaml
-global:
-  scrape_interval: 15s
-
-# No remote_write - using Prometheus local storage only
-
-scrape_configs:
-  - job_name: "my-application"
-    static_configs:
-      - targets:
-          - "app-server-1:9090"
-          - "app-server-2:9090"
-
-  - job_name: "node-exporters"
-    static_configs:
-      - targets:
-          - "node1:9100"
-          - "node2:9100"
-```
-
----
-
-### Common Configuration Tasks
-
-#### Task 1: Reduce Storage Costs
-
-Increase scrape interval to collect fewer data points:
-
-```yaml
-global:
-  scrape_interval: 30s # Was 10s
-```
-
-#### Task 2: Add External VictoriaMetrics
-
-Update remote write URL:
-
-```yaml
-remote_write:
-  - url: http://your-external-vm:8428/api/v1/write
-```
-
-#### Task 3: Scrape Additional Services
-
-Add new jobs to `scrape_configs`:
-
-```yaml
-scrape_configs:
-  - job_name: "otel-collector"
-    static_configs:
-      - targets: ["otel-collector:8889"]
-
-  # Add your services here
-  - job_name: "my-app"
-    static_configs:
-      - targets: ["my-app:8080"]
-```
+For advanced Prometheus configuration options not covered in this setup (alerting rules, service discovery, TLS, authentication, etc.), see the [official Prometheus documentation](https://prometheus.io/docs/prometheus/latest/configuration/configuration/).
 
 ---
 
@@ -716,13 +574,13 @@ scrape_configs:
 
 **File Location:** `docker-compose/docker-compose.yaml` (command flags)
 
-**When to Edit:** Changing retention, memory limits, or deduplication settings
+**When to Edit:** Adjusting data retention period or changing the listen address
 
 ### Configuration Overview
 
-VictoriaMetrics is configured using command-line flags (not a config file).
+VictoriaMetrics is configured using command-line flags in the Docker Compose file.
 
-**Default Configuration:**
+**Current Default:**
 
 ```yaml
 victoriametrics:
@@ -738,245 +596,70 @@ victoriametrics:
 
 ---
 
-### Core Configuration Flags
+### 1. Retention Period
 
-| Flag                     | Type   | Default                  | Description               | When to Change                    |
-| ------------------------ | ------ | ------------------------ | ------------------------- | --------------------------------- |
-| `-retentionPeriod`       | int    | `1` (month)              | How long to keep data     | Increase for longer history       |
-| `-httpListenAddr`        | string | `:8428`                  | HTTP API listen address   | Change port if conflict           |
-| `-storageDataPath`       | string | `/victoria-metrics-data` | Data directory            | Using custom volume               |
-| `-memory.allowedPercent` | int    | `80`                     | % of system memory to use | Tune based on server size         |
-| `-memory.allowedBytes`   | bytes  | (auto)                   | Absolute memory limit     | Prefer over percent in containers |
+**Flag:** `-retentionPeriod=12`
 
----
+**Purpose:** Controls how long metrics are stored before being automatically deleted.
 
-### 1. Retention Configuration
+**Current Default:** `12` (months)
 
-Control how long metrics are stored.
+The retention period determines how far back you can query metrics. The default of 12 months provides a full year of historical data. Adjust this value based on your requirements:
 
-#### Retention Period Guide
+- Lower values (e.g., `1`, `3`, `6`) reduce disk storage requirements
+- Higher values (e.g., `24`, `36`) extend historical data retention for compliance or long-term analysis
 
-| Retention               | Flag Value            | Disk Usage (1M series) | Use Case              |
-| ----------------------- | --------------------- | ---------------------- | --------------------- |
-| **1 month**             | `-retentionPeriod=1`  | ~50 GB                 | Development/testing   |
-| **3 months**            | `-retentionPeriod=3`  | ~150 GB                | Short-term production |
-| **6 months**            | `-retentionPeriod=6`  | ~300 GB                | Standard production   |
-| **12 months** (default) | `-retentionPeriod=12` | ~600 GB                | Long-term analysis    |
-| **24 months**           | `-retentionPeriod=24` | ~1.2 TB                | Compliance/audit      |
-| **36 months**           | `-retentionPeriod=36` | ~1.8 TB                | Extended compliance   |
-
-**Storage Calculation:**
-
-```
-Disk space = active_series × retention_months × 0.5 GB
-
-Example:
-2 million series × 12 months × 0.5 GB = 1.2 TB
-```
-
-**Configuration Examples:**
+**Example: Change to 6 months**
 
 ```yaml
-# Example 1: 6 month retention
 victoriametrics:
   command:
     - "-retentionPeriod=6"
     - "-httpListenAddr=:8428"
-
-# Example 2: 24 month retention (compliance)
-victoriametrics:
-  command:
-    - "-retentionPeriod=24"
-    - "-httpListenAddr=:8428"
 ```
+
+**Note:** Changing the retention period affects disk space usage. VictoriaMetrics uses approximately 1-2 bytes per sample on disk. Monitor your disk usage to ensure you have adequate storage for your chosen retention period.
 
 ---
 
-### 2. Memory Configuration
+### 2. HTTP Listen Address
 
-VictoriaMetrics uses memory for caching to improve query performance.
+**Flag:** `-httpListenAddr=:8428`
 
-#### Memory Allocation Guide
+**Purpose:** Specifies the network address and port for the VictoriaMetrics HTTP API.
 
-| Server RAM | Recommended Setting | Flag                        | VictoriaMetrics RAM | Reasoning         |
-| ---------- | ------------------- | --------------------------- | ------------------- | ----------------- |
-| 4 GB       | 60%                 | `-memory.allowedPercent=60` | ~2.4 GB             | Leave room for OS |
-| 8 GB       | 70%                 | `-memory.allowedPercent=70` | ~5.6 GB             | Balanced          |
-| 16 GB      | 75%                 | `-memory.allowedPercent=75` | ~12 GB              | Good caching      |
-| 32 GB+     | 80% (default)       | `-memory.allowedPercent=80` | ~25 GB+             | Optimal caching   |
+**Current Default:** `:8428` (listens on all interfaces, port 8428)
 
-#### Configuration Methods
+This flag controls where VictoriaMetrics accepts connections. The default configuration works for most deployments where VictoriaMetrics is accessed via Docker networking or localhost. You might change this if:
 
-**Method 1: Percentage (Recommended for bare metal)**
+- You have a port conflict and need to use a different port
+- You want to restrict access to specific network interfaces
+
+**Example: Change port to 8429**
 
 ```yaml
 victoriametrics:
   command:
     - "-retentionPeriod=12"
-    - "-httpListenAddr=:8428"
-    - "-memory.allowedPercent=75"
-```
-
-**Method 2: Absolute Bytes (Recommended for containers)**
-
-```yaml
-victoriametrics:
-  command:
-    - "-retentionPeriod=12"
-    - "-httpListenAddr=:8428"
-    - "-memory.allowedBytes=8GB" # Explicit limit
-```
-
-**Method 3: Combined with Docker limits**
-
-```yaml
-victoriametrics:
-  command:
-    - "-retentionPeriod=12"
-    - "-httpListenAddr=:8428"
-    - "-memory.allowedPercent=80"
-  deploy:
-    resources:
-      limits:
-        memory: 10G # Docker enforces this
-```
-
----
-
-### 3. Query Performance Configuration
-
-Tune query timeouts and concurrency:
-
-| Flag                            | Default | Description              | Increase When           |
-| ------------------------------- | ------- | ------------------------ | ----------------------- |
-| `-search.maxQueryDuration`      | `30s`   | Max query execution time | Complex queries timeout |
-| `-search.maxConcurrentRequests` | `16`    | Max simultaneous queries | Many dashboard users    |
-| `-search.maxQueueDuration`      | `10s`   | Max time in queue        | Queries queue up        |
-
-**Example: High-Concurrency Configuration**
-
-```yaml
-victoriametrics:
-  command:
-    - "-retentionPeriod=12"
-    - "-httpListenAddr=:8428"
-    - "-search.maxQueryDuration=60s" # Allow longer queries
-    - "-search.maxConcurrentRequests=32" # More concurrent queries
-    - "-search.maxQueueDuration=30s" # Longer queue wait
-```
-
----
-
-### 4. Deduplication Configuration
-
-**Use When:** Multiple Prometheus instances scrape the same targets (HA setup).
-
-| Flag                       | Default          | Description                       |
-| -------------------------- | ---------------- | --------------------------------- |
-| `-dedup.minScrapeInterval` | `0ms` (disabled) | Dedupe samples within this window |
-
-**Example: HA Prometheus Setup**
-
-```yaml
-# Two Prometheus instances scrape the same targets every 10s
-# VictoriaMetrics deduplicates redundant samples
-
-victoriametrics:
-  command:
-    - "-retentionPeriod=12"
-    - "-httpListenAddr=:8428"
-    - "-dedup.minScrapeInterval=10s" # Match Prometheus scrape_interval
-```
-
-**How it works:**
-
-```
-Prometheus-1 scrapes at: 0s, 10s, 20s, 30s
-Prometheus-2 scrapes at: 1s, 11s, 21s, 31s
-VictoriaMetrics keeps: One sample per 10s window
-```
-
----
-
-### Complete Configuration Examples
-
-#### Example 1: Small Development Setup
-
-```yaml
-victoriametrics:
-  image: victoriametrics/victoria-metrics:latest
-  command:
-    - "-retentionPeriod=1" # 1 month
-    - "-httpListenAddr=:8428"
-    - "-memory.allowedBytes=2GB" # Small memory footprint
-  volumes:
-    - victoriametrics_data:/victoria-metrics-data
+    - "-httpListenAddr=:8429"
   ports:
-    - "8428:8428"
+    - "8429:8429" # Update port mapping too
 ```
 
-#### Example 2: Production Setup (Default)
+**Example: Listen only on localhost**
 
 ```yaml
 victoriametrics:
-  image: victoriametrics/victoria-metrics:latest
   command:
-    - "-retentionPeriod=12" # 12 months
-    - "-httpListenAddr=:8428"
-    - "-memory.allowedBytes=8GB"
-    - "-search.maxQueryDuration=30s"
-    - "-search.maxConcurrentRequests=16"
-  volumes:
-    - victoriametrics_data:/victoria-metrics-data
-  ports:
-    - "8428:8428"
-  deploy:
-    resources:
-      limits:
-        memory: 10G
-        cpus: "4"
-```
-
-#### Example 3: High-Availability Production
-
-```yaml
-victoriametrics:
-  image: victoriametrics/victoria-metrics:latest
-  command:
-    - "-retentionPeriod=24" # 24 months (compliance)
-    - "-httpListenAddr=:8428"
-    - "-memory.allowedBytes=16GB" # Large cache
-    - "-dedup.minScrapeInterval=10s" # HA Prometheus dedup
-    - "-search.maxQueryDuration=60s" # Complex queries
-    - "-search.maxConcurrentRequests=32" # Many users
-    - "-search.maxQueueDuration=30s"
-  volumes:
-    - victoriametrics_data:/victoria-metrics-data
-  ports:
-    - "8428:8428"
-  deploy:
-    resources:
-      limits:
-        memory: 20G
-        cpus: "8"
+    - "-retentionPeriod=12"
+    - "-httpListenAddr=127.0.0.1:8428"
 ```
 
 ---
 
-### Advanced Flags
+### Additional Resources
 
-| Flag                  | Description                    | Use Case                    |
-| --------------------- | ------------------------------ | --------------------------- |
-| `-promscrape.config`  | Use VictoriaMetrics as scraper | Replace Prometheus entirely |
-| `-influxListenAddr`   | Accept InfluxDB writes         | Multi-protocol ingestion    |
-| `-graphiteListenAddr` | Accept Graphite writes         | Legacy metric migration     |
-| `-opentsdbListenAddr` | Accept OpenTSDB writes         | IoT/sensor data             |
-
----
-
-### Additional VictoriaMetrics Resources
-
-For more advanced configuration options and detailed information, refer to the [official VictoriaMetrics documentation](https://docs.victoriametrics.com/).
+For advanced configuration options not included in this setup (memory limits, query performance tuning, deduplication, HA configurations, etc.), refer to the [official VictoriaMetrics documentation](https://docs.victoriametrics.com/).
 
 ---
 
