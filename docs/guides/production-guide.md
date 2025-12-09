@@ -119,6 +119,7 @@ After choosing your profile, deployment method, and security configuration, cons
 
 ### Performance Tuning
 
+<a id="performance-tuning"></a>
 **Do you need to optimize for high throughput?**
 
 Key tuning areas:
@@ -207,8 +208,7 @@ After deployment, verify everything is working:
 
 1. ✅ Choose **`full`** profile ([Deployment Profiles Guide](deployment-profiles.md))
 2. ✅ Configure **TLS and authentication** ([Security Guide](security.md))
-3. ✅ Set up **HA with load balancer**
-4. ✅ Configure **backups**
+3. ✅ Configure **backups**
 
 ### Scenario 2: Adding to Existing Prometheus
 
@@ -227,13 +227,12 @@ After deployment, verify everything is working:
 
 Common production issues and where to find solutions:
 
-| Issue                            | Likely Cause                       | Where to Look                                                            |
-| -------------------------------- | ---------------------------------- | ------------------------------------------------------------------------ |
-| High memory usage                | Cardinality explosion, batch sizes | [Performance Tuning](../../ADVANCED_SETUP_DOCS.md#performance-tuning)    |
-| Traces not converting to metrics | Spanmetrics config                 | [Troubleshooting](../../ADVANCED_SETUP_DOCS.md#advanced-troubleshooting) |
-| Connection refused               | Network/firewall rules             | [Deployment Guide](deployment-guide.md#troubleshooting)                  |
-| Authentication failing           | TLS/auth config                    | [Security Guide](security.md)                                            |
-| High disk usage                  | Retention settings, cardinality    | [Configuration Reference](configuration-reference.md)                    |
+| Issue                  | Likely Cause                       | Where to Look                                           |
+| ---------------------- | ---------------------------------- | ------------------------------------------------------- |
+| High memory usage      | Cardinality explosion, batch sizes | [Performance Tuning](#performance-tuning)               |
+| Connection refused     | Network/firewall rules             | [Deployment Guide](deployment-guide.md#troubleshooting) |
+| Authentication failing | TLS/auth config                    | [Security Guide](security.md)                           |
+| High disk usage        | Retention settings, cardinality    | [Configuration Reference](configuration-reference.md)   |
 
 ---
 

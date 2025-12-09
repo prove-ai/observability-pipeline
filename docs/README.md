@@ -23,7 +23,7 @@ The documentation is organized into 8 focused guides in the `guides/` directory:
 
 5. **[hybrid-cloud-integration.md](guides/hybrid-cloud-integration.md)** - Hybrid cloud integration pattern for on-premises and cloud deployments
 
-6. **[production-guide.md](guides/production-guide.md)** - HA, sizing, persistence, backups, and performance tuning
+6. **[production-guide.md](guides/production-guide.md)** - Sizing, persistence, backups, and performance tuning
 
 7. **[security.md](guides/security.md)** - TLS, authentication, network security, and data privacy
 

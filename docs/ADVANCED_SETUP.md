@@ -14,9 +14,8 @@ This guide provides comprehensive instructions for deploying and configuring the
 ### Prerequisites
 
 - **Familiarity with**: Docker, Prometheus, basic observability concepts
-- **Infrastructure**: Docker and Docker Compose installed (or Ansible for remote deployment)
+- **Infrastructure**: Docker and Docker Compose installed
 - **Network Access**: Appropriate firewall rules and security group configurations
-- **SSH Access**: For Ansible-based deployments to EC2 instances
 
 ## Quick Start Decision Tree
 

@@ -95,7 +95,20 @@ receivers:
         max_concurrent_streams: 200
 ```
 
-[OTLP Receiver Configuration Source (Go Struct)](https://pkg.go.dev/go.opentelemetry.io/collector/config/configgrpc#section-readme)
+**Configuration Properties**
+
+All three properties are officially supported in the OTLP receiver:
+
+- **`endpoint`:** Configures the gRPC server listening address
+- **`max_recv_msg_size_mib`:** Maximum message size in MiB (useful for large traces from ML/batch jobs)
+- **`max_concurrent_streams`:** Maximum concurrent gRPC streams per connection
+
+**Documentation References:**
+
+- [OTLP Receiver Configuration](https://github.com/open-telemetry/opentelemetry-collector/blob/main/receiver/otlpreceiver/config.md)
+- [Version 0.138.0 Release](https://github.com/open-telemetry/opentelemetry-collector-contrib/releases/tag/v0.138.0)
+
+**Note:** The OpenTelemetry Collector Contrib distribution includes all core collector components, ensuring these configuration options are available.
 
 **Scenario 2: Browser-Based Applications (CORS)**
 
@@ -113,7 +126,21 @@ receivers:
             - "Content-Type"
 ```
 
-[OpenTelemetry Collector HTTP Server Config (CORS)](https://github.com/open-telemetry/opentelemetry-collector/blob/main/config/confighttp/README.md#server-configuration)
+**Configuration Properties**
+
+All CORS properties are officially supported in the OTLP HTTP receiver:
+
+- **`endpoint`:** HTTP server listening address (default: `localhost:4318`)
+- **`cors.allowed_origins`:** Allowed values of the Origin header for browser requests; supports wildcards (e.g., `https://*.example.com`)
+- **`allowed_headers`:** Additional headers allowed in CORS requests beyond the default safelist (`Accept`, `Accept-Language`, `Content-Type`, `Content-Language` are implicitly allowed)
+
+**Documentation References:**
+
+- [OTLP Receiver README](https://github.com/open-telemetry/opentelemetry-collector/blob/main/receiver/otlpreceiver/README.md)
+- [OTLP Receiver Configuration](https://github.com/open-telemetry/opentelemetry-collector/blob/main/receiver/otlpreceiver/config.md)
+- [Version 0.138.0 Release](https://github.com/open-telemetry/opentelemetry-collector-contrib/releases/tag/v0.138.0)
+
+**Note:** The OpenTelemetry Collector Contrib distribution includes all core collector components, ensuring these CORS configuration options are available for browser-based telemetry.
 
 **Scenario 3: Localhost-Only Access**
 
@@ -125,7 +152,26 @@ receivers:
         endpoint: 127.0.0.1:4317 # Only local connections
 ```
 
-[OpenTelemetry Collector Networking Best Practices](https://opentelemetry.io/docs/security/config-best-practices/#network-configuration)
+**Configuration Properties**
+
+The `endpoint` property is officially supported in the OTLP receiver:
+
+- **`endpoint`:** Configures the gRPC server listening address
+  - Using `127.0.0.1:4317` restricts the receiver to accept connections only from the local machine
+  - This is more secure than `0.0.0.0:4317` which accepts connections from any network interface
+  - Ideal for scenarios where applications run on the same host as the collector (e.g., sidecar patterns, local development)
+
+**Security Benefits:**
+
+Binding to `127.0.0.1` prevents external network access to the collector's OTLP endpoint, reducing the attack surface when remote telemetry ingestion is not required.
+
+**Documentation References:**
+
+- [OTLP Receiver Configuration](https://github.com/open-telemetry/opentelemetry-collector/blob/main/receiver/otlpreceiver/config.md)
+- [OTLP Receiver README](https://github.com/open-telemetry/opentelemetry-collector/blob/main/receiver/otlpreceiver/README.md)
+- [Version 0.138.0 Release](https://github.com/open-telemetry/opentelemetry-collector-contrib/releases/tag/v0.138.0)
+
+**Note:** The OpenTelemetry Collector Contrib distribution includes all core collector components, ensuring this endpoint configuration option is available.
 
 ---
 

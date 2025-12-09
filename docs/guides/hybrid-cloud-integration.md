@@ -9,6 +9,7 @@ This guide describes how to integrate the Observability Pipeline in a hybrid clo
 **Scenario**: On-premises applications send traces to cloud-hosted Observability Pipeline.
 
 This pattern is ideal for organizations that:
+
 - Have on-premises infrastructure but want centralized cloud observability
 - Need to maintain some workloads on-prem due to compliance, latency, or legacy requirements
 - Want to consolidate observability data from multiple locations into a single cloud platform
@@ -73,6 +74,7 @@ docker compose --profile full up -d
 ```
 
 This deploys:
+
 - OpenTelemetry Collector (receives traces from on-prem)
 - Prometheus (scrapes and queries metrics)
 - VictoriaMetrics (long-term storage)
@@ -153,6 +155,7 @@ docker compose logs otel-collector | grep "traces"
 ### Issue: Traces Not Reaching Cloud
 
 **Possible Causes:**
+
 - Network connectivity issues (VPN/Direct Connect down)
 - Firewall blocking port 4317
 - Security group misconfiguration
@@ -161,24 +164,28 @@ docker compose logs otel-collector | grep "traces"
 **Solutions:**
 
 1. **Check network connectivity:**
+
    ```bash
    telnet <cloud-collector> 4317
    ```
 
 2. **Verify firewall rules:**
+
    - Check on-prem firewall allows outbound 4317
    - Check cloud security groups allow inbound 4317
 
 3. **Validate TLS certificates:**
+
    ```bash
    openssl s_client -connect <cloud-collector>:4317
    ```
 
 4. **Check collector logs:**
+
    ```bash
    # On-prem collector
    docker compose logs otel-collector | grep "error"
-   
+
    # Cloud collector
    docker compose logs otel-collector | grep "connection"
    ```
@@ -186,6 +193,7 @@ docker compose logs otel-collector | grep "traces"
 ### Issue: High Latency
 
 **Possible Causes:**
+
 - Network path not optimized
 - Batch processor settings too conservative
 
@@ -197,7 +205,7 @@ docker compose logs otel-collector | grep "traces"
    ```yaml
    processors:
      batch:
-       timeout: 5s  # Reduce for lower latency
+       timeout: 5s # Reduce for lower latency
        send_batch_size: 512
    ```
 
@@ -238,4 +246,3 @@ docker compose logs otel-collector | grep "traces"
 - **Reference materials**: [Reference Guide](reference.md)
 
 [← Back to Advanced Setup](../ADVANCED_SETUP.md)
-
