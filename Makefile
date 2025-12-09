@@ -2,11 +2,11 @@
 
 # Start the observability stack
 up:
-	cd docker-compose && docker compose --profile full up -d
+	cd docker-compose && docker compose --profile full up
 
 # Stop the observability stack
 down:
-	cd docker-compose && docker compose down
+	cd docker-compose && docker compose --profile full down
 
 # View logs from all services
 logs:

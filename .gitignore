@@ -1,5 +1,6 @@
 INSTRUCTIONS.md
 
 **/.vscode/**
-
+**/.env
 AGENTS.md
+envoy.yaml

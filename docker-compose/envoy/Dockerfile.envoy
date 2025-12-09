@@ -1,0 +1,17 @@
+FROM envoyproxy/envoy:v1.31-latest
+
+# Copy Envoy configuration template
+COPY envoy.template.yaml /etc/envoy/envoy.template.yaml
+
+# Copy configuration generation script
+COPY generate-envoy-config.sh /etc/envoy/generate-envoy-config.sh
+
+# Copy entrypoint script
+COPY envoy-entrypoint.sh /etc/envoy/entrypoint.sh
+
+# Make scripts executable
+RUN chmod +x /etc/envoy/generate-envoy-config.sh /etc/envoy/entrypoint.sh
+
+# Set the custom entrypoint
+ENTRYPOINT ["/bin/sh", "/etc/envoy/entrypoint.sh"]
+

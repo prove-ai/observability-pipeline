@@ -1,0 +1,295 @@
+static_resources:
+  listeners:
+    # OTLP gRPC receiver (port 4317)
+    - name: otel_grpc_listener
+      address:
+        socket_address:
+          address: 0.0.0.0
+          port_value: 4317
+      filter_chains:
+        - filters:
+            - name: envoy.filters.network.http_connection_manager
+              typed_config:
+                "@type": type.googleapis.com/envoy.extensions.filters.network.http_connection_manager.v3.HttpConnectionManager
+                stat_prefix: otel_grpc
+                codec_type: AUTO
+                http2_protocol_options: {}
+                http_filters:
+                  - name: envoy.filters.http.lua
+                    typed_config:
+                      "@type": type.googleapis.com/envoy.extensions.filters.http.lua.v3.Lua
+                      inline_code: |
+                        function envoy_on_request(request_handle)
+                          local api_key = request_handle:headers():get("X-API-Key")
+                          local valid_keys = {
+                            ${ENVOY_API_KEYS}
+                          }
+                          
+                          if not api_key then
+                            request_handle:respond({[":status"] = "401", ["Content-Type"] = "text/plain"}, "Missing API Key")
+                            return
+                          end
+                          
+                          local is_valid = false
+                          for _, key in ipairs(valid_keys) do
+                            if api_key == key then
+                              is_valid = true
+                              break
+                            end
+                          end
+                          
+                          if not is_valid then
+                            request_handle:respond({[":status"] = "401", ["Content-Type"] = "text/plain"}, "Invalid API Key")
+                            return
+                          end
+                        end
+                  - name: envoy.filters.http.router
+                    typed_config:
+                      "@type": type.googleapis.com/envoy.extensions.filters.http.router.v3.Router
+                route_config:
+                  name: otel_grpc_route
+                  virtual_hosts:
+                    - name: otel_grpc_service
+                      domains: ["*"]
+                      routes:
+                        - match:
+                            prefix: "/"
+                          route:
+                            cluster: otel_collector_grpc
+                upgrade_configs:
+                  - upgrade_type: websocket
+                  - upgrade_type: CONNECT
+
+    # OTLP HTTP receiver (port 4318)
+    - name: otel_http_listener
+      address:
+        socket_address:
+          address: 0.0.0.0
+          port_value: 4318
+      filter_chains:
+        - filters:
+            - name: envoy.filters.network.http_connection_manager
+              typed_config:
+                "@type": type.googleapis.com/envoy.extensions.filters.network.http_connection_manager.v3.HttpConnectionManager
+                stat_prefix: otel_http
+                http_filters:
+                  - name: envoy.filters.http.lua
+                    typed_config:
+                      "@type": type.googleapis.com/envoy.extensions.filters.http.lua.v3.Lua
+                      inline_code: |
+                        function envoy_on_request(request_handle)
+                          local api_key = request_handle:headers():get("X-API-Key")
+                          local valid_keys = {
+                            ${ENVOY_API_KEYS}
+                          }
+                          
+                          if not api_key then
+                            request_handle:respond({[":status"] = "401", ["Content-Type"] = "text/plain"}, "Missing API Key")
+                            return
+                          end
+                          
+                          local is_valid = false
+                          for _, key in ipairs(valid_keys) do
+                            if api_key == key then
+                              is_valid = true
+                              break
+                            end
+                          end
+                          
+                          if not is_valid then
+                            request_handle:respond({[":status"] = "401", ["Content-Type"] = "text/plain"}, "Invalid API Key")
+                            return
+                          end
+                        end
+                  - name: envoy.filters.http.router
+                    typed_config:
+                      "@type": type.googleapis.com/envoy.extensions.filters.http.router.v3.Router
+                route_config:
+                  name: otel_http_route
+                  virtual_hosts:
+                    - name: otel_http_service
+                      domains: ["*"]
+                      routes:
+                        - match:
+                            prefix: "/"
+                          route:
+                            cluster: otel_collector_http
+
+    # Prometheus (port 9090)
+    - name: prometheus_listener
+      address:
+        socket_address:
+          address: 0.0.0.0
+          port_value: 9090
+      filter_chains:
+        - filters:
+            - name: envoy.filters.network.http_connection_manager
+              typed_config:
+                "@type": type.googleapis.com/envoy.extensions.filters.network.http_connection_manager.v3.HttpConnectionManager
+                stat_prefix: prometheus
+                http_filters:
+                  - name: envoy.filters.http.lua
+                    typed_config:
+                      "@type": type.googleapis.com/envoy.extensions.filters.http.lua.v3.Lua
+                      inline_code: |
+                        function envoy_on_request(request_handle)
+                          local api_key = request_handle:headers():get("X-API-Key")
+                          local valid_keys = {
+                            ${ENVOY_API_KEYS}
+                          }
+                          
+                          if not api_key then
+                            request_handle:respond({[":status"] = "401", ["Content-Type"] = "text/plain"}, "Missing API Key")
+                            return
+                          end
+                          
+                          local is_valid = false
+                          for _, key in ipairs(valid_keys) do
+                            if api_key == key then
+                              is_valid = true
+                              break
+                            end
+                          end
+                          
+                          if not is_valid then
+                            request_handle:respond({[":status"] = "401", ["Content-Type"] = "text/plain"}, "Invalid API Key")
+                            return
+                          end
+                        end
+                  - name: envoy.filters.http.router
+                    typed_config:
+                      "@type": type.googleapis.com/envoy.extensions.filters.http.router.v3.Router
+                route_config:
+                  name: prometheus_route
+                  virtual_hosts:
+                    - name: prometheus_service
+                      domains: ["*"]
+                      routes:
+                        - match:
+                            prefix: "/"
+                          route:
+                            cluster: prometheus
+
+    # VictoriaMetrics (port 8428)
+    - name: victoriametrics_listener
+      address:
+        socket_address:
+          address: 0.0.0.0
+          port_value: 8428
+      filter_chains:
+        - filters:
+            - name: envoy.filters.network.http_connection_manager
+              typed_config:
+                "@type": type.googleapis.com/envoy.extensions.filters.network.http_connection_manager.v3.HttpConnectionManager
+                stat_prefix: victoriametrics
+                http_filters:
+                  - name: envoy.filters.http.lua
+                    typed_config:
+                      "@type": type.googleapis.com/envoy.extensions.filters.http.lua.v3.Lua
+                      inline_code: |
+                        function envoy_on_request(request_handle)
+                          local api_key = request_handle:headers():get("X-API-Key")
+                          local valid_keys = {
+                            ${ENVOY_API_KEYS}
+                          }
+                          
+                          if not api_key then
+                            request_handle:respond({[":status"] = "401", ["Content-Type"] = "text/plain"}, "Missing API Key")
+                            return
+                          end
+                          
+                          local is_valid = false
+                          for _, key in ipairs(valid_keys) do
+                            if api_key == key then
+                              is_valid = true
+                              break
+                            end
+                          end
+                          
+                          if not is_valid then
+                            request_handle:respond({[":status"] = "401", ["Content-Type"] = "text/plain"}, "Invalid API Key")
+                            return
+                          end
+                        end
+                  - name: envoy.filters.http.router
+                    typed_config:
+                      "@type": type.googleapis.com/envoy.extensions.filters.http.router.v3.Router
+                route_config:
+                  name: victoriametrics_route
+                  virtual_hosts:
+                    - name: victoriametrics_service
+                      domains: ["*"]
+                      routes:
+                        - match:
+                            prefix: "/"
+                          route:
+                            cluster: victoriametrics
+
+  clusters:
+    # OTel Collector gRPC cluster
+    - name: otel_collector_grpc
+      connect_timeout: 5s
+      type: STRICT_DNS
+      lb_policy: ROUND_ROBIN
+      http2_protocol_options: {}
+      load_assignment:
+        cluster_name: otel_collector_grpc
+        endpoints:
+          - lb_endpoints:
+              - endpoint:
+                  address:
+                    socket_address:
+                      address: otel-collector
+                      port_value: 4317
+
+    # OTel Collector HTTP cluster
+    - name: otel_collector_http
+      connect_timeout: 5s
+      type: STRICT_DNS
+      lb_policy: ROUND_ROBIN
+      load_assignment:
+        cluster_name: otel_collector_http
+        endpoints:
+          - lb_endpoints:
+              - endpoint:
+                  address:
+                    socket_address:
+                      address: otel-collector
+                      port_value: 4318
+
+    # Prometheus cluster
+    - name: prometheus
+      connect_timeout: 5s
+      type: STRICT_DNS
+      lb_policy: ROUND_ROBIN
+      load_assignment:
+        cluster_name: prometheus
+        endpoints:
+          - lb_endpoints:
+              - endpoint:
+                  address:
+                    socket_address:
+                      address: prometheus
+                      port_value: 9090
+
+    # VictoriaMetrics cluster
+    - name: victoriametrics
+      connect_timeout: 5s
+      type: STRICT_DNS
+      lb_policy: ROUND_ROBIN
+      load_assignment:
+        cluster_name: victoriametrics
+        endpoints:
+          - lb_endpoints:
+              - endpoint:
+                  address:
+                    socket_address:
+                      address: victoriametrics
+                      port_value: 8428
+
+admin:
+  address:
+    socket_address:
+      address: 127.0.0.1
+      port_value: 9901
+

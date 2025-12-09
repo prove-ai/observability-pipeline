@@ -1,4 +1,31 @@
 services:
+  # Envoy Proxy - Central authentication gateway
+  envoy:
+    build:
+      context: ./envoy
+      dockerfile: Dockerfile.envoy
+    image: observability-pipeline-envoy:latest
+    container_name: envoy
+    env_file:
+      - ../.env
+    ports:
+      - 4317:4317 # OTLP gRPC receiver (proxied)
+      - 4318:4318 # OTLP HTTP receiver (proxied)
+      - 9090:9090 # Prometheus (proxied)
+      - 8428:8428 # VictoriaMetrics (proxied)
+      - 9901:9901 # Envoy admin interface (localhost only)
+    networks:
+      - observability
+    restart: unless-stopped
+    profiles:
+      - full 
+      - no-prometheus 
+      - no-vm 
+      - no-collector
+      - vm-only 
+      - prom-only 
+ 
+
   # OpenTelemetry Collector - Receives OTLP traces and converts them to Prometheus metrics
   otel-collector:
     image: otel/opentelemetry-collector-contrib:0.138.0
@@ -11,8 +38,9 @@ services:
       - 8888:8888 # Prometheus metrics exposed by the Collector
       - 8889:8889 # Prometheus exporter metrics
       - 13133:13133 # health_check extension
-      - 4317:4317 # OTLP gRPC receiver
-      - 4318:4318 # OTLP http receiver
+      # Ports 4317 and 4318 are now exposed through Envoy proxy only
+      # - 4317:4317 # OTLP gRPC receiver (now via Envoy)
+      # - 4318:4318 # OTLP http receiver (now via Envoy)
       - 55679:55679 # zpages extension
     networks:
       - observability
@@ -30,8 +58,9 @@ services:
     volumes:
       - ./prometheus.yaml:/etc/prometheus/prometheus.yaml:ro
       - prometheus_data:/prometheus
-    ports:
-      - "9090:9090"
+    # Port 9090 is now exposed through Envoy proxy only
+    # ports:
+    #   - "9090:9090"
     networks:
       - observability
     restart: unless-stopped
@@ -74,8 +103,9 @@ services:
       - '-httpListenAddr=:8428'
     volumes:
       - victoriametrics_data:/victoria-metrics-data
-    ports:
-      - "8428:8428"
+    # Port 8428 is now exposed through Envoy proxy only
+    # ports:
+    #   - "8428:8428"
     networks:
       - observability
     restart: unless-stopped
