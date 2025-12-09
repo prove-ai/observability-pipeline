@@ -1,5 +1,5 @@
 global:
-    scrape_interval: 10s
+  scrape_interval: 10s
 
 # ---- Long-term storage (VictoriaMetrics) ----------------------------
 # Enable this ONLY if you are running VictoriaMetrics.
@@ -8,28 +8,57 @@ global:
 #
 # If you do NOT use VictoriaMetrics, comment out or remove this entire block.
 remote_write:
-    - url: http://victoriametrics:8428/api/v1/write
-      # example external:
-      # url: http://your-vm-host:8428/api/v1/write
+  - url: http://victoriametrics:8428/api/v1/write
+    # example external:
+    # url: http://your-vm-host:8428/api/v1/write
 
 # ---- Scrape targets -------------------------------------------------
 scrape_configs:
-    # Our OpenTelemetry Collector (when you run it from this compose file)
-    # - Used in "full" profiles where `otel-collector` is part of the stack.
-    # - If you do NOT run our collector, remove this job or change targets to your own collector/exporters.
-    - job_name: "otel-collector"
-      static_configs:
-          - targets: ["otel-collector:8889"]
+  # Our OpenTelemetry Collector (when you run it from this compose file)
+  # - Used in "full" profiles where `otel-collector` is part of the stack.
+  # - If you do NOT run our collector, remove this job or change targets to your own collector/exporters.
+  - job_name: "otel-collector"
+    static_configs:
+      - targets: ["otel-collector:8889"]
 
-    # Internal metrics of the collector itself (optional)
-    - job_name: "otel-collector-internal"
-      static_configs:
-          - targets: ["otel-collector:8888"]
+  # Internal metrics of the collector itself (optional)
+  - job_name: "otel-collector-internal"
+    static_configs:
+      - targets: ["otel-collector:8888"]
 
-    # Example placeholder for your own exporters / apps
-    # Uncomment and adapt if you're NOT using our collector and instead scrape your own services directly.
-    # - job_name: "your-services"
-    #   static_configs:
-    #     - targets:
-    #         - "your-app:9100"
-    #         - "another-exporter:9200"
+  # vLLM metrics endpoint (if not going through the collector)
+  # - For Remote vLLM: Replace `localhost:8000` with your host machine IP, e.g. `192.168.x.x:8000`
+  # - For Docker Compose: Replace `localhost:8000` with your vLLM service name, e.g., `vllm:8000`
+  # - For Kubernetes: Use kubernetes_sd_configs instead (see example below)
+  - job_name: "vllm"
+    static_configs:
+      - targets: ["localhost:8000"] # Replace with your vLLM host:port
+    metrics_path: "/metrics"
+
+  # vLLM on Kubernetes (alternative to static_configs above)
+  # Uncomment and adapt this:
+  # This uses pod discovery to automatically find vLLM pods.
+  # - job_name: "vllm-k8s"
+  #   kubernetes_sd_configs:
+  #     - role: pod
+  #       namespaces:
+  #         names:
+  #           - default  # Replace with your namespace
+  #   relabel_configs:
+  #     # Keep only pods with label app=vllm (adjust label as needed)
+  #     - source_labels: [__meta_kubernetes_pod_label_app]
+  #       action: keep
+  #       regex: vllm
+  #     # Use pod IP and port 8000 (adjust if different)
+  #     - source_labels: [__meta_kubernetes_pod_ip]
+  #       target_label: __address__
+  #       replacement: $1:8000
+  #   metrics_path: "/metrics"
+
+  # Example placeholder for your own exporters / apps
+  # Uncomment and adapt if you're NOT using our collector and instead scrape your own services directly.
+  # - job_name: "your-services"
+  #   static_configs:
+  #     - targets:
+  #         - "your-app:9100"
+  #         - "another-exporter:9200"
