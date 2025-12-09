@@ -299,6 +299,8 @@ aws ec2 create-vpc-endpoint \
   --subnet-ids subnet-xxx
 ```
 
+**For hybrid cloud deployments**, see the [Hybrid Cloud Integration](hybrid-cloud-integration.md) guide for detailed instructions on securing VPN and Direct Connect connections between on-premises and cloud environments.
+
 ---
 
 ## Data Privacy

@@ -22,16 +22,16 @@ This guide provides comprehensive instructions for deploying and configuring the
 
 **Which guide do you need?**
 
-| If you want to...                                       | Start here                                                   |
-| ------------------------------------------------------- | ------------------------------------------------------------ |
-| Understand how the pipeline works                       | [Architecture Overview](guides/architecture.md)              |
-| Choose the right deployment profile                     | [Deployment Profiles Guide](guides/deployment-profiles.md)   |
-| Configure the collector, Prometheus, or VictoriaMetrics | [Configuration Reference](guides/configuration-reference.md) |
-| Deploy via Docker Compose                               | [Deployment Guide](guides/deployment-guide.md)               |
-| Integrate via Hybrid Cloud (On-Prem + Cloud)            | [Integration Patterns](guides/integration-patterns.md)       |
-| Prepare for production (HA, backups, sizing)            | [Production Guide](guides/production-guide.md)               |
-| Secure your deployment (TLS, auth, firewalls)           | [Security Guide](guides/security.md)                         |
-| Look up metrics, ports, queries, or commands            | [Reference Guide](guides/reference.md)                       |
+| If you want to...                                       | Start here                                                     |
+| ------------------------------------------------------- | -------------------------------------------------------------- |
+| Understand how the pipeline works                       | [Architecture Overview](guides/architecture.md)                |
+| Choose the right deployment profile                     | [Deployment Profiles Guide](guides/deployment-profiles.md)     |
+| Configure the collector, Prometheus, or VictoriaMetrics | [Configuration Reference](guides/configuration-reference.md)   |
+| Deploy via Docker Compose                               | [Deployment Guide](guides/deployment-guide.md)                 |
+| Integrate via Hybrid Cloud (On-Prem + Cloud)            | [Hybrid Cloud Integration](guides/hybrid-cloud-integration.md) |
+| Prepare for production (HA, backups, sizing)            | [Production Guide](guides/production-guide.md)                 |
+| Secure your deployment (TLS, auth, firewalls)           | [Security Guide](guides/security.md)                           |
+| Look up metrics, ports, queries, or commands            | [Reference Guide](guides/reference.md)                         |
 
 ## Documentation Structure
 
@@ -51,10 +51,8 @@ This guide provides comprehensive instructions for deploying and configuring the
 
 ### Advanced Topics
 
-5. **[Integration Patterns](guides/integration-patterns.md)**  
-   Hybrid cloud scenarios and multi-region deployments.
-
-   **⚠️ TODO:** Multi-region, Kubernetes and edge scenarios patterns are untested and may be removed. Testing and validation required.
+5. **[Hybrid Cloud Integration](guides/hybrid-cloud-integration.md)**  
+   Hybrid cloud integration pattern for connecting on-premises infrastructure to cloud-hosted observability.
 
 6. **[Production Guide](guides/production-guide.md)**  
    Resource sizing, data persistence, backup strategies, and performance tuning.

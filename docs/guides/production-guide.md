@@ -106,7 +106,7 @@ After choosing your profile, deployment method, and security configuration, cons
 **How will you store data?**
 
 - **Development**: Docker volumes (default)
-- **Production**: Host-mounted directories or EBS volumes
+- **Production**: Host-mounted directories or block storage
 - **Retention**: VictoriaMetrics default is 12 months (configurable)
 
 ### Backup Strategy
@@ -123,10 +123,34 @@ After choosing your profile, deployment method, and security configuration, cons
 
 Key tuning areas:
 
-- **Batch Processor**: Adjust batch sizes and timeouts
-- **Memory Limiter**: Prevent OOM crashes under load
-- **Histogram Buckets**: Customize for your latency profile
-- **Prometheus Scraping**: Tune intervals and relabeling
+- **Batch Processor** (`otel-collector-config.yaml`):
+
+  ```yaml
+  batch:
+    timeout: 10s
+    send_batch_size: 1024
+    send_batch_max_size: 2048
+  ```
+
+- **Memory Limiter** (add to `processors:`):
+
+  ```yaml
+  memory_limiter:
+    check_interval: 1s
+    limit_mib: 512
+    spike_limit_mib: 128
+  ```
+
+- **Histogram Buckets** (`spanmetrics.histogram.explicit.buckets`):
+
+  ```yaml
+  buckets: [0.001, 0.005, 0.01, 0.05, 0.1, 0.5, 1, 5, 10] # seconds
+  ```
+
+- **Prometheus Scraping** (`prometheus.yaml`):
+  ```yaml
+  scrape_interval: 10s # increase to 15s-30s for lower overhead
+  ```
 
 ---
 
@@ -135,8 +159,8 @@ Key tuning areas:
 Follow this recommended sequence for a successful production deployment:
 
 ```
-1. Choose Profile → 2. Configure Security → 3. Deploy → 4. Verify → 5. Monitor
-     (Step 1)           (Step 3)          (Step 2)   (Below)    (Below)
+1. Choose Profile → 2. Deploy → 3. Verify → 4. Monitor
+
 ```
 
 ### Verification Checklist
@@ -171,20 +195,6 @@ After deployment, verify everything is working:
 
 **📖 Details:** See [Post-Deployment Verification in Deployment Guide](deployment-guide.md#post-deployment-verification)
 
-### Monitoring Your Observability Stack
-
-**Monitor the monitors:**
-
-- **Collector Metrics**: Available at `:8888/metrics`
-- **Prometheus Metrics**: Built-in self-monitoring
-- **VictoriaMetrics Metrics**: Available at `:8428/metrics`
-
-Key metrics to alert on:
-
-- Collector: `otelcol_receiver_refused_spans` (backpressure)
-- Prometheus: `prometheus_remote_storage_samples_failed_total` (remote write failures)
-- VictoriaMetrics: `vm_free_disk_space_bytes` (disk space)
-
 ---
 
 ## Quick Start: Common Production Scenarios
@@ -211,18 +221,6 @@ Key metrics to alert on:
 3. ✅ Configure your Prometheus to **scrape collector** and **remote_write to VM**
 4. ✅ Configure **security** ([Security Guide](security.md))
 
-### Scenario 3: Multi-Region Deployment
-
-**You need:** Collectors in multiple regions, centralized storage
-
-**Steps:**
-
-1. ✅ Choose **`no-vm`** profile for each region ([Deployment Profiles Guide](deployment-profiles.md))
-2. ✅ Deploy regional **Collector + Prometheus** in each region
-3. ✅ Deploy central **VictoriaMetrics** (`vm-only` profile)
-4. ✅ Configure all Prometheus instances to **remote_write to central VM**
-5. ✅ Add **external_labels** to identify regions
-
 ---
 
 ## Troubleshooting Production Issues
@@ -239,48 +237,6 @@ Common production issues and where to find solutions:
 
 ---
 
-## Production Readiness Checklist
-
-Use this final checklist before going live:
-
-### Deployment
-
-- [ ] Chosen appropriate deployment profile for your infrastructure
-- [ ] Deployed using repeatable method (Ansible/IaC)
-- [ ] Verified all services are running and healthy
-
-### Security
-
-- [ ] TLS configured for external endpoints (if required)
-- [ ] Authentication configured for Prometheus/VictoriaMetrics
-- [ ] Firewall rules restrict access to authorized networks
-- [ ] Debug endpoints disabled or secured
-- [ ] PII scrubbing configured (if handling sensitive data)
-
-### Operations
-
-- [ ] Resource sizing appropriate for expected load
-- [ ] Data persistence configured (host volumes/EBS)
-- [ ] Backup strategy implemented and tested
-- [ ] Monitoring configured for observability stack itself
-
-### Testing
-
-- [ ] End-to-end trace ingestion tested
-- [ ] Metrics appearing in Prometheus and VictoriaMetrics
-- [ ] Query performance acceptable
-- [ ] Failover tested (if HA configured)
-- [ ] Backup and restore tested
-
-### Documentation
-
-- [ ] Runbooks created for common operations
-- [ ] Escalation procedures documented
-- [ ] Configuration changes tracked in version control
-- [ ] Team trained on operations and troubleshooting
-
----
-
 ## Additional Resources
 
 ### Detailed Implementation Guides
@@ -294,7 +250,7 @@ Use this final checklist before going live:
 ### Architecture and Integration
 
 - **[Architecture Guide](architecture.md)** - System architecture and data flow
-- **[Integration Patterns](integration-patterns.md)** - Multi-region and hybrid cloud patterns
+- **[Hybrid Cloud Integration](hybrid-cloud-integration.md)** - Hybrid cloud integration pattern
 
 ### Reference Materials
 

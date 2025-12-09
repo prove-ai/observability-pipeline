@@ -233,7 +233,7 @@ docker exec prometheus wget -O- http://otel-collector:8889/metrics
 ### For Development Environments
 
 1. ✅ Deployment complete
-2. **Next:** [Send traces from your application](integration-patterns.md)
+2. **Next:** [Send traces from your application](hybrid-cloud-integration.md)
 
 ### For Production Environments
 
@@ -244,7 +244,7 @@ docker exec prometheus wget -O- http://otel-collector:8889/metrics
 ### Additional Resources
 
 - **Configuration tuning**: [Configuration Reference](configuration-reference.md)
-- **Integration patterns**: [Integration Patterns](integration-patterns.md)
+- **Hybrid cloud integration**: [Hybrid Cloud Integration](hybrid-cloud-integration.md)
 - **Production best practices**: [Production Guide](production-guide.md)
 - **Security hardening**: [Security Guide](security.md)
 

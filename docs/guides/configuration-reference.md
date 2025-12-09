@@ -684,7 +684,7 @@ Quick reference for all three components:
 Now it's time to deploy and integrate:
 
 1. **Deploy:** [Deployment Guide](deployment-guide.md)
-2. **Integrate Applications:** [Integration Patterns](integration-patterns.md)
+2. **Integrate Applications:** [Hybrid Cloud Integration](hybrid-cloud-integration.md)
 3. **Production Readiness:** [Production Guide](production-guide.md)
 4. **Security:** [Security Guide](security.md)
 

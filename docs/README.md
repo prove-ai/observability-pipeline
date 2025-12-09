@@ -21,9 +21,11 @@ The documentation is organized into 8 focused guides in the `guides/` directory:
 
 #### Advanced Topics
 
-5. **[integration-patterns.md](guides/integration-patterns.md)** - Hybrid cloud, multi-region, Kubernetes, and edge scenarios
+5. **[hybrid-cloud-integration.md](guides/hybrid-cloud-integration.md)** - Hybrid cloud integration pattern for on-premises and cloud deployments
 
-6. **[production-guide.md](guides/production-guide.md)** - HA, sizing, persistence, backups, and performance tuning 7. **[security.md](guides/security.md)** - TLS, authentication, network security, and data privacy
+6. **[production-guide.md](guides/production-guide.md)** - HA, sizing, persistence, backups, and performance tuning
+
+7. **[security.md](guides/security.md)** - TLS, authentication, network security, and data privacy
 
 #### Reference
 

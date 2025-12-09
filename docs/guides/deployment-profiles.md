@@ -81,6 +81,7 @@ The Observability Pipeline supports six deployment profiles to accommodate vario
 - Centralized VictoriaMetrics cluster
 - Managed VictoriaMetrics service (e.g., VictoriaMetrics Cloud)
 - Alternative storage backends (Thanos, Cortex, M3DB)
+- Hybrid cloud setups (on-prem collectors forwarding to cloud storage) - see [Hybrid Cloud Integration](hybrid-cloud-integration.md)
 
 ---
 
@@ -362,6 +363,7 @@ curl 'http://localhost:8428/api/v1/query?query=up'
 
 - **Configure your chosen profile**: [Configuration Reference](configuration-reference.md)
 - **Deploy the stack**: [Deployment Guide](deployment-guide.md)
+- **Hybrid cloud setup**: [Hybrid Cloud Integration](hybrid-cloud-integration.md)
 - **Prepare for production**: [Production Guide](production-guide.md)
 
 [← Back to Advanced Setup](../ADVANCED_SETUP.md)

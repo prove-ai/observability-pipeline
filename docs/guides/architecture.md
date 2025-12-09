@@ -389,7 +389,7 @@ The spanmetrics connector automatically generates **RED metrics** from traces:
 
 1. ✅ You've started the stack
 2. ✅ You've verified it works
-3. **Next:** Integrate your application → See [Integration Patterns](integration-patterns.md)
+3. **Next:** Integrate your application → See [Hybrid Cloud Integration](hybrid-cloud-integration.md)
 4. **Then:** Configure for your needs → See [Configuration Reference](configuration-reference.md)
 
 ### For Production Deployments
@@ -401,8 +401,7 @@ The spanmetrics connector automatically generates **RED metrics** from traces:
 
 ### For Advanced Scenarios
 
-- **Multi-region setup** → [Integration Patterns](integration-patterns.md#pattern-3-multi-region-deployment-with-central-storage)
-- **Hybrid cloud patterns** → [Integration Patterns](integration-patterns.md#pattern-1-hybrid-cloud-on-prem--cloud)
+- **Hybrid cloud integration** → [Hybrid Cloud Integration](hybrid-cloud-integration.md) - Connect on-premises infrastructure to cloud observability
 
 ---
 
@@ -474,7 +473,7 @@ provider.addSpanProcessor(new BatchSpanProcessor(exporter));
 provider.register();
 ```
 
-**More examples:** [Integration Patterns](integration-patterns.md)
+**Hybrid cloud setup:** [Hybrid Cloud Integration](hybrid-cloud-integration.md)
 
 ---
 
