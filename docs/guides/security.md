@@ -2,6 +2,14 @@
 
 [← Back to Advanced Setup](../ADVANCED_SETUP.md)
 
+---
+
+## ⚠️ Work in progress
+
+The current doc is only referencing [this config](https://github.com/CasperLabs/observability-pipeline/pull/6/files).
+
+---
+
 This guide covers security best practices for the Observability Pipeline including TLS/SSL, authentication, network security, and data privacy.
 
 ## Table of Contents
