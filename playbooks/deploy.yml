@@ -112,6 +112,22 @@
         group: "{{ deploy_user }}"
         mode: '0644'
 
+    - name: Copy .env file
+      copy:
+        src: "../.env"
+        dest: "{{ deploy_path }}/.env"
+        owner: "{{ deploy_user }}"
+        group: "{{ deploy_user }}"
+        mode: '0600'
+
+    - name: Copy envoy configuration directory
+      copy:
+        src: "../docker-compose/envoy"
+        dest: "{{ deploy_path }}/docker-compose/"
+        owner: "{{ deploy_user }}"
+        group: "{{ deploy_user }}"
+        mode: '0755'
+
     - name: Check if Docker Compose services are already running
       shell: sg docker -c "cd {{ deploy_path }}/docker-compose && docker compose --profile {{ compose_profile }} ps"
       register: compose_status
@@ -127,17 +143,6 @@
       become_user: "{{ deploy_user }}"
       environment:
         PATH: "/usr/local/bin:/usr/bin:/bin"
-
-    - name: Clean up old Grafana and PostgreSQL volumes (if they exist)
-      shell: |
-        for vol in $(sg docker -c "docker volume ls -q | grep -E '(grafana_data|postgres_data)'"); do
-          sg docker -c "docker volume rm $vol" 2>/dev/null || true
-        done
-      become_user: "{{ deploy_user }}"
-      environment:
-        PATH: "/usr/local/bin:/usr/bin:/bin"
-      failed_when: false
-      changed_when: false
 
     - name: Start Docker Compose services
       shell: sg docker -c "cd {{ deploy_path }}/docker-compose && docker compose --profile {{ compose_profile }} up -d"
