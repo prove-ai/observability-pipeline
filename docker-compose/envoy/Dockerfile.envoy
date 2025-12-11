@@ -1,4 +1,6 @@
-FROM envoyproxy/envoy:v1.31-latest
+ARG ENVOY_VERSION=v1.31-latest
+
+FROM envoyproxy/envoy:$ENVOY_VERSION
 
 # Copy Envoy configuration template
 COPY envoy.template.yaml /etc/envoy/envoy.template.yaml

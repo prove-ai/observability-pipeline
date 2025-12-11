@@ -122,33 +122,65 @@ chmod +x /usr/local/bin/otel-cli
 
 Download from the [Github Releases Page](https://github.com/equinix-labs/otel-cli/releases)
 
-## API Key Authentication
+## Authentication
 
-All external requests to the observability services must include a valid API key in the `X-API-Key` header. The Envoy proxy validates API keys before forwarding requests to backend services.
+All external requests to the observability services must be authenticated. The Envoy proxy handles authentication before forwarding requests to backend services.
 
-### Configuring API Keys
+### Supported Authentication Methods
 
-API keys are configured via the `ENVOY_API_KEYS` environment variable, which is read from the `.env` file in the project root. The Envoy configuration is generated dynamically from a template at container startup.
+The system supports two authentication methods, controlled by the `ENVOY_AUTH_METHOD` environment variable:
 
-**Default behavior:**
-- If `ENVOY_API_KEYS` is not set, a placeholder key (`placeholder_api_key`) is used
-- For production deployments, you **must** set `ENVOY_API_KEYS` with your actual API keys
+1.  **API Key (`api-key`)**: Uses the `X-API-Key` header. This is the default.
+2.  **Basic Auth (`basic-auth`)**: Uses standard HTTP Basic Authentication (header `Authorization: Basic <base64_credentials>`).
 
-### Setting API Keys
+### Configuration
 
-1. Create or edit the `.env` file in the project root (if it doesn't exist, you can use `.env.example` as a template)
-2. Add your API keys as a comma-separated list:
-   ```bash
-   ENVOY_API_KEYS=placeholder_api_key
-   ```
-3. Restart the Envoy service to apply changes:
-   ```bash
-   docker compose restart envoy
-   ```
+Authentication is configured via environment variables in the `.env` file in the project root.
+
+#### 1. Choose Authentication Method
+
+Set the `ENVOY_AUTH_METHOD` variable:
+
+```bash
+# Options: api-key, basic-auth
+ENVOY_AUTH_METHOD=api-key
+```
+
+#### 2. Configure Credentials
+
+**For API Key Authentication:**
+
+Add your API keys as a comma-separated list in `ENVOY_API_KEYS`.
+
+```bash
+ENVOY_API_KEYS=my_secret_key_1,my_secret_key_2
+```
+
+**For Basic Authentication:**
+
+Add your credentials as a comma-separated list of `username:password` pairs in `ENVOY_BASIC_AUTH_CREDENTIALS`.
+
+```bash
+ENVOY_BASIC_AUTH_CREDENTIALS=admin:secretpassword
+```
+
+### Applying Changes
+
+After modifying the `.env` file, restart the Envoy service:
+
+```bash
+docker compose restart envoy
+```
+
+### Default Behavior
+
+-   If `ENVOY_AUTH_METHOD` is not set, it defaults to `api-key`.
+-   If `ENVOY_API_KEYS` is not set, a placeholder key (`placeholder_api_key`) is used.
+-   If `ENVOY_BASIC_AUTH_CREDENTIALS` is not set, Basic Auth will fail if enabled.
 
 ## Send a Test Span using Otel CLI
 
-All requests must include the `X-API-Key` header. Example:
+### Using API Key
 
 ```bash
 otel-cli span \
@@ -162,8 +194,15 @@ otel-cli span \
   --headers "X-API-Key: placeholder_api_key"
 ```
 
+### Using Basic Auth
+
+If you are using Basic Auth (e.g., user `admin` with password `secret`), you can pass the header directly or use the `--headers` flag with the encoded credentials. Note that `otel-cli` might not have a direct `--user` flag like curl, so you may need to construct the header manually or rely on the environment variables if supported.
+
+For `curl` it is simpler (see below).
+
 Or using curl:
 
+**API Key:**
 ```bash
 curl -X POST http://localhost:4318/v1/traces \
   -H "Content-Type: application/x-protobuf" \
@@ -171,9 +210,19 @@ curl -X POST http://localhost:4318/v1/traces \
   --data-binary @trace.pb
 ```
 
+**Basic Auth:**
+```bash
+curl -X POST http://localhost:4318/v1/traces \
+  -H "Content-Type: application/x-protobuf" \
+  -u "admin:secretpassword" \
+  --data-binary @trace.pb
+```
+
 **Note:** If you send an empty payload like `{"resourceSpans":[]}`, you'll receive `{"partialSuccess":{}}` as a response. This is expected - it means the request was accepted but contained no spans to process. To test with actual data, use `otel-cli` or send a properly formatted trace payload.
 
 ## Testing Endpoints with curl
+
+**Note:** The examples below use API Key authentication. If you are using Basic Auth, replace `-H "X-API-Key: placeholder_api_key"` with `-u "username:password"`.
 
 ### OTel HTTP Receiver (port 4318)
 
@@ -208,10 +257,6 @@ curl -H "X-API-Key: placeholder_api_key" "http://localhost:9090/api/v1/query?que
 ```bash
 curl -H "X-API-Key: placeholder_api_key" "http://localhost:9090/api/v1/query?query=llm_traces_span_metrics_calls_total"
 ```
-
-**Range query:**
-```bash
-curl -H "X-API-Key: placeholder_api_key" "http://localhost:9090/api/v1/query_range?query=up&start=$(date -u +%s -d '1 hour ago')&end=$(date -u +%s)&step=15s"
 ```
 
 **Access Prometheus UI:**
@@ -363,8 +408,9 @@ After deploying Envoy, verify NLB health checks pass. Envoy will accept TCP conn
 
 If you receive `401 Unauthorized` responses:
 
--   Ensure you're including the `X-API-Key` header in all requests
--   Verify the API key matches one of the valid keys configured via `ENVOY_API_KEYS` environment variable
+-   **API Key:** Ensure you're including the `X-API-Key` header and it matches a key in `ENVOY_API_KEYS`.
+-   **Basic Auth:** Ensure you're sending valid credentials (header `Authorization: Basic ...`) matching `ENVOY_BASIC_AUTH_CREDENTIALS`.
+-   **Method:** Verify `ENVOY_AUTH_METHOD` matches the method you are trying to use.
 -   Check Envoy logs: `docker compose logs envoy`
 
 ### Understanding OTLP Responses

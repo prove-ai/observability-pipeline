@@ -2,7 +2,7 @@
 
 # Start the observability stack
 up:
-	cd docker-compose && docker compose --profile full up
+	cd docker-compose && docker compose --profile full up --build
 
 # Stop the observability stack
 down:
@@ -28,7 +28,7 @@ restart:
 
 # Check status of containers
 status:
-	cd docker-compose && docker compose ps
+	cd docker-compose && docker compose ps -a
 
 # Clean up containers and volumes
 clean:
