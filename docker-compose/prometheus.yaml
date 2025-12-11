@@ -31,9 +31,10 @@ scrape_configs:
   # - For Docker Compose: Replace `localhost:8000` with your vLLM service name, e.g., `vllm:8000`
   # - For Kubernetes: Use kubernetes_sd_configs instead (see example below)
   - job_name: "vllm"
-    static_configs:
-      - targets: ["localhost:8000"] # Replace with your vLLM host:port
+    scheme: "http"
     metrics_path: "/metrics"
+    static_configs:
+      - targets: ["garage.proveai.com:8000"]
 
   # vLLM on Kubernetes (alternative to static_configs above)
   # Uncomment and adapt this:
