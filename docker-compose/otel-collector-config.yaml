@@ -5,26 +5,9 @@ receivers:
         endpoint: 0.0.0.0:4317
       http:
         endpoint: 0.0.0.0:4318
-  prometheus:
-    config:
-      scrape_configs:
-        - job_name: "vllm-native-metrics"
-          scrape_interval: 10s
-          static_configs:
-            - targets: ["host.docker.internal:8000"] # add vllm server target
-          metric_relabel_configs:
-            # add consistent labeling to vllm metrics
-            - source_labels: [__name__]
-              target_label: source
-              replacement: "vllm"
 
 processors:
   batch: {}
-  attributes:
-    actions:
-      - key: instrumentation_source
-        value: vllm
-        action: insert
 
 connectors:
   spanmetrics:
