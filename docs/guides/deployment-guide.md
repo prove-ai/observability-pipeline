@@ -102,10 +102,10 @@ For detailed instructions on installing `otel-cli` and sending test traces, see 
 
 ```bash
 # Wait 15 seconds, then verify metrics appear
-# For API Key auth (default):
 curl -H "X-API-Key: placeholder_api_key" 'http://localhost:9090/api/v1/query?query=llm_traces_span_metrics_calls_total' | jq
-# For Basic Auth, see [Prometheus Commands](reference.md#prometheus-commands)
 ```
+
+**Note:** For Basic Auth examples, see [Prometheus Commands](reference.md#prometheus-commands).
 
 ---
 

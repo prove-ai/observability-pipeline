@@ -322,21 +322,21 @@ curl http://localhost:13133/health/status
 
 ```bash
 # Note: Requires authentication via Envoy
-# For API Key auth (default):
 curl -H "X-API-Key: placeholder_api_key" http://localhost:9090/-/healthy
-# For Basic Auth, see [Prometheus Commands](reference.md#prometheus-commands)
 # Expected: HTTP 200 OK with "Prometheus Server is Healthy."
 ```
+
+For Basic Auth examples, see [Prometheus Commands](reference.md#prometheus-commands).
 
 **VictoriaMetrics:**
 
 ```bash
 # Note: Requires authentication via Envoy
-# For API Key auth (default):
 curl -H "X-API-Key: placeholder_api_key" http://localhost:8428/health
-# For Basic Auth, see [VictoriaMetrics Commands](reference.md#victoriametrics-commands)
 # Expected: OK
 ```
+
+For Basic Auth examples, see [VictoriaMetrics Commands](reference.md#victoriametrics-commands).
 
 ### <a id="ref-metrics-validation"></a>Metrics Validation
 
@@ -353,21 +353,21 @@ curl http://localhost:8889/metrics
 
 ```bash
 # Note: Requires authentication via Envoy
-# For API Key auth (default):
 curl -H "X-API-Key: placeholder_api_key" http://localhost:9090/api/v1/targets
-# For Basic Auth, see [Prometheus Commands](reference.md#prometheus-commands)
 # Check that otel-collector targets show "health":"up"
 ```
+
+For Basic Auth examples, see [Prometheus Commands](reference.md#prometheus-commands).
 
 **VictoriaMetrics Data:**
 
 ```bash
 # Note: Requires authentication via Envoy
-# For API Key auth (default):
 curl -H "X-API-Key: placeholder_api_key" 'http://localhost:8428/api/v1/query?query=up'
-# For Basic Auth, see [VictoriaMetrics Commands](reference.md#victoriametrics-commands)
 # Verify metrics are stored and queryable
 ```
+
+For Basic Auth examples, see [VictoriaMetrics Commands](reference.md#victoriametrics-commands).
 
 ---
 
