@@ -34,7 +34,7 @@ scrape_configs:
     scheme: "http"
     metrics_path: "/metrics"
     static_configs:
-      - targets: ["garage.proveai.com:8000"]
+      - targets: ["garage.proveai.com:18010"]
 
   # vLLM on Kubernetes (alternative to static_configs above)
   # Uncomment and adapt this:
