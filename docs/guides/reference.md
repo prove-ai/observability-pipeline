@@ -229,22 +229,40 @@ docker compose down -v
 
 ```bash
 # Check configuration
+# For API Key auth (default):
 curl -H "X-API-Key: placeholder_api_key" http://localhost:9090/api/v1/status/config
+# For Basic Auth:
+# curl -u admin:secretpassword http://localhost:9090/api/v1/status/config
 
 # Check targets
+# For API Key auth (default):
 curl -H "X-API-Key: placeholder_api_key" http://localhost:9090/api/v1/targets
+# For Basic Auth:
+# curl -u admin:secretpassword http://localhost:9090/api/v1/targets
 
 # Query API
+# For API Key auth (default):
 curl -H "X-API-Key: placeholder_api_key" 'http://localhost:9090/api/v1/query?query=up'
+# For Basic Auth:
+# curl -u admin:secretpassword 'http://localhost:9090/api/v1/query?query=up'
 
 # Check TSDB status
+# For API Key auth (default):
 curl -H "X-API-Key: placeholder_api_key" http://localhost:9090/api/v1/status/tsdb
+# For Basic Auth:
+# curl -u admin:secretpassword http://localhost:9090/api/v1/status/tsdb
 
 # Health check
+# For API Key auth (default):
 curl -H "X-API-Key: placeholder_api_key" http://localhost:9090/-/healthy
+# For Basic Auth:
+# curl -u admin:secretpassword http://localhost:9090/-/healthy
 
 # Readiness check
+# For API Key auth (default):
 curl -H "X-API-Key: placeholder_api_key" http://localhost:9090/-/ready
+# For Basic Auth:
+# curl -u admin:secretpassword http://localhost:9090/-/ready
 ```
 
 ### VictoriaMetrics Commands
@@ -255,22 +273,37 @@ curl -H "X-API-Key: placeholder_api_key" http://localhost:9090/-/ready
 
 ```bash
 # Health check
+# For API Key auth (default):
 curl -H "X-API-Key: placeholder_api_key" http://localhost:8428/health
+# For Basic Auth:
+# curl -u admin:secretpassword http://localhost:8428/health
 
 # Metrics
+# For API Key auth (default):
 curl -H "X-API-Key: placeholder_api_key" http://localhost:8428/metrics
+# For Basic Auth:
+# curl -u admin:secretpassword http://localhost:8428/metrics
 
 # Query (Prometheus-compatible)
+# For API Key auth (default):
 curl -H "X-API-Key: placeholder_api_key" 'http://localhost:8428/api/v1/query?query=up'
+# For Basic Auth:
+# curl -u admin:secretpassword 'http://localhost:8428/api/v1/query?query=up'
 
 # Create snapshot
+# For API Key auth (default):
 curl -H "X-API-Key: placeholder_api_key" http://localhost:8428/snapshot/create
+# For Basic Auth:
+# curl -u admin:secretpassword http://localhost:8428/snapshot/create
 
 # List snapshots
 ls /victoria-metrics-data/snapshots/
 
 # Delete old data (use with caution)
+# For API Key auth (default):
 curl -X POST -H "X-API-Key: placeholder_api_key" 'http://localhost:8428/api/v1/admin/tsdb/delete_series?match[]={__name__="old_metric"}'
+# For Basic Auth:
+# curl -X POST -u admin:secretpassword 'http://localhost:8428/api/v1/admin/tsdb/delete_series?match[]={__name__="old_metric"}'
 ```
 
 ### OpenTelemetry Collector Commands
@@ -473,7 +506,8 @@ service:
 | Start full stack    | `docker compose --profile full up -d`              |
 | View logs           | `docker compose logs -f`                           |
 | Check health        | `curl http://localhost:13133/health/status`        |
-| Query metrics       | `curl -H "X-API-Key: placeholder_api_key" http://localhost:9090/api/v1/query?query=up` |
+| Query metrics (API Key) | `curl -H "X-API-Key: placeholder_api_key" http://localhost:9090/api/v1/query?query=up` |
+| Query metrics (Basic Auth) | `curl -u admin:secretpassword http://localhost:9090/api/v1/query?query=up` |
 | Stop stack          | `docker compose down`                              |
 | Restart collector   | `docker compose restart otel-collector`            |
 | View resource usage | `docker stats`                                     |

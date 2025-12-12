@@ -268,15 +268,15 @@ External Applications
 │  observability Docker network           │
 │                                         │
 │  Envoy Proxy (ports: 4317, 4318, 9090, 8428)
-│     │                                    │
+│     │                                   │
 │     ├─→ otel-collector (internal)       │
-│     │                                    │
+│     │                                   │
 │     ├─→ prometheus (internal)           │
-│     │    │                               │
+│     │    │                              │
 │     │    ├─→ otel-collector:8889 (scrape)
-│     │    │                               │
+│     │    │                              │
 │     │    └─→ victoriametrics:8428 (remote_write)
-│     │                                    │
+│     │                                   │
 │     └─→ victoriametrics (internal)      │
 │                                         │
 └─────────────────────────────────────────┘
@@ -369,7 +369,9 @@ curl http://localhost:13133/health/status
 
 ```bash
 # Check targets via API (requires authentication via Envoy)
+# For API Key auth (default):
 curl -H "X-API-Key: placeholder_api_key" http://localhost:9090/api/v1/targets | jq '.data.activeTargets[] | {job: .labels.job, health: .health}'
+# For Basic Auth, see [Prometheus Commands](reference.md#prometheus-commands)
 
 # Or open in browser (authentication required)
 open http://localhost:9090/targets
@@ -392,8 +394,7 @@ Wait 15 seconds, then query Prometheus:
 # Via API (requires authentication via Envoy)
 # For API Key auth (default):
 curl -H "X-API-Key: placeholder_api_key" 'http://localhost:9090/api/v1/query?query=llm_traces_span_metrics_calls_total' | jq
-# For Basic Auth:
-# curl -u admin:secretpassword 'http://localhost:9090/api/v1/query?query=llm_traces_span_metrics_calls_total' | jq
+# For Basic Auth, see [Prometheus Commands](reference.md#prometheus-commands)
 
 # Or open Prometheus UI (authentication required)
 open http://localhost:9090
@@ -406,12 +407,13 @@ open http://localhost:9090
 # Health check (requires authentication via Envoy)
 # For API Key auth (default):
 curl -H "X-API-Key: placeholder_api_key" http://localhost:8428/health
-# For Basic Auth:
-# curl -u admin:secretpassword http://localhost:8428/health
+# For Basic Auth, see [VictoriaMetrics Commands](reference.md#victoriametrics-commands)
 # Expected: OK
 
 # Query metrics (same as Prometheus API, requires authentication)
+# For API Key auth (default):
 curl -H "X-API-Key: placeholder_api_key" 'http://localhost:8428/api/v1/query?query=up' | jq
+# For Basic Auth, see [VictoriaMetrics Commands](reference.md#victoriametrics-commands)
 ```
 
 ---
