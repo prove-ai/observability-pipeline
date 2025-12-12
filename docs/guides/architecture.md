@@ -13,7 +13,7 @@ This observability pipeline, when deployed with the [full deployment profile](de
 - You can query and visualize these metrics using the ProveAI client
 - All metrics are stored for 12 months with efficient compression
 
-## Quick Start (5 Minutes)
+## Quick Start
 
 ### Prerequisites
 
@@ -63,11 +63,19 @@ curl http://localhost:13133/health/status
 # Expected: {"status":"Server available"}
 
 # 3. Verify Prometheus can reach targets
-curl http://localhost:9090/api/v1/targets | jq
+# Note: Prometheus endpoints require authentication via Envoy
+# For API Key auth (default):
+curl -H "X-API-Key: placeholder_api_key" http://localhost:9090/api/v1/targets | jq
+# For Basic Auth:
+# curl -u admin:secretpassword http://localhost:9090/api/v1/targets | jq
 # Expected: All targets showing "up"
 
 # 4. Verify VictoriaMetrics is running
-curl http://localhost:8428/health
+# Note: VictoriaMetrics endpoints require authentication via Envoy
+# For API Key auth (default):
+curl -H "X-API-Key: placeholder_api_key" http://localhost:8428/health
+# For Basic Auth:
+# curl -u admin:secretpassword http://localhost:8428/health
 # Expected: "OK"
 ```
 
@@ -89,12 +97,28 @@ Send a test trace:
 <a id="send-test-trace-command"></a>
 
 ```bash
+# Note: Requires authentication via Envoy
+# For API Key auth (default):
 otel-cli span \
-  --service "my-app" \
-  --name "test-request" \
+  --service "otel-test" \
+  --name "demo-span" \
   --endpoint http://localhost:4318/v1/traces \
   --protocol http/protobuf \
-  --attrs "environment=dev,user_id=123"
+  --attrs "env=dev,component=demo" \
+  --start "$(date -Iseconds)" \
+  --end "$(date -Iseconds)" \
+  --otlp-headers "X-API-Key=placeholder_api_key"
+
+# For Basic Auth:
+# otel-cli span \
+# --service "otel-test" \
+# --name "demo-span" \
+# --endpoint http://localhost:4318/v1/traces \
+# --protocol http/protobuf \
+# --attrs "env=dev,component=demo" \
+# --start "$(date -Iseconds)" \
+# --end "$(date -Iseconds)" \
+# --otlp-headers "Authorization=Basic $(echo -n 'admin:secretpassword' | base64)"
 ```
 
 **View the results** (wait 10-15 seconds for metrics to appear):
@@ -104,7 +128,7 @@ otel-cli span \
 open http://localhost:9090
 
 # Run this query in the Prometheus UI
-llm_traces_span_metrics_calls_total{service_name="my-app"}
+llm_traces_span_metrics_calls_total{service_name="otel-test"}
 ```
 
 ---
@@ -119,6 +143,15 @@ Your Application
 │
 ├─[gRPC: port 4317]
 └─[HTTP: port 4318]
+     ↓
+┌────────────────────────────────┐
+│  Envoy Proxy                   │
+│  ┌──────────────────────────┐  │
+│  │ • API Key Authentication │  │
+│  │ • Centralized auth       │  │
+│  └──────────────────────────┘  │
+└────────────────────────────────┘
+     ↓ (forwards authenticated requests)
      ↓
 ┌────────────────────────────────┐
 │  OpenTelemetry Collector       │
@@ -156,9 +189,27 @@ Your Application
 
 ### Component Responsibilities
 
+#### Envoy Proxy
+
+**What it does:** Centralized authentication gateway for all external requests.
+
+- **Image**: `observability-pipeline-envoy:latest` (custom build)
+- **Primary Role**: Authenticate requests before forwarding to backend services
+- **Key Feature**: Supports API Key and Basic Auth methods
+
+**Ports:**
+
+- `4317` - OTLP gRPC receiver (proxied to collector)
+- `4318` - OTLP HTTP receiver (proxied to collector)
+- `9090` - Prometheus UI and API (proxied)
+- `8428` - VictoriaMetrics API (proxied)
+- `9901` - Envoy admin interface (localhost only)
+
+**Configuration:** Environment variables in `.env` file (see [Security Guide](security.md))
+
 #### OpenTelemetry Collector (otel-collector)
 
-**What it does:** The entry point for all traces from your applications.
+**What it does:** Receives authenticated traces from Envoy and converts them to metrics.
 
 - **Image**: `otel/opentelemetry-collector-contrib:0.138.0`
 - **Primary Role**: Receive traces, convert to metrics, export to Prometheus
@@ -166,8 +217,8 @@ Your Application
 
 **Ports:**
 
-- `4317` - OTLP gRPC receiver (recommended for production)
-- `4318` - OTLP HTTP receiver (easier for testing)
+- `4317` - OTLP gRPC receiver (internal, accessed via Envoy)
+- `4318` - OTLP HTTP receiver (internal, accessed via Envoy)
 - `8889` - Prometheus metrics exporter (spanmetrics output)
 - `8888` - Internal collector metrics (monitor the collector itself)
 - `13133` - Health check endpoint
@@ -182,13 +233,13 @@ Your Application
 
 - **Image**: `prom/prometheus:latest`
 - **Primary Role**: Metrics scraping, querying, and forwarding
-- **Port**: `9090` (Web UI and API)
+- **Port**: `9090` (Web UI and API, accessed via Envoy)
 - **Scrape Interval**: 10 seconds (configurable in `prometheus.yaml`)
 - **Storage**: Local TSDB + remote write to VictoriaMetrics
 
 **Configuration file:** `docker-compose/prometheus.yaml`
 
-**Access the UI:** `http://localhost:9090`
+**Access the UI:** `http://localhost:9090` (requires authentication via Envoy)
 
 #### VictoriaMetrics
 
@@ -196,11 +247,11 @@ Your Application
 
 - **Image**: `victoriametrics/victoria-metrics:latest`
 - **Primary Role**: Long-term metric storage
-- **Port**: `8428`
+- **Port**: `8428` (accessed via Envoy)
 - **Retention**: 12 months (configurable via `-retentionPeriod` flag)
 - **API**: Prometheus-compatible query API
 
-**Access the API:** `http://localhost:8428`
+**Access the API:** `http://localhost:8428` (requires authentication via Envoy)
 
 **Why use it?** VictoriaMetrics uses ~10x less disk space than Prometheus for the same data.
 
@@ -216,13 +267,25 @@ External Applications
 ┌─────────────────────────────────────────┐
 │  observability Docker network           │
 │                                         │
-│  otel-collector ←→ prometheus ←→ VM     │
-│  (4317,4318)       (9090)      (8428)   │
+│  Envoy Proxy (ports: 4317, 4318, 9090, 8428)
+│     │                                    │
+│     ├─→ otel-collector (internal)       │
+│     │                                    │
+│     ├─→ prometheus (internal)           │
+│     │    │                               │
+│     │    ├─→ otel-collector:8889 (scrape)
+│     │    │                               │
+│     │    └─→ victoriametrics:8428 (remote_write)
+│     │                                    │
+│     └─→ victoriametrics (internal)      │
 │                                         │
 └─────────────────────────────────────────┘
 ```
 
-**Important:** Applications outside Docker can send traces to `localhost:4317/4318`, but services inside Docker should use the service name `otel-collector:4317`.
+**Important:**
+
+- External applications send traces to `localhost:4317/4318`, which routes through Envoy for authentication before reaching the collector.
+- Services inside Docker communicate directly using service names (e.g., `otel-collector:4317`) without authentication.
 
 ---
 
@@ -305,10 +368,10 @@ curl http://localhost:13133/health/status
 ### Step 3: Verify Prometheus Targets
 
 ```bash
-# Check targets via API
-curl http://localhost:9090/api/v1/targets | jq '.data.activeTargets[] | {job: .labels.job, health: .health}'
+# Check targets via API (requires authentication via Envoy)
+curl -H "X-API-Key: placeholder_api_key" http://localhost:9090/api/v1/targets | jq '.data.activeTargets[] | {job: .labels.job, health: .health}'
 
-# Or open in browser
+# Or open in browser (authentication required)
 open http://localhost:9090/targets
 ```
 
@@ -326,10 +389,13 @@ See the example in [Send Your First Trace](#send-test-trace-command) above.
 Wait 15 seconds, then query Prometheus:
 
 ```bash
-# Via API
-curl 'http://localhost:9090/api/v1/query?query=llm_traces_span_metrics_calls_total' | jq
+# Via API (requires authentication via Envoy)
+# For API Key auth (default):
+curl -H "X-API-Key: placeholder_api_key" 'http://localhost:9090/api/v1/query?query=llm_traces_span_metrics_calls_total' | jq
+# For Basic Auth:
+# curl -u admin:secretpassword 'http://localhost:9090/api/v1/query?query=llm_traces_span_metrics_calls_total' | jq
 
-# Or open Prometheus UI
+# Or open Prometheus UI (authentication required)
 open http://localhost:9090
 # Then run: llm_traces_span_metrics_calls_total{service_name="my-app"}
 ```
@@ -337,12 +403,15 @@ open http://localhost:9090
 ### Step 6: Verify VictoriaMetrics
 
 ```bash
-# Health check
-curl http://localhost:8428/health
+# Health check (requires authentication via Envoy)
+# For API Key auth (default):
+curl -H "X-API-Key: placeholder_api_key" http://localhost:8428/health
+# For Basic Auth:
+# curl -u admin:secretpassword http://localhost:8428/health
 # Expected: OK
 
-# Query metrics (same as Prometheus API)
-curl 'http://localhost:8428/api/v1/query?query=up' | jq
+# Query metrics (same as Prometheus API, requires authentication)
+curl -H "X-API-Key: placeholder_api_key" 'http://localhost:8428/api/v1/query?query=up' | jq
 ```
 
 ---
@@ -429,11 +498,11 @@ docker compose down -v
 
 ### Important URLs
 
-- **Prometheus UI**: http://localhost:9090
-- **VictoriaMetrics API**: http://localhost:8428
-- **Collector Health**: http://localhost:13133/health/status
-- **Collector Internal Metrics**: http://localhost:8888/metrics
-- **Collector Spanmetrics**: http://localhost:8889/metrics
+- **Prometheus UI**: http://localhost:9090 (requires authentication via Envoy)
+- **VictoriaMetrics API**: http://localhost:8428 (requires authentication via Envoy)
+- **Collector Health**: http://localhost:13133/health/status (no authentication required)
+- **Collector Internal Metrics**: http://localhost:8888/metrics (no authentication required)
+- **Collector Spanmetrics**: http://localhost:8889/metrics (internal only, no authentication required)
 
 ### Send Traces from Your Application
 
@@ -446,7 +515,19 @@ from opentelemetry.sdk.trace import TracerProvider
 from opentelemetry.sdk.trace.export import BatchSpanProcessor
 
 provider = TracerProvider()
-processor = BatchSpanProcessor(OTLPSpanExporter(endpoint="http://localhost:4317"))
+# Endpoint goes through Envoy proxy (requires authentication)
+# For API Key auth (default):
+processor = BatchSpanProcessor(OTLPSpanExporter(
+    endpoint="http://localhost:4317",
+    headers={"X-API-Key": "your-api-key"}  # Required for Envoy auth
+))
+# For Basic Auth:
+# import base64
+# auth_header = base64.b64encode(b'admin:secretpassword').decode('utf-8')
+# processor = BatchSpanProcessor(OTLPSpanExporter(
+#     endpoint="http://localhost:4317",
+#     headers={"Authorization": f"Basic {auth_header}"}  # Required for Envoy auth
+# ))
 provider.add_span_processor(processor)
 trace.set_tracer_provider(provider)
 
@@ -466,9 +547,22 @@ const {
 const { BatchSpanProcessor } = require("@opentelemetry/sdk-trace-base");
 
 const provider = new NodeTracerProvider();
+// Endpoint goes through Envoy proxy (requires authentication)
+// For API Key auth (default):
 const exporter = new OTLPTraceExporter({
   url: "http://localhost:4318/v1/traces",
+  headers: {
+    "X-API-Key": "your-api-key", // Required for Envoy auth
+  },
 });
+// For Basic Auth:
+// const auth = Buffer.from('admin:secretpassword').toString('base64');
+// const exporter = new OTLPTraceExporter({
+//   url: "http://localhost:4318/v1/traces",
+//   headers: {
+//     "Authorization": `Basic ${auth}`, // Required for Envoy auth
+//   },
+// });
 provider.addSpanProcessor(new BatchSpanProcessor(exporter));
 provider.register();
 ```

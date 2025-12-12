@@ -8,10 +8,7 @@ This guide provides step-by-step instructions for deploying the Observability Pi
 
 ## Prerequisites
 
-| Requirement    | Minimum Version | Check Command            |
-| -------------- | --------------- | ------------------------ |
-| Docker         | 20.10+          | `docker --version`       |
-| Docker Compose | 2.0+            | `docker compose version` |
+See [Prerequisites in Architecture Guide](architecture.md#prerequisites) for detailed requirements and setup verification.
 
 ---
 
@@ -36,6 +33,10 @@ Before deploying, choose your profile based on existing infrastructure:
 
 ### Command Reference
 
+For complete command reference, see [Useful Commands in Architecture Guide](architecture.md#useful-commands).
+
+**Quick deployment:**
+
 ```bash
 # Navigate to docker-compose directory
 cd docker-compose
@@ -43,25 +44,8 @@ cd docker-compose
 # Start with your chosen profile
 docker compose --profile full up -d
 
-# View logs from all services
-docker compose logs -f
-
-# View logs from specific service
-docker compose logs -f otel-collector
-docker compose logs -f prometheus
-docker compose logs -f victoriametrics
-
 # Check service status
 docker compose ps
-
-# Restart services
-docker compose restart
-
-# Stop services (keeps data)
-docker compose down
-
-# Stop and remove all data
-docker compose down -v
 ```
 
 ### Common Docker Compose Variables
@@ -102,39 +86,23 @@ victoriametrics   Up        0.0.0.0:8428->8428/tcp
 
 ### 2. Health Check Endpoints
 
-| Service         | Endpoint                                    | Expected Response               |
-| --------------- | ------------------------------------------- | ------------------------------- |
-| OTel Collector  | `curl http://localhost:13133/health/status` | `{"status":"Server available"}` |
-| Prometheus      | `curl http://localhost:9090/-/healthy`      | `Prometheus is Healthy.`        |
-| VictoriaMetrics | `curl http://localhost:8428/health`         | `OK`                            |
+For complete health check commands and expected responses, see [Verify It's Working in Architecture Guide](architecture.md#verify-its-working).
+
+| Service         | Endpoint                        | Authentication       |
+| --------------- | ------------------------------- | -------------------- |
+| OTel Collector  | `localhost:13133/health/status` | None required        |
+| Prometheus      | `localhost:9090/-/healthy`      | Required (via Envoy) |
+| VictoriaMetrics | `localhost:8428/health`         | Required (via Envoy) |
 
 ### 3. Test Trace Ingestion
 
-**Install otel-cli if not already installed:**
+For detailed instructions on installing `otel-cli` and sending test traces, see [Send Your First Trace in Architecture Guide](architecture.md#send-your-first-trace).
+
+**Quick verification after sending a test trace:**
 
 ```bash
-# macOS
-brew install equinix-labs/otel-cli/otel-cli
-
-# Linux
-# See architecture.md for installation
-```
-
-**Send test trace:**
-
-```bash
-otel-cli span \
-  --service "test-app" \
-  --name "test-operation" \
-  --endpoint http://localhost:4318/v1/traces \
-  --protocol http/protobuf \
-  --attrs "env=dev"
-```
-
-**Wait 15 seconds, then verify metrics appear:**
-
-```bash
-curl 'http://localhost:9090/api/v1/query?query=llm_traces_span_metrics_calls_total' | jq
+# Wait 15 seconds, then verify metrics appear
+curl -H "X-API-Key: placeholder_api_key" 'http://localhost:9090/api/v1/query?query=llm_traces_span_metrics_calls_total' | jq
 ```
 
 ---
@@ -151,16 +119,20 @@ Use this checklist after deployment:
 
 ### Health Checks
 
-- [ ] OTel Collector health: `curl http://localhost:13133/health/status`
-- [ ] Prometheus health: `curl http://localhost:9090/-/healthy`
-- [ ] VictoriaMetrics health: `curl http://localhost:8428/health`
+For detailed health check procedures, see [Verify It's Working in Architecture Guide](architecture.md#verify-its-working).
+
+- [ ] OTel Collector health endpoint responds
+- [ ] Prometheus health endpoint responds (auth required via Envoy)
+- [ ] VictoriaMetrics health endpoint responds (auth required via Envoy)
 
 ### Data Flow Checks
 
-- [ ] Prometheus targets show "UP": `http://localhost:9090/targets`
+For detailed verification commands, see [Testing & Verification in Architecture Guide](architecture.md#testing--verification).
+
+- [ ] Prometheus targets show "UP" (see Step 3 in Architecture Guide)
 - [ ] Collector is receiving traces (check logs)
-- [ ] Metrics appear in Prometheus: `llm_traces_span_metrics_calls_total`
-- [ ] Metrics are stored in VictoriaMetrics: `curl http://localhost:8428/api/v1/query?query=up`
+- [ ] Metrics appear in Prometheus (see Step 5 in Architecture Guide)
+- [ ] Metrics are stored in VictoriaMetrics (see Step 6 in Architecture Guide)
 
 ### Network Checks
 
@@ -210,9 +182,7 @@ docker compose logs otel-collector | grep "Span #"
 
 **Check if Prometheus is scraping:**
 
-```bash
-curl http://localhost:9090/api/v1/targets | jq
-```
+See [Step 3: Verify Prometheus Targets in Architecture Guide](architecture.md#step-3-verify-prometheus-targets) for the complete verification command.
 
 **Check if spanmetrics are exported:**
 

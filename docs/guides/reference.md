@@ -169,19 +169,23 @@ sum(rate(llm_traces_span_metrics_duration_count[5m]))
 
 ## Port Reference
 
-| Port  | Service             | Component       | Purpose                   | Required |
-| ----- | ------------------- | --------------- | ------------------------- | -------- |
-| 4317  | OTLP gRPC           | Collector       | Receive traces (gRPC)     | Yes      |
-| 4318  | OTLP HTTP           | Collector       | Receive traces (HTTP)     | Yes      |
-| 8889  | Prometheus Exporter | Collector       | Expose spanmetrics        | Yes      |
-| 8888  | Internal Metrics    | Collector       | Collector self-monitoring | Yes      |
-| 13133 | Health Check        | Collector       | Health/readiness checks   | Yes      |
-| 1888  | pprof               | Collector       | Profiling (debugging)     | Optional |
-| 55679 | zpages              | Collector       | Debugging UI              | Optional |
-| 9090  | HTTP                | Prometheus      | Query API / UI            | Yes      |
-| 8428  | HTTP                | VictoriaMetrics | Query API / Remote write  | Yes      |
+| Port  | Service             | Component       | Purpose                   | Access Type | Required |
+| ----- | ------------------- | --------------- | ------------------------- | ----------- | -------- |
+| 4317  | OTLP gRPC           | Envoy → Collector | Receive traces (gRPC)     | External (via Envoy, auth required) | Yes      |
+| 4318  | OTLP HTTP           | Envoy → Collector | Receive traces (HTTP)     | External (via Envoy, auth required) | Yes      |
+| 8889  | Prometheus Exporter | Collector       | Expose spanmetrics        | Internal only | Yes      |
+| 8888  | Internal Metrics    | Collector       | Collector self-monitoring | External (direct, no auth) | Yes      |
+| 13133 | Health Check        | Collector       | Health/readiness checks   | External (direct, no auth) | Yes      |
+| 1888  | pprof               | Collector       | Profiling (debugging)     | External (direct, no auth) | Optional |
+| 55679 | zpages              | Collector       | Debugging UI              | External (direct, no auth) | Optional |
+| 9090  | HTTP                | Envoy → Prometheus | Query API / UI            | External (via Envoy, auth required) | Yes      |
+| 8428  | HTTP                | Envoy → VictoriaMetrics | Query API / Remote write  | External (via Envoy, auth required) | Yes      |
+| 9901  | Admin Interface     | Envoy           | Envoy admin/debugging     | Localhost only | Optional |
 
-**Note**: Ports 1888 (pprof) and 55679 (zpages) are only accessible if you enable these extensions in your collector configuration. They are optional and primarily used for debugging and performance analysis.
+**Notes**: 
+- Ports 4317, 4318, 9090, and 8428 are exposed through Envoy proxy and require authentication (API Key or Basic Auth). See [Security Guide](security.md) for configuration.
+- Ports 1888 (pprof) and 55679 (zpages) are only accessible if you enable these extensions in your collector configuration. They are optional and primarily used for debugging and performance analysis.
+- Port 8889 is internal only - accessed by Prometheus within the Docker network, no authentication required.
 
 ---
 
@@ -217,46 +221,56 @@ docker compose down -v
 
 ### Prometheus Commands
 
+**⚠️ Authentication Required:** All Prometheus endpoints require authentication via Envoy. The authentication method depends on your `ENVOY_AUTH_METHOD` configuration:
+- **API Key** (default): Use `-H "X-API-Key: your-api-key"`
+- **Basic Auth**: Use `-u username:password`
+
+**Common Error:** If you see `401 Unauthorized` or `jq: parse error` when piping to `jq`, you're missing authentication. The response body is plain text "Unauthorized" instead of JSON.
+
 ```bash
 # Check configuration
-curl http://localhost:9090/api/v1/status/config
+curl -H "X-API-Key: placeholder_api_key" http://localhost:9090/api/v1/status/config
 
 # Check targets
-curl http://localhost:9090/api/v1/targets
+curl -H "X-API-Key: placeholder_api_key" http://localhost:9090/api/v1/targets
 
 # Query API
-curl 'http://localhost:9090/api/v1/query?query=up'
+curl -H "X-API-Key: placeholder_api_key" 'http://localhost:9090/api/v1/query?query=up'
 
 # Check TSDB status
-curl http://localhost:9090/api/v1/status/tsdb
+curl -H "X-API-Key: placeholder_api_key" http://localhost:9090/api/v1/status/tsdb
 
 # Health check
-curl http://localhost:9090/-/healthy
+curl -H "X-API-Key: placeholder_api_key" http://localhost:9090/-/healthy
 
 # Readiness check
-curl http://localhost:9090/-/ready
+curl -H "X-API-Key: placeholder_api_key" http://localhost:9090/-/ready
 ```
 
 ### VictoriaMetrics Commands
 
+**⚠️ Authentication Required:** All VictoriaMetrics endpoints require authentication via Envoy. The authentication method depends on your `ENVOY_AUTH_METHOD` configuration:
+- **API Key** (default): Use `-H "X-API-Key: your-api-key"`
+- **Basic Auth**: Use `-u username:password`
+
 ```bash
 # Health check
-curl http://localhost:8428/health
+curl -H "X-API-Key: placeholder_api_key" http://localhost:8428/health
 
 # Metrics
-curl http://localhost:8428/metrics
+curl -H "X-API-Key: placeholder_api_key" http://localhost:8428/metrics
 
 # Query (Prometheus-compatible)
-curl 'http://localhost:8428/api/v1/query?query=up'
+curl -H "X-API-Key: placeholder_api_key" 'http://localhost:8428/api/v1/query?query=up'
 
 # Create snapshot
-curl http://localhost:8428/snapshot/create
+curl -H "X-API-Key: placeholder_api_key" http://localhost:8428/snapshot/create
 
 # List snapshots
 ls /victoria-metrics-data/snapshots/
 
 # Delete old data (use with caution)
-curl -X POST 'http://localhost:8428/api/v1/admin/tsdb/delete_series?match[]={__name__="old_metric"}'
+curl -X POST -H "X-API-Key: placeholder_api_key" 'http://localhost:8428/api/v1/admin/tsdb/delete_series?match[]={__name__="old_metric"}'
 ```
 
 ### OpenTelemetry Collector Commands
@@ -459,7 +473,7 @@ service:
 | Start full stack    | `docker compose --profile full up -d`              |
 | View logs           | `docker compose logs -f`                           |
 | Check health        | `curl http://localhost:13133/health/status`        |
-| Query metrics       | `curl http://localhost:9090/api/v1/query?query=up` |
+| Query metrics       | `curl -H "X-API-Key: placeholder_api_key" http://localhost:9090/api/v1/query?query=up` |
 | Stop stack          | `docker compose down`                              |
 | Restart collector   | `docker compose restart otel-collector`            |
 | View resource usage | `docker stats`                                     |
