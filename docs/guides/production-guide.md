@@ -63,27 +63,21 @@ Based on your existing infrastructure, select the appropriate profile:
 
 Consider these security aspects for your production deployment:
 
-| Security Area          | Questions to Consider                        | Priority |
-| ---------------------- | -------------------------------------------- | -------- |
-| **Transport Security** | Do you need TLS/mTLS?                        | High     |
-| **Access Control**     | Who should access Prometheus/VM UIs?         | High     |
-| **Data Privacy**       | Do you need to scrub PII from traces?        | High     |
-| **Network Security**   | Should services be on private networks only? | Medium   |
-| **Compliance**         | GDPR, HIPAA, SOC 2 requirements?             | Varies   |
-| **Debug Endpoints**    | Should pprof/zpages be disabled?             | Medium   |
+| Security Area        | Questions to Consider                        | Priority |
+| -------------------- | -------------------------------------------- | -------- |
+| **Access Control**   | Who should access Prometheus/VM UIs?         | High     |
+| **Network Security** | Should services be on private networks only? | Medium   |
+| **Debug Endpoints**  | Should pprof/zpages be disabled?             | Medium   |
 
 ### Security Checklist
 
 Before going to production, ensure you address:
 
-- [ ] **TLS Configuration** - Encrypt communication between components
 - [ ] **Authentication** - Protect Prometheus and VictoriaMetrics endpoints
 - [ ] **Network Restrictions** - Limit access via firewalls/security groups
 - [ ] **Debug Endpoints** - Disable or restrict pprof (1888) and zpages (55679)
-- [ ] **PII Scrubbing** - Remove sensitive data from traces
-- [ ] **Compliance Requirements** - Meet regulatory requirements
 
-**📖 Next:** See the [Security Guide](security.md) for detailed configuration instructions for TLS, authentication, network security, and PII scrubbing.
+**📖 Next:** See the [Security Guide](security.md) for detailed configuration instructions for authentication, network security, and securing debugging endpoints.
 
 ---
 
@@ -191,8 +185,7 @@ After deployment, verify everything is working:
 
 - [ ] Only required ports are open
 - [ ] Debug ports (1888, 55679) are NOT exposed publicly
-- [ ] TLS is enabled (if required)
-- [ ] Authentication is configured (if required)
+- [ ] Authentication is configured
 
 **📖 Details:** See [Post-Deployment Verification in Deployment Guide](deployment-guide.md#post-deployment-verification)
 
@@ -207,7 +200,7 @@ After deployment, verify everything is working:
 **Steps:**
 
 1. ✅ Choose **`full`** profile ([Deployment Profiles Guide](deployment-profiles.md))
-2. ✅ Configure **TLS and authentication** ([Security Guide](security.md))
+2. ✅ Configure **authentication** ([Security Guide](security.md))
 3. ✅ Configure **backups**
 
 ### Scenario 2: Adding to Existing Prometheus
@@ -231,7 +224,7 @@ Common production issues and where to find solutions:
 | ---------------------- | ---------------------------------- | ------------------------------------------------------- |
 | High memory usage      | Cardinality explosion, batch sizes | [Performance Tuning](#performance-tuning)               |
 | Connection refused     | Network/firewall rules             | [Deployment Guide](deployment-guide.md#troubleshooting) |
-| Authentication failing | TLS/auth config                    | [Security Guide](security.md)                           |
+| Authentication failing | Auth credentials config            | [Security Guide](security.md)                           |
 | High disk usage        | Retention settings, cardinality    | [Configuration Reference](configuration-reference.md)   |
 
 ---
@@ -242,7 +235,7 @@ Common production issues and where to find solutions:
 
 - **[Deployment Profiles Guide](deployment-profiles.md)** - Choose the right profile for your infrastructure
 - **[Deployment Guide](deployment-guide.md)** - Step-by-step deployment instructions
-- **[Security Guide](security.md)** - TLS, authentication, network security, PII scrubbing
+- **[Security Guide](security.md)** - Authentication, network security, and securing debugging endpoints
 - **[Configuration Reference](configuration-reference.md)** - Detailed configuration options
 - **[ADVANCED_SETUP_DOCS.md](../../ADVANCED_SETUP_DOCS.md)** - Comprehensive reference with all implementation details
 

@@ -29,7 +29,7 @@ This guide provides comprehensive instructions for deploying and configuring the
 | Deploy via Docker Compose                               | [Deployment Guide](guides/deployment-guide.md)                 |
 | Integrate via Hybrid Cloud (On-Prem + Cloud)            | [Hybrid Cloud Integration](guides/hybrid-cloud-integration.md) |
 | Prepare for production (HA, backups, sizing)            | [Production Guide](guides/production-guide.md)                 |
-| Secure your deployment (TLS, auth, firewalls)           | [Security Guide](guides/security.md)                           |
+| Secure your deployment (auth, firewalls)                | [Security Guide](guides/security.md)                           |
 | Look up metrics, ports, queries, or commands            | [Reference Guide](guides/reference.md)                         |
 
 ## Documentation Structure
@@ -57,7 +57,7 @@ This guide provides comprehensive instructions for deploying and configuring the
    Resource sizing, data persistence, backup strategies, and performance tuning.
 
 7. **[Security Guide](guides/security.md)**  
-   TLS/SSL configuration, authentication, authorization, network security, and data privacy.
+   Authentication, network security, and securing debugging endpoints.
 
 ### Reference
 

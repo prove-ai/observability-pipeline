@@ -169,20 +169,21 @@ sum(rate(llm_traces_span_metrics_duration_count[5m]))
 
 ## Port Reference
 
-| Port  | Service             | Component       | Purpose                   | Access Type | Required |
-| ----- | ------------------- | --------------- | ------------------------- | ----------- | -------- |
-| 4317  | OTLP gRPC           | Envoy → Collector | Receive traces (gRPC)     | External (via Envoy, auth required) | Yes      |
-| 4318  | OTLP HTTP           | Envoy → Collector | Receive traces (HTTP)     | External (via Envoy, auth required) | Yes      |
-| 8889  | Prometheus Exporter | Collector       | Expose spanmetrics        | Internal only | Yes      |
-| 8888  | Internal Metrics    | Collector       | Collector self-monitoring | External (direct, no auth) | Yes      |
-| 13133 | Health Check        | Collector       | Health/readiness checks   | External (direct, no auth) | Yes      |
-| 1888  | pprof               | Collector       | Profiling (debugging)     | External (direct, no auth) | Optional |
-| 55679 | zpages              | Collector       | Debugging UI              | External (direct, no auth) | Optional |
-| 9090  | HTTP                | Envoy → Prometheus | Query API / UI            | External (via Envoy, auth required) | Yes      |
+| Port  | Service             | Component               | Purpose                   | Access Type                         | Required |
+| ----- | ------------------- | ----------------------- | ------------------------- | ----------------------------------- | -------- |
+| 4317  | OTLP gRPC           | Envoy → Collector       | Receive traces (gRPC)     | External (via Envoy, auth required) | Yes      |
+| 4318  | OTLP HTTP           | Envoy → Collector       | Receive traces (HTTP)     | External (via Envoy, auth required) | Yes      |
+| 8889  | Prometheus Exporter | Collector               | Expose spanmetrics        | Internal only                       | Yes      |
+| 8888  | Internal Metrics    | Collector               | Collector self-monitoring | External (direct, no auth)          | Yes      |
+| 13133 | Health Check        | Collector               | Health/readiness checks   | External (direct, no auth)          | Yes      |
+| 1888  | pprof               | Collector               | Profiling (debugging)     | External (direct, no auth)          | Optional |
+| 55679 | zpages              | Collector               | Debugging UI              | External (direct, no auth)          | Optional |
+| 9090  | HTTP                | Envoy → Prometheus      | Query API / UI            | External (via Envoy, auth required) | Yes      |
 | 8428  | HTTP                | Envoy → VictoriaMetrics | Query API / Remote write  | External (via Envoy, auth required) | Yes      |
-| 9901  | Admin Interface     | Envoy           | Envoy admin/debugging     | Localhost only | Optional |
+| 9901  | Admin Interface     | Envoy                   | Envoy admin/debugging     | Localhost only                      | Optional |
 
-**Notes**: 
+**Notes**:
+
 - Ports 4317, 4318, 9090, and 8428 are exposed through Envoy proxy and require authentication (API Key or Basic Auth). See [Security Guide](security.md) for configuration.
 - Ports 1888 (pprof) and 55679 (zpages) are only accessible if you enable these extensions in your collector configuration. They are optional and primarily used for debugging and performance analysis.
 - Port 8889 is internal only - accessed by Prometheus within the Docker network, no authentication required.
@@ -222,6 +223,7 @@ docker compose down -v
 ### Prometheus Commands
 
 **⚠️ Authentication Required:** All Prometheus endpoints require authentication via Envoy. The authentication method depends on your `ENVOY_AUTH_METHOD` configuration:
+
 - **API Key** (default): Use `-H "X-API-Key: your-api-key"`
 - **Basic Auth**: Use `-u username:password`
 
@@ -232,42 +234,43 @@ docker compose down -v
 # For API Key auth (default):
 curl -H "X-API-Key: placeholder_api_key" http://localhost:9090/api/v1/status/config
 # For Basic Auth:
-# curl -u admin:secretpassword http://localhost:9090/api/v1/status/config
+curl -u admin:secretpassword http://localhost:9090/api/v1/status/config
 
 # Check targets
 # For API Key auth (default):
 curl -H "X-API-Key: placeholder_api_key" http://localhost:9090/api/v1/targets
 # For Basic Auth:
-# curl -u admin:secretpassword http://localhost:9090/api/v1/targets
+curl -u admin:secretpassword http://localhost:9090/api/v1/targets
 
 # Query API
 # For API Key auth (default):
 curl -H "X-API-Key: placeholder_api_key" 'http://localhost:9090/api/v1/query?query=up'
 # For Basic Auth:
-# curl -u admin:secretpassword 'http://localhost:9090/api/v1/query?query=up'
+curl -u admin:secretpassword 'http://localhost:9090/api/v1/query?query=up'
 
 # Check TSDB status
 # For API Key auth (default):
 curl -H "X-API-Key: placeholder_api_key" http://localhost:9090/api/v1/status/tsdb
 # For Basic Auth:
-# curl -u admin:secretpassword http://localhost:9090/api/v1/status/tsdb
+curl -u admin:secretpassword http://localhost:9090/api/v1/status/tsdb
 
 # Health check
 # For API Key auth (default):
 curl -H "X-API-Key: placeholder_api_key" http://localhost:9090/-/healthy
 # For Basic Auth:
-# curl -u admin:secretpassword http://localhost:9090/-/healthy
+curl -u admin:secretpassword http://localhost:9090/-/healthy
 
 # Readiness check
 # For API Key auth (default):
 curl -H "X-API-Key: placeholder_api_key" http://localhost:9090/-/ready
 # For Basic Auth:
-# curl -u admin:secretpassword http://localhost:9090/-/ready
+curl -u admin:secretpassword http://localhost:9090/-/ready
 ```
 
 ### VictoriaMetrics Commands
 
 **⚠️ Authentication Required:** All VictoriaMetrics endpoints require authentication via Envoy. The authentication method depends on your `ENVOY_AUTH_METHOD` configuration:
+
 - **API Key** (default): Use `-H "X-API-Key: your-api-key"`
 - **Basic Auth**: Use `-u username:password`
 
@@ -276,25 +279,25 @@ curl -H "X-API-Key: placeholder_api_key" http://localhost:9090/-/ready
 # For API Key auth (default):
 curl -H "X-API-Key: placeholder_api_key" http://localhost:8428/health
 # For Basic Auth:
-# curl -u admin:secretpassword http://localhost:8428/health
+curl -u admin:secretpassword http://localhost:8428/health
 
 # Metrics
 # For API Key auth (default):
 curl -H "X-API-Key: placeholder_api_key" http://localhost:8428/metrics
 # For Basic Auth:
-# curl -u admin:secretpassword http://localhost:8428/metrics
+curl -u admin:secretpassword http://localhost:8428/metrics
 
 # Query (Prometheus-compatible)
 # For API Key auth (default):
 curl -H "X-API-Key: placeholder_api_key" 'http://localhost:8428/api/v1/query?query=up'
 # For Basic Auth:
-# curl -u admin:secretpassword 'http://localhost:8428/api/v1/query?query=up'
+curl -u admin:secretpassword 'http://localhost:8428/api/v1/query?query=up'
 
 # Create snapshot
 # For API Key auth (default):
 curl -H "X-API-Key: placeholder_api_key" http://localhost:8428/snapshot/create
 # For Basic Auth:
-# curl -u admin:secretpassword http://localhost:8428/snapshot/create
+curl -u admin:secretpassword http://localhost:8428/snapshot/create
 
 # List snapshots
 ls /victoria-metrics-data/snapshots/
@@ -303,7 +306,7 @@ ls /victoria-metrics-data/snapshots/
 # For API Key auth (default):
 curl -X POST -H "X-API-Key: placeholder_api_key" 'http://localhost:8428/api/v1/admin/tsdb/delete_series?match[]={__name__="old_metric"}'
 # For Basic Auth:
-# curl -X POST -u admin:secretpassword 'http://localhost:8428/api/v1/admin/tsdb/delete_series?match[]={__name__="old_metric"}'
+curl -X POST -u admin:secretpassword 'http://localhost:8428/api/v1/admin/tsdb/delete_series?match[]={__name__="old_metric"}'
 ```
 
 ### OpenTelemetry Collector Commands
@@ -501,16 +504,16 @@ service:
 
 ### Common Tasks
 
-| Task                | Command                                            |
-| ------------------- | -------------------------------------------------- |
-| Start full stack    | `docker compose --profile full up -d`              |
-| View logs           | `docker compose logs -f`                           |
-| Check health        | `curl http://localhost:13133/health/status`        |
-| Query metrics (API Key) | `curl -H "X-API-Key: placeholder_api_key" http://localhost:9090/api/v1/query?query=up` |
-| Query metrics (Basic Auth) | `curl -u admin:secretpassword http://localhost:9090/api/v1/query?query=up` |
-| Stop stack          | `docker compose down`                              |
-| Restart collector   | `docker compose restart otel-collector`            |
-| View resource usage | `docker stats`                                     |
+| Task                       | Command                                                                                |
+| -------------------------- | -------------------------------------------------------------------------------------- |
+| Start full stack           | `docker compose --profile full up -d`                                                  |
+| View logs                  | `docker compose logs -f`                                                               |
+| Check health               | `curl http://localhost:13133/health/status`                                            |
+| Query metrics (API Key)    | `curl -H "X-API-Key: placeholder_api_key" http://localhost:9090/api/v1/query?query=up` |
+| Query metrics (Basic Auth) | `curl -u admin:secretpassword http://localhost:9090/api/v1/query?query=up`             |
+| Stop stack                 | `docker compose down`                                                                  |
+| Restart collector          | `docker compose restart otel-collector`                                                |
+| View resource usage        | `docker stats`                                                                         |
 
 ### Common Queries
 

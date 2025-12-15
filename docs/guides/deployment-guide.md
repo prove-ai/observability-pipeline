@@ -210,7 +210,7 @@ docker exec prometheus wget -O- http://otel-collector:8889/metrics
 ### For Production Environments
 
 1. ✅ Deployment complete
-2. **Then:** [Configure security (TLS, auth)](security.md)
+2. **Then:** [Configure security (authentication)](security.md)
 3. **Finally:** [Backups](production-guide.md)
 
 ### Additional Resources

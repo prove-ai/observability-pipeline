@@ -67,7 +67,7 @@ curl http://localhost:13133/health/status
 # For API Key auth (default):
 curl -H "X-API-Key: placeholder_api_key" http://localhost:9090/api/v1/targets | jq
 # For Basic Auth:
-# curl -u admin:secretpassword http://localhost:9090/api/v1/targets | jq
+curl -u admin:secretpassword http://localhost:9090/api/v1/targets | jq
 # Expected: All targets showing "up"
 
 # 4. Verify VictoriaMetrics is running
@@ -75,7 +75,7 @@ curl -H "X-API-Key: placeholder_api_key" http://localhost:9090/api/v1/targets | 
 # For API Key auth (default):
 curl -H "X-API-Key: placeholder_api_key" http://localhost:8428/health
 # For Basic Auth:
-# curl -u admin:secretpassword http://localhost:8428/health
+curl -u admin:secretpassword http://localhost:8428/health
 # Expected: "OK"
 ```
 
@@ -110,15 +110,15 @@ otel-cli span \
   --otlp-headers "X-API-Key=placeholder_api_key"
 
 # For Basic Auth:
-# otel-cli span \
-# --service "otel-test" \
-# --name "demo-span" \
-# --endpoint http://localhost:4318/v1/traces \
-# --protocol http/protobuf \
-# --attrs "env=dev,component=demo" \
-# --start "$(date -Iseconds)" \
-# --end "$(date -Iseconds)" \
-# --otlp-headers "Authorization=Basic $(echo -n 'admin:secretpassword' | base64)"
+  otel-cli span \
+  --service "otel-test" \
+  --name "demo-span" \
+  --endpoint http://localhost:4318/v1/traces \
+  --protocol http/protobuf \
+  --attrs "env=dev,component=demo" \
+  --start "$(date -Iseconds)" \
+  --end "$(date -Iseconds)" \
+  --otlp-headers "Authorization=Basic $(echo -n 'admin:secretpassword' | base64)"
 ```
 
 **View the results** (wait 10-15 seconds for metrics to appear):
