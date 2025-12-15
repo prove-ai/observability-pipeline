@@ -412,8 +412,8 @@ extensions:
 **Additional Configuration Notes**:
 
 - `health_check`: Required for monitoring and health probes
-- `pprof`: Provides runtime profiling data (CPU, memory, goroutines). Access at `http://localhost:1888/debug/pprof/`
-- `zpages`: Provides live debugging pages for pipelines, extensions, and feature gates. Access at `http://localhost:55679/debug/servicez`
+- `pprof`: Provides runtime profiling data (CPU, memory, goroutines). Access at `https://obs-dev.proveai.com:1888/debug/pprof/`
+- `zpages`: Provides live debugging pages for pipelines, extensions, and feature gates. Access at `https://obs-dev.proveai.com:55679/debug/servicez`
 
 **Advanced health_check options**:
 

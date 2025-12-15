@@ -314,7 +314,7 @@ Verify that each service is running and responsive:
 **Collector:**
 
 ```bash
-curl http://localhost:13133/health/status
+curl https://obs-dev.proveai.com:13133/health/status
 # Expected: {"status":"Server available","upSince":"..."}
 ```
 
@@ -322,7 +322,7 @@ curl http://localhost:13133/health/status
 
 ```bash
 # Note: Requires authentication via Envoy
-curl -H "X-API-Key: placeholder_api_key" http://localhost:9090/-/healthy
+curl -H "X-API-Key: placeholder_api_key" https://obs-dev.proveai.com:9090/-/healthy
 # Expected: HTTP 200 OK with "Prometheus Server is Healthy."
 ```
 
@@ -332,7 +332,7 @@ For Basic Auth examples, see [Prometheus Commands](reference.md#prometheus-comma
 
 ```bash
 # Note: Requires authentication via Envoy
-curl -H "X-API-Key: placeholder_api_key" http://localhost:8428/health
+curl -H "X-API-Key: placeholder_api_key" https://obs-dev.proveai.com:8428/health
 # Expected: OK
 ```
 
@@ -345,7 +345,7 @@ Verify that metrics are being collected and flowing through the pipeline:
 **Collector Spanmetrics:**
 
 ```bash
-curl http://localhost:8889/metrics
+curl https://obs-dev.proveai.com:8889/metrics
 # Should return Prometheus-formatted metrics including llm_traces_span_metrics_*
 ```
 
@@ -353,7 +353,7 @@ curl http://localhost:8889/metrics
 
 ```bash
 # Note: Requires authentication via Envoy
-curl -H "X-API-Key: placeholder_api_key" http://localhost:9090/api/v1/targets
+curl -H "X-API-Key: placeholder_api_key" https://obs-dev.proveai.com:9090/api/v1/targets
 # Check that otel-collector targets show "health":"up"
 ```
 
@@ -363,7 +363,7 @@ For Basic Auth examples, see [Prometheus Commands](reference.md#prometheus-comma
 
 ```bash
 # Note: Requires authentication via Envoy
-curl -H "X-API-Key: placeholder_api_key" 'http://localhost:8428/api/v1/query?query=up'
+curl -H "X-API-Key: placeholder_api_key" 'https://obs-dev.proveai.com:8428/api/v1/query?query=up'
 # Verify metrics are stored and queryable
 ```
 

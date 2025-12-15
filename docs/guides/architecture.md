@@ -61,7 +61,7 @@ docker compose ps
 
 ```bash
 # 2. Verify OpenTelemetry Collector is ready
-curl http://localhost:13133/health/status
+curl https://obs-dev.proveai.com:13133/health/status
 # Expected: {"status":"Server available"}
 ```
 
@@ -69,22 +69,22 @@ curl http://localhost:13133/health/status
 # 3. Verify Prometheus can reach targets
 # Note: Prometheus endpoints require authentication via Envoy
 # For API Key auth (default):
-curl -H "X-API-Key: placeholder_api_key" http://localhost:9090/api/v1/targets | jq
+curl -H "X-API-Key: placeholder_api_key" https://obs-dev.proveai.com:9090/api/v1/targets | jq
 # Expected: All targets showing "up"
 
 # For Basic Auth:
-curl -u admin:secretpassword http://localhost:9090/api/v1/targets | jq
+curl -u user:secretpassword https://obs-dev.proveai.com:9090/api/v1/targets | jq
 ```
 
 ```bash
 # 4. Verify VictoriaMetrics is running
 # Note: VictoriaMetrics endpoints require authentication via Envoy
 # For API Key auth (default):
-curl -H "X-API-Key: placeholder_api_key" http://localhost:8428/health
+curl -H "X-API-Key: placeholder_api_key" https://obs-dev.proveai.com:8428/health
 # Expected: "OK"
 
 # For Basic Auth:
-curl -u admin:secretpassword http://localhost:8428/health
+curl -u user:secretpassword https://obs-dev.proveai.com:8428/health
 ```
 
 ### Send Your First Trace
@@ -110,7 +110,7 @@ Send a test trace:
 otel-cli span \
   --service "otel-test" \
   --name "demo-span" \
-  --endpoint http://localhost:4318/v1/traces \
+  --endpoint https://obs-dev.proveai.com:4318/v1/traces \
   --protocol http/protobuf \
   --attrs "env=dev,component=demo" \
   --start "$(date -Iseconds)" \
@@ -121,19 +121,19 @@ otel-cli span \
   otel-cli span \
   --service "otel-test" \
   --name "demo-span" \
-  --endpoint http://localhost:4318/v1/traces \
+  --endpoint https://obs-dev.proveai.com:4318/v1/traces \
   --protocol http/protobuf \
   --attrs "env=dev,component=demo" \
   --start "$(date -Iseconds)" \
   --end "$(date -Iseconds)" \
-  --otlp-headers "Authorization=Basic $(echo -n 'admin:secretpassword' | base64)"
+  --otlp-headers "Authorization=Basic $(echo -n 'user:secretpassword' | base64)"
 ```
 
 **View the results** (wait 10-15 seconds for metrics to appear):
 
 ```bash
 # Open Prometheus in your browser
-open http://localhost:9090
+open https://obs-dev.proveai.com:9090
 
 # Run this query in the Prometheus UI
 llm_traces_span_metrics_calls_total{service_name="otel-test"}
@@ -211,7 +211,7 @@ Your Application
 - `4318` - OTLP HTTP receiver (proxied to collector)
 - `9090` - Prometheus UI and API (proxied)
 - `8428` - VictoriaMetrics API (proxied)
-- `9901` - Envoy admin interface (localhost only)
+- `9901` - Envoy user interface (localhost only)
 
 **Configuration:** Environment variables in `.env` file (see [Security Guide](security.md))
 
@@ -247,7 +247,7 @@ Your Application
 
 **Configuration file:** `docker-compose/prometheus.yaml`
 
-**Access the UI:** `http://localhost:9090` (requires authentication via Envoy)
+**Access the UI:** `https://obs-dev.proveai.com:9090` (requires authentication via Envoy)
 
 #### VictoriaMetrics
 
@@ -259,7 +259,7 @@ Your Application
 - **Retention**: 12 months (configurable via `-retentionPeriod` flag)
 - **API**: Prometheus-compatible query API
 
-**Access the API:** `http://localhost:8428` (requires authentication via Envoy)
+**Access the API:** `https://obs-dev.proveai.com:8428` (requires authentication via Envoy)
 
 **Why use it?** VictoriaMetrics uses ~10x less disk space than Prometheus for the same data.
 
@@ -368,7 +368,7 @@ docker compose ps
 
 ```bash
 # Health check
-curl http://localhost:13133/health/status
+curl https://obs-dev.proveai.com:13133/health/status
 
 # Expected: {"status":"Server available","upSince":"..."}
 ```
@@ -377,10 +377,10 @@ curl http://localhost:13133/health/status
 
 ```bash
 # Check targets via API (requires authentication via Envoy)
-curl -H "X-API-Key: placeholder_api_key" http://localhost:9090/api/v1/targets | jq '.data.activeTargets[] | {job: .labels.job, health: .health}'
+curl -H "X-API-Key: placeholder_api_key" https://obs-dev.proveai.com:9090/api/v1/targets | jq '.data.activeTargets[] | {job: .labels.job, health: .health}'
 
 # Or open in browser (authentication required)
-open http://localhost:9090/targets
+open https://obs-dev.proveai.com:9090/targets
 ```
 
 **Note:** For Basic Auth examples, see [Prometheus Commands](reference.md#prometheus-commands).
@@ -401,12 +401,13 @@ Wait 15 seconds, then query Prometheus:
 ```bash
 # Via API (requires authentication via Envoy)
 # For API Key auth (default):
-curl -H "X-API-Key: placeholder_api_key" 'http://localhost:9090/api/v1/query?query=llm_traces_span_metrics_calls_total' | jq
+curl -H "X-API-Key: placeholder_api_key" 'https://obs-dev.proveai.com:9090/api/v1/query?query=llm_traces_span_metrics_calls_total' | jq
+
 # For Basic Auth:
-# curl -u admin:secretpassword 'http://localhost:9090/api/v1/query?query=llm_traces_span_metrics_calls_total' | jq
+curl -u user:secretpassword 'https://obs-dev.proveai.com:9090/api/v1/query?query=llm_traces_span_metrics_calls_total' | jq
 
 # Or open Prometheus UI (authentication required)
-open http://localhost:9090
+open https://obs-dev.proveai.com:9090
 # Then run: llm_traces_span_metrics_calls_total{service_name="my-app"}
 ```
 
@@ -415,21 +416,21 @@ open http://localhost:9090
 ```bash
 # Health check (requires authentication via Envoy)
 # For API Key auth (default):
-curl -H "X-API-Key: placeholder_api_key" http://localhost:8428/health
+curl -H "X-API-Key: placeholder_api_key" https://obs-dev.proveai.com:8428/health
 # Expected: OK
 
 # For Basic Auth:
-curl -u admin:secretpassword http://localhost:8428/health
+curl -u user:secretpassword https://obs-dev.proveai.com:8428/health
 
 ```
 
 ```bash
 # Query metrics (same as Prometheus API, requires authentication)
 # For API Key auth (default):
-curl -H "X-API-Key: placeholder_api_key" 'http://localhost:8428/api/v1/query?query=up' | jq
+curl -H "X-API-Key: placeholder_api_key" 'https://obs-dev.proveai.com:8428/api/v1/query?query=up' | jq
 
 # For Basic Auth:
-curl -u admin:secretpassword 'http://localhost:8428/api/v1/query?query=up' | jq
+curl -u user:secretpassword 'https://obs-dev.proveai.com:8428/api/v1/query?query=up' | jq
 ```
 
 ---
@@ -516,11 +517,11 @@ docker compose down -v
 
 ### Important URLs
 
-- **Prometheus UI**: http://localhost:9090 (requires authentication via Envoy)
-- **VictoriaMetrics API**: http://localhost:8428 (requires authentication via Envoy)
-- **Collector Health**: http://localhost:13133/health/status (no authentication required)
-- **Collector Internal Metrics**: http://localhost:8888/metrics (no authentication required)
-- **Collector Spanmetrics**: http://localhost:8889/metrics (internal only, no authentication required)
+- **Prometheus UI**: https://obs-dev.proveai.com:9090 (requires authentication via Envoy)
+- **VictoriaMetrics API**: https://obs-dev.proveai.com:8428 (requires authentication via Envoy)
+- **Collector Health**: https://obs-dev.proveai.com:13133/health/status (no authentication required)
+- **Collector Internal Metrics**: https://obs-dev.proveai.com:8888/metrics (no authentication required)
+- **Collector Spanmetrics**: https://obs-dev.proveai.com:8889/metrics (internal only, no authentication required)
 
 ### Send Traces from Your Application
 
@@ -536,14 +537,14 @@ provider = TracerProvider()
 # Endpoint goes through Envoy proxy (requires authentication)
 # For API Key auth (default):
 processor = BatchSpanProcessor(OTLPSpanExporter(
-    endpoint="http://localhost:4317",
+    endpoint="https://obs-dev.proveai.com:4317",
     headers={"X-API-Key": "your-api-key"}  # Required for Envoy auth
 ))
 # For Basic Auth:
 # import base64
-# auth_header = base64.b64encode(b'admin:secretpassword').decode('utf-8')
+# auth_header = base64.b64encode(b'user:secretpassword').decode('utf-8')
 # processor = BatchSpanProcessor(OTLPSpanExporter(
-#     endpoint="http://localhost:4317",
+#     endpoint="https://obs-dev.proveai.com:4317",
 #     headers={"Authorization": f"Basic {auth_header}"}  # Required for Envoy auth
 # ))
 provider.add_span_processor(processor)
@@ -568,15 +569,15 @@ const provider = new NodeTracerProvider();
 // Endpoint goes through Envoy proxy (requires authentication)
 // For API Key auth (default):
 const exporter = new OTLPTraceExporter({
-  url: "http://localhost:4318/v1/traces",
+  url: "https://obs-dev.proveai.com:4318/v1/traces",
   headers: {
     "X-API-Key": "your-api-key", // Required for Envoy auth
   },
 });
 // For Basic Auth:
-// const auth = Buffer.from('admin:secretpassword').toString('base64');
+// const auth = Buffer.from('user:secretpassword').toString('base64');
 // const exporter = new OTLPTraceExporter({
-//   url: "http://localhost:4318/v1/traces",
+//   url: "https://obs-dev.proveai.com:4318/v1/traces",
 //   headers: {
 //     "Authorization": `Basic ${auth}`, // Required for Envoy auth
 //   },

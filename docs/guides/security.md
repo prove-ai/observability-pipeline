@@ -61,15 +61,6 @@ Add your credentials as a comma-separated list of `username:password` pairs in `
 ENVOY_BASIC_AUTH_CREDENTIALS=admin:secretpassword
 ```
 
-### Applying Changes
-
-After modifying the `.env` file, restart the Envoy service:
-
-```bash
-cd docker-compose
-docker compose restart envoy
-```
-
 ### Default Behavior
 
 - If `ENVOY_AUTH_METHOD` is not set, it defaults to `api-key`.
@@ -94,7 +85,7 @@ Requests are rejected at the Envoy layer and never reach backend services.
 ```bash
 # Send trace with API key
 curl -H "X-API-Key: my_secret_key_1" \
-  -X POST http://localhost:4318/v1/traces \
+  -X POST https://obs-dev.proveai.com:4318/v1/traces \
   -H "Content-Type: application/x-protobuf" \
   --data-binary @trace.pb
 ```
@@ -104,48 +95,10 @@ curl -H "X-API-Key: my_secret_key_1" \
 ```bash
 # Send trace with Basic Auth
 curl -u admin:secretpassword \
-  -X POST http://localhost:4318/v1/traces \
+  -X POST https://obs-dev.proveai.com:4318/v1/traces \
   -H "Content-Type: application/x-protobuf" \
   --data-binary @trace.pb
 ```
-
----
-
-## Securing Debugging Endpoints
-
-The OpenTelemetry Collector debugging extensions (pprof and zpages) expose sensitive information about your system and should be secured in production.
-
-### Default Configuration
-
-By default, the collector configuration does not enable pprof or zpages extensions. The default configuration only includes the `health_check` extension:
-
-```yaml
-service:
-  extensions: [health_check]
-```
-
-### Recommendations for Production
-
-#### 1. Keep Debugging Disabled (Recommended)
-
-For production environments, keep debugging extensions disabled. The default configuration already follows this practice.
-
-#### 2. Bind to Localhost Only (If Needed)
-
-If you need debugging capabilities, bind to localhost to restrict access:
-
-```yaml
-extensions:
-  pprof:
-    endpoint: 127.0.0.1:1888 # Only accessible from localhost
-  zpages:
-    endpoint: 127.0.0.1:55679 # Only accessible from localhost
-
-service:
-  extensions: [health_check, pprof, zpages]
-```
-
-**Note:** Even when bound to localhost, these ports are exposed in the Docker Compose configuration. Consider removing port mappings in `docker-compose.yaml` if you don't need external access.
 
 ---
 
@@ -167,6 +120,8 @@ The default Docker Compose configuration exposes the following ports:
 | 8888  | Collector               | External (direct)    | None           | Internal collector metrics   |
 | 8889  | Collector               | Internal only        | None           | Prometheus exporter          |
 | 9901  | Envoy                   | Localhost only       | None           | Envoy admin interface        |
+
+Make sure each of these ports is open and enabled on the host where the entire stack is deployed.
 
 **Key Points:**
 

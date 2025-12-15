@@ -102,7 +102,7 @@ For detailed instructions on installing `otel-cli` and sending test traces, see 
 
 ```bash
 # Wait 15 seconds, then verify metrics appear
-curl -H "X-API-Key: placeholder_api_key" 'http://localhost:9090/api/v1/query?query=llm_traces_span_metrics_calls_total' | jq
+curl -H "X-API-Key: placeholder_api_key" 'https://obs-dev.proveai.com:9090/api/v1/query?query=llm_traces_span_metrics_calls_total' | jq
 ```
 
 **Note:** For Basic Auth examples, see [Prometheus Commands](reference.md#prometheus-commands).
@@ -189,7 +189,7 @@ See [Step 3: Verify Prometheus Targets in Architecture Guide](architecture.md#st
 **Check if spanmetrics are exported:**
 
 ```bash
-curl http://localhost:8889/metrics | grep llm_traces
+curl https://obs-dev.proveai.com:8889/metrics | grep llm_traces
 ```
 
 **Check network connectivity:**
