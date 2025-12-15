@@ -58,8 +58,8 @@ static_resources:
                               return
                             end
                           end
+                          
                           -- Basic Authentication
-                          -- 
                           if auth_method == "basic-auth" then
                             local auth_header = request_handle:headers():get("Authorization")
                             local valid_credentials = {
