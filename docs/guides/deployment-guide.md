@@ -88,11 +88,11 @@ victoriametrics   Up        0.0.0.0:8428->8428/tcp
 
 For complete health check commands and expected responses, see [Verify It's Working in Architecture Guide](architecture.md#verify-its-working).
 
-| Service         | Endpoint                        | Authentication       |
-| --------------- | ------------------------------- | -------------------- |
-| OTel Collector  | `localhost:13133/health/status` | None required        |
-| Prometheus      | `localhost:9090/-/healthy`      | Required (via Envoy) |
-| VictoriaMetrics | `localhost:8428/health`         | Required (via Envoy) |
+| Service         | Endpoint                                          | Authentication       |
+| --------------- | ------------------------------------------------- | -------------------- |
+| OTel Collector  | `https://obs-dev.proveai.com:13133/health/status` | None required        |
+| Prometheus      | `https://obs-dev.proveai.com:9090/-/healthy`      | Required (via Envoy) |
+| VictoriaMetrics | `https://obs-dev.proveai.com:8428/health`         | Required (via Envoy) |
 
 ### 3. Test Trace Ingestion
 
