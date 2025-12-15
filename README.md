@@ -2,8 +2,8 @@
 
 ## Prerequisites
 
-- Docker and Docker Compose installed
-- (Optional) otel-cli for testing
+-   Docker and Docker Compose installed
+-   (Optional) otel-cli for testing
 
 ## Architecture
 
@@ -32,10 +32,10 @@ docker compose --profile full up -d
 
 This will start:
 
-- **Envoy Proxy** on ports 4317 (gRPC), 4318 (HTTP), 9090 (Prometheus), 8428 (VictoriaMetrics) - provides API key authentication
-- **OTel Collector** on ports 8888 (internal metrics), 8889 (Prometheus exporter) - accessible via Envoy only
-- **Prometheus** - accessible via Envoy only (port 9090)
-- **VictoriaMetrics** - accessible via Envoy only (port 8428, long-term storage with 12 months retention)
+-   **Envoy Proxy** on ports 4317 (gRPC), 4318 (HTTP), 9090 (Prometheus), 8428 (VictoriaMetrics) - provides API key authentication
+-   **OTel Collector** on ports 8888 (internal metrics), 8889 (Prometheus exporter) - accessible via Envoy only
+-   **Prometheus** - accessible via Envoy only (port 9090)
+-   **VictoriaMetrics** - accessible via Envoy only (port 8428, long-term storage with 12 months retention)
 
 ### Docker Compose Profiles
 
@@ -45,12 +45,12 @@ If you already have portions of the observability stack set up (Prometheus, Open
 
 Available profiles:
 
-- `full` - Runs the complete stack (Collector, Prometheus, VictoriaMetrics)
-- `no-prometheus` - Use when you already have Prometheus (includes Collector and VictoriaMetrics)
-- `no-collector` - Use when you already have an OpenTelemetry Collector (includes Prometheus and VictoriaMetrics)
-- `no-vm` - Use when you already have VictoriaMetrics (includes Collector and Prometheus)
-- `vm-only` - Use when you only want VictoriaMetrics (no Collector or Prometheus)
-- `prom-only` - Use when you only want Prometheus (no Collector or VictoriaMetrics)
+-   `full` - Runs the complete stack (Collector, Prometheus, VictoriaMetrics)
+-   `no-prometheus` - Use when you already have Prometheus (includes Collector and VictoriaMetrics)
+-   `no-collector` - Use when you already have an OpenTelemetry Collector (includes Prometheus and VictoriaMetrics)
+-   `no-vm` - Use when you already have VictoriaMetrics (includes Collector and Prometheus)
+-   `vm-only` - Use when you only want VictoriaMetrics (no Collector or Prometheus)
+-   `prom-only` - Use when you only want Prometheus (no Collector or VictoriaMetrics)
 
 For detailed information on each profile and required customer configuration, see [PROFILES.md](docker-compose/PROFILES.md).
 
@@ -174,9 +174,9 @@ docker compose restart envoy
 
 ### Default Behavior
 
-- If `ENVOY_AUTH_METHOD` is not set, it defaults to `api-key`.
-- If `ENVOY_API_KEYS` is not set, a placeholder key (`placeholder_api_key`) is used.
-- If `ENVOY_BASIC_AUTH_CREDENTIALS` is not set, Basic Auth will fail if enabled.
+-   If `ENVOY_AUTH_METHOD` is not set, it defaults to `api-key`.
+-   If `ENVOY_API_KEYS` is not set, a placeholder key (`placeholder_api_key`) is used.
+-   If `ENVOY_BASIC_AUTH_CREDENTIALS` is not set, Basic Auth will fail if enabled.
 
 ## Send a Test Span using Otel CLI
 
@@ -203,7 +203,6 @@ For `curl` it is simpler (see below).
 Or using curl:
 
 **API Key:**
-
 ```bash
 curl -X POST http://localhost:4318/v1/traces \
   -H "Content-Type: application/x-protobuf" \
@@ -212,7 +211,6 @@ curl -X POST http://localhost:4318/v1/traces \
 ```
 
 **Basic Auth:**
-
 ```bash
 curl -X POST http://localhost:4318/v1/traces \
   -H "Content-Type: application/x-protobuf" \
@@ -229,7 +227,6 @@ curl -X POST http://localhost:4318/v1/traces \
 ### OTel HTTP Receiver (port 4318)
 
 **Send a test trace (JSON format):**
-
 ```bash
 curl -X POST http://localhost:4318/v1/traces \
   -H "Content-Type: application/json" \
@@ -240,7 +237,6 @@ curl -X POST http://localhost:4318/v1/traces \
 **Note:** The above command sends an empty trace array. For a valid trace, use `otel-cli` or send a properly formatted OTLP trace payload.
 
 **Health check:**
-
 ```bash
 curl -H "X-API-Key: placeholder_api_key" http://localhost:4318/
 ```
@@ -248,54 +244,46 @@ curl -H "X-API-Key: placeholder_api_key" http://localhost:4318/
 ### Prometheus (port 9090)
 
 **Check targets:**
-
 ```bash
 curl -H "X-API-Key: placeholder_api_key" http://localhost:9090/targets
 ```
 
 **Query metrics (instant query):**
-
 ```bash
 curl -H "X-API-Key: placeholder_api_key" "http://localhost:9090/api/v1/query?query=up"
 ```
 
 **Query specific metric:**
-
 ```bash
 curl -H "X-API-Key: placeholder_api_key" "http://localhost:9090/api/v1/query?query=llm_traces_span_metrics_calls_total"
 ```
-
-````
+```
 
 **Access Prometheus UI:**
 ```bash
 # Open in browser: http://localhost:9090
 # Or use curl:
 curl -H "X-API-Key: placeholder_api_key" http://localhost:9090/
-````
+```
 
 ### VictoriaMetrics (port 8428)
 
 **Health check:**
-
 ```bash
 curl -H "X-API-Key: placeholder_api_key" http://localhost:8428/health
 ```
 
 **Query metrics (instant query):**
-
 ```bash
 curl -H "X-API-Key: placeholder_api_key" "http://localhost:8428/api/v1/query?query=up"
 ```
 
 **Query specific metric:**
-
 ```bash
 curl -H "X-API-Key: placeholder_api_key" "http://localhost:8428/api/v1/query?query=llm_traces_span_metrics_calls_total"
 ```
 
 **Range query:**
-
 ```bash
 curl -H "X-API-Key: placeholder_api_key" "http://localhost:8428/api/v1/query_range?query=up&start=$(date -u +%s -d '1 hour ago')&end=$(date -u +%s)&step=15s"
 ```
@@ -360,8 +348,8 @@ curl -H "X-API-Key: placeholder_api_key" http://localhost:9090/targets
 
 You should see two targets both showing as **UP**:
 
-- `otel-collector` (otel-collector:8889)
-- `otel-collector-internal` (otel-collector:8888)
+-   `otel-collector` (otel-collector:8889)
+-   `otel-collector-internal` (otel-collector:8888)
 
 ### 5. Query Metrics in Prometheus
 
@@ -405,10 +393,10 @@ This stack is designed to work behind AWS Network Load Balancer (NLB). The Envoy
 
 ### NLB Configuration
 
-- **Target Groups**: NLB target groups should point to Envoy's exposed ports (4317, 4318, 9090, 8428) on EC2 instances
-- **Health Checks**: NLB performs TCP health checks directly on service ports (e.g., port 4318). Envoy accepts TCP connections on these ports, satisfying NLB health checks
-- **Security Groups**: Ensure EC2 security groups allow traffic from NLB to Envoy ports
-- **No Breaking Changes**: Existing NLB configuration remains the same - same ports, same health check settings. Traffic now flows through Envoy instead of directly to services
+-   **Target Groups**: NLB target groups should point to Envoy's exposed ports (4317, 4318, 9090, 8428) on EC2 instances
+-   **Health Checks**: NLB performs TCP health checks directly on service ports (e.g., port 4318). Envoy accepts TCP connections on these ports, satisfying NLB health checks
+-   **Security Groups**: Ensure EC2 security groups allow traffic from NLB to Envoy ports
+-   **No Breaking Changes**: Existing NLB configuration remains the same - same ports, same health check settings. Traffic now flows through Envoy instead of directly to services
 
 ### Deployment Notes
 
@@ -420,22 +408,20 @@ After deploying Envoy, verify NLB health checks pass. Envoy will accept TCP conn
 
 If you receive `401 Unauthorized` responses:
 
-- **API Key:** Ensure you're including the `X-API-Key` header and it matches a key in `ENVOY_API_KEYS`.
-- **Basic Auth:** Ensure you're sending valid credentials (header `Authorization: Basic ...`) matching `ENVOY_BASIC_AUTH_CREDENTIALS`.
-- **Method:** Verify `ENVOY_AUTH_METHOD` matches the method you are trying to use.
-- Check Envoy logs: `docker compose logs envoy`
+-   **API Key:** Ensure you're including the `X-API-Key` header and it matches a key in `ENVOY_API_KEYS`.
+-   **Basic Auth:** Ensure you're sending valid credentials (header `Authorization: Basic ...`) matching `ENVOY_BASIC_AUTH_CREDENTIALS`.
+-   **Method:** Verify `ENVOY_AUTH_METHOD` matches the method you are trying to use.
+-   Check Envoy logs: `docker compose logs envoy`
 
 ### Understanding OTLP Responses
 
 **`{"partialSuccess":{}}` response:**
-
 - This is a **successful** response (HTTP 200 OK)
 - It indicates the request was accepted but contained no spans to process (e.g., empty `resourceSpans` array)
 - This is expected behavior when sending empty or invalid trace payloads
 - To verify authentication is working, check that you receive this response instead of `401 Unauthorized`
 
 **Empty trace payload example:**
-
 ```bash
 curl -X POST http://localhost:4318/v1/traces \
   -H "Content-Type: application/json" \
@@ -446,10 +432,10 @@ curl -X POST http://localhost:4318/v1/traces \
 
 ### Prometheus shows empty results
 
-- Check `http://localhost:9090/targets` (with API key header) - both targets should be UP
-- Verify metrics exist at `http://localhost:8889/metrics` (internal, no auth required)
-- Wait 5-10 seconds after sending a span for Prometheus to scrape
-- Ensure you're using the `otel/opentelemetry-collector-contrib` image (not the base image)
+-   Check `http://localhost:9090/targets` (with API key header) - both targets should be UP
+-   Verify metrics exist at `http://localhost:8889/metrics` (internal, no auth required)
+-   Wait 5-10 seconds after sending a span for Prometheus to scrape
+-   Ensure you're using the `otel/opentelemetry-collector-contrib` image (not the base image)
 
 ### Container fails to start
 
