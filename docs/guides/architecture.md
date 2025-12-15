@@ -57,26 +57,34 @@ docker compose --profile full up -d
 ```bash
 # 1. Check all services are healthy
 docker compose ps
+```
 
+```bash
 # 2. Verify OpenTelemetry Collector is ready
 curl http://localhost:13133/health/status
 # Expected: {"status":"Server available"}
+```
 
+```bash
 # 3. Verify Prometheus can reach targets
 # Note: Prometheus endpoints require authentication via Envoy
 # For API Key auth (default):
 curl -H "X-API-Key: placeholder_api_key" http://localhost:9090/api/v1/targets | jq
-# For Basic Auth:
-curl -u admin:secretpassword http://localhost:9090/api/v1/targets | jq
 # Expected: All targets showing "up"
 
+# For Basic Auth:
+curl -u admin:secretpassword http://localhost:9090/api/v1/targets | jq
+```
+
+```bash
 # 4. Verify VictoriaMetrics is running
 # Note: VictoriaMetrics endpoints require authentication via Envoy
 # For API Key auth (default):
 curl -H "X-API-Key: placeholder_api_key" http://localhost:8428/health
+# Expected: "OK"
+
 # For Basic Auth:
 curl -u admin:secretpassword http://localhost:8428/health
-# Expected: "OK"
 ```
 
 ### Send Your First Trace
@@ -408,15 +416,20 @@ open http://localhost:9090
 # Health check (requires authentication via Envoy)
 # For API Key auth (default):
 curl -H "X-API-Key: placeholder_api_key" http://localhost:8428/health
-# For Basic Auth:
-# curl -u admin:secretpassword http://localhost:8428/health
 # Expected: OK
 
+# For Basic Auth:
+curl -u admin:secretpassword http://localhost:8428/health
+
+```
+
+```bash
 # Query metrics (same as Prometheus API, requires authentication)
 # For API Key auth (default):
 curl -H "X-API-Key: placeholder_api_key" 'http://localhost:8428/api/v1/query?query=up' | jq
+
 # For Basic Auth:
-# curl -u admin:secretpassword 'http://localhost:8428/api/v1/query?query=up' | jq
+curl -u admin:secretpassword 'http://localhost:8428/api/v1/query?query=up' | jq
 ```
 
 ---
