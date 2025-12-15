@@ -186,7 +186,7 @@ docker compose restart envoy
 otel-cli span \
   --service "otel-test" \
   --name "demo-span" \
-  --endpoint https://obs-dev.proveai.com:4318/v1/traces \
+  --endpoint http://localhost:4318/v1/traces \
   --protocol http/protobuf \
   --attrs "env=dev,component=demo" \
   --start "$(date -Iseconds)" \
@@ -205,7 +205,7 @@ Or using curl:
 **API Key:**
 
 ```bash
-curl -X POST https://obs-dev.proveai.com:4318/v1/traces \
+curl -X POST http://localhost:4318/v1/traces \
   -H "Content-Type: application/x-protobuf" \
   -H "X-API-Key: placeholder_api_key" \
   --data-binary @trace.pb
@@ -214,7 +214,7 @@ curl -X POST https://obs-dev.proveai.com:4318/v1/traces \
 **Basic Auth:**
 
 ```bash
-curl -X POST https://obs-dev.proveai.com:4318/v1/traces \
+curl -X POST http://localhost:4318/v1/traces \
   -H "Content-Type: application/x-protobuf" \
   -u "admin:secretpassword" \
   --data-binary @trace.pb
@@ -231,7 +231,7 @@ curl -X POST https://obs-dev.proveai.com:4318/v1/traces \
 **Send a test trace (JSON format):**
 
 ```bash
-curl -X POST https://obs-dev.proveai.com:4318/v1/traces \
+curl -X POST http://localhost:4318/v1/traces \
   -H "Content-Type: application/json" \
   -H "X-API-Key: placeholder_api_key" \
   -d '{"resourceSpans":[]}'
@@ -242,7 +242,7 @@ curl -X POST https://obs-dev.proveai.com:4318/v1/traces \
 **Health check:**
 
 ```bash
-curl -H "X-API-Key: placeholder_api_key" https://obs-dev.proveai.com:4318/
+curl -H "X-API-Key: placeholder_api_key" http://localhost:4318/
 ```
 
 ### Prometheus (port 9090)
@@ -250,28 +250,28 @@ curl -H "X-API-Key: placeholder_api_key" https://obs-dev.proveai.com:4318/
 **Check targets:**
 
 ```bash
-curl -H "X-API-Key: placeholder_api_key" https://obs-dev.proveai.com:9090/targets
+curl -H "X-API-Key: placeholder_api_key" http://localhost:9090/targets
 ```
 
 **Query metrics (instant query):**
 
 ```bash
-curl -H "X-API-Key: placeholder_api_key" "https://obs-dev.proveai.com:9090/api/v1/query?query=up"
+curl -H "X-API-Key: placeholder_api_key" "http://localhost:9090/api/v1/query?query=up"
 ```
 
 **Query specific metric:**
 
 ```bash
-curl -H "X-API-Key: placeholder_api_key" "https://obs-dev.proveai.com:9090/api/v1/query?query=llm_traces_span_metrics_calls_total"
+curl -H "X-API-Key: placeholder_api_key" "http://localhost:9090/api/v1/query?query=llm_traces_span_metrics_calls_total"
 ```
 
 ````
 
 **Access Prometheus UI:**
 ```bash
-# Open in browser: https://obs-dev.proveai.com:9090
+# Open in browser: http://localhost:9090
 # Or use curl:
-curl -H "X-API-Key: placeholder_api_key" https://obs-dev.proveai.com:9090/
+curl -H "X-API-Key: placeholder_api_key" http://localhost:9090/
 ````
 
 ### VictoriaMetrics (port 8428)
@@ -279,25 +279,25 @@ curl -H "X-API-Key: placeholder_api_key" https://obs-dev.proveai.com:9090/
 **Health check:**
 
 ```bash
-curl -H "X-API-Key: placeholder_api_key" https://obs-dev.proveai.com:8428/health
+curl -H "X-API-Key: placeholder_api_key" http://localhost:8428/health
 ```
 
 **Query metrics (instant query):**
 
 ```bash
-curl -H "X-API-Key: placeholder_api_key" "https://obs-dev.proveai.com:8428/api/v1/query?query=up"
+curl -H "X-API-Key: placeholder_api_key" "http://localhost:8428/api/v1/query?query=up"
 ```
 
 **Query specific metric:**
 
 ```bash
-curl -H "X-API-Key: placeholder_api_key" "https://obs-dev.proveai.com:8428/api/v1/query?query=llm_traces_span_metrics_calls_total"
+curl -H "X-API-Key: placeholder_api_key" "http://localhost:8428/api/v1/query?query=llm_traces_span_metrics_calls_total"
 ```
 
 **Range query:**
 
 ```bash
-curl -H "X-API-Key: placeholder_api_key" "https://obs-dev.proveai.com:8428/api/v1/query_range?query=up&start=$(date -u +%s -d '1 hour ago')&end=$(date -u +%s)&step=15s"
+curl -H "X-API-Key: placeholder_api_key" "http://localhost:8428/api/v1/query_range?query=up&start=$(date -u +%s -d '1 hour ago')&end=$(date -u +%s)&step=15s"
 ```
 
 **Note:** Replace `placeholder_api_key` with your actual API key from the `ENVOY_API_KEYS` environment variable. If `ENVOY_API_KEYS` is not set, `placeholder_api_key` is used as the default.
@@ -329,7 +329,7 @@ otel-collector  | 	{"kind": "exporter", "data_type": "traces", "name": "logging"
 
 ### 2. Verify Collector Internal Metrics
 
-Visit `https://obs-dev.proveai.com:8888/metrics` and search for:
+Visit `http://localhost:8888/metrics` and search for:
 
 ```
 otelcol_receiver_accepted_spans
@@ -339,7 +339,7 @@ This counter should increment each time you send a span.
 
 ### 3. Verify Span Metrics in Prometheus Exporter
 
-Visit `https://obs-dev.proveai.com:8889/metrics`
+Visit `http://localhost:8889/metrics`
 
 Search for the test metric `llm_traces_span_metrics_calls_total`
 
@@ -352,10 +352,10 @@ llm_traces_span_metrics_calls_total{component="demo",env="dev",job="otel-test",o
 
 ### 4. Verify Prometheus is Scraping
 
-Visit `https://obs-dev.proveai.com:9090/targets` (include `X-API-Key: placeholder_api_key` header in your browser request, or use curl):
+Visit `http://localhost:9090/targets` (include `X-API-Key: placeholder_api_key` header in your browser request, or use curl):
 
 ```bash
-curl -H "X-API-Key: placeholder_api_key" https://obs-dev.proveai.com:9090/targets
+curl -H "X-API-Key: placeholder_api_key" http://localhost:9090/targets
 ```
 
 You should see two targets both showing as **UP**:
@@ -365,10 +365,10 @@ You should see two targets both showing as **UP**:
 
 ### 5. Query Metrics in Prometheus
 
-Visit `https://obs-dev.proveai.com:9090` (include `X-API-Key: placeholder_api_key` header) or use the API:
+Visit `http://localhost:9090` (include `X-API-Key: placeholder_api_key` header) or use the API:
 
 ```bash
-curl -H "X-API-Key: placeholder_api_key" "https://obs-dev.proveai.com:9090/api/v1/query?query=llm_traces_span_metrics_calls_total"
+curl -H "X-API-Key: placeholder_api_key" "http://localhost:9090/api/v1/query?query=llm_traces_span_metrics_calls_total"
 ```
 
 Run a query:
@@ -388,7 +388,7 @@ llm_traces_span_metrics_calls_total{component="demo", env="dev", exported_job="o
 Verify VictoriaMetrics is running (include API key header):
 
 ```bash
-curl -H "X-API-Key: placeholder_api_key" https://obs-dev.proveai.com:8428/health
+curl -H "X-API-Key: placeholder_api_key" http://localhost:8428/health
 ```
 
 Prometheus automatically remote_writes all metrics to VictoriaMetrics for long-term storage (12 months retention).
@@ -396,7 +396,7 @@ Prometheus automatically remote_writes all metrics to VictoriaMetrics for long-t
 You can query metrics directly from VictoriaMetrics using its Prometheus-compatible API:
 
 ```bash
-curl -H "X-API-Key: placeholder_api_key" "https://obs-dev.proveai.com:8428/api/v1/query?query=llm_traces_span_metrics_calls_total"
+curl -H "X-API-Key: placeholder_api_key" "http://localhost:8428/api/v1/query?query=llm_traces_span_metrics_calls_total"
 ```
 
 ## AWS NLB Integration
@@ -437,7 +437,7 @@ If you receive `401 Unauthorized` responses:
 **Empty trace payload example:**
 
 ```bash
-curl -X POST https://obs-dev.proveai.com:4318/v1/traces \
+curl -X POST http://localhost:4318/v1/traces \
   -H "Content-Type: application/json" \
   -H "X-API-Key: placeholder_api_key" \
   -d '{"resourceSpans":[]}'
@@ -446,8 +446,8 @@ curl -X POST https://obs-dev.proveai.com:4318/v1/traces \
 
 ### Prometheus shows empty results
 
-- Check `https://obs-dev.proveai.com:9090/targets` (with API key header) - both targets should be UP
-- Verify metrics exist at `https://obs-dev.proveai.com:8889/metrics` (internal, no auth required)
+- Check `http://localhost:9090/targets` (with API key header) - both targets should be UP
+- Verify metrics exist at `http://localhost:8889/metrics` (internal, no auth required)
 - Wait 5-10 seconds after sending a span for Prometheus to scrape
 - Ensure you're using the `otel/opentelemetry-collector-contrib` image (not the base image)
 
