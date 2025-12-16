@@ -253,7 +253,30 @@ open https://obs-dev.proveai.com:9090/targets
 
 ### Step 4: Send a Test Trace
 
-See the example in [Send Your First Trace](../quick-start.md#send-test-trace-command) above.
+```bash
+# Note: Requires authentication via Envoy
+# For API Key auth (default):
+otel-cli span \
+  --service "otel-test" \
+  --name "demo-span" \
+  --endpoint https://obs-dev.proveai.com:4318/v1/traces \
+  --protocol http/protobuf \
+  --attrs "env=dev,component=demo" \
+  --start "$(date -Iseconds)" \
+  --end "$(date -Iseconds)" \
+  --otlp-headers "X-API-Key=placeholder_api_key"
+
+# For Basic Auth:
+  otel-cli span \
+  --service "otel-test" \
+  --name "demo-span" \
+  --endpoint https://obs-dev.proveai.com:4318/v1/traces \
+  --protocol http/protobuf \
+  --attrs "env=dev,component=demo" \
+  --start "$(date -Iseconds)" \
+  --end "$(date -Iseconds)" \
+  --otlp-headers "Authorization=Basic $(echo -n 'user:secretpassword' | base64)"
+```
 
 ### Step 5: Verify Metrics Appear
 
