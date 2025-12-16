@@ -253,7 +253,7 @@ open https://obs-dev.proveai.com:9090/targets
 
 ### Step 4: Send a Test Trace
 
-See the example in [Send Your First Trace](#send-test-trace-command) above.
+See the example in [Send Your First Trace](../quick-start.md#send-test-trace-command) above.
 
 ### Step 5: Verify Metrics Appear
 
