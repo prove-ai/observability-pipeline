@@ -4,7 +4,7 @@
 
 ## What This Pipeline Does
 
-This observability pipeline, when deployed with the [full deployment profile](deployment-profiles.md#profile-1-full-complete-stack), solves a common problem: **how to monitor distributed applications using OpenTelemetry traces**. Instead of instrumenting your application twice (once for traces, once for metrics), this pipeline automatically derives metrics from traces and stores them for long-term analysis.
+This observability pipeline, when deployed with the [full deployment profile](guides/deployment-profiles.md#profile-1-full-complete-stack), solves a common problem: **how to monitor distributed applications using OpenTelemetry traces**. Instead of instrumenting your application twice (once for traces, once for metrics), this pipeline automatically derives metrics from traces and stores them for long-term analysis.
 
 **At a Glance:**
 
@@ -100,9 +100,7 @@ curl -L https://github.com/equinix-labs/otel-cli/releases/latest/download/otel-c
 chmod +x /usr/local/bin/otel-cli
 ```
 
-Send a test trace:
-
-<a id="send-test-trace-command"></a>
+## Send a test trace:
 
 ```bash
 # Note: Requires authentication via Envoy

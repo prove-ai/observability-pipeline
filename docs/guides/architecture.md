@@ -2,7 +2,7 @@
 
 [← Back to Advanced Setup](../ADVANCED_SETUP.md)
 
-This document describes the architecture of the observability pipeline, which transforms OpenTelemetry traces into metrics for long-term storage and analysis. The system consists of four main components: **Envoy Proxy** (authentication gateway), **OpenTelemetry Collector** (converts traces to RED metrics via spanmetrics), **Prometheus** (scrapes and queries metrics), and **VictoriaMetrics** (long-term storage with 10x compression). The pipeline supports multiple deployment profiles for integration with existing infrastructure, and includes comprehensive testing procedures and design rationale.
+is document describes the architecture of the observability pipeline, which transforms OpenTelemetry traces into metrics for long-term storage and analysis. The system consists of four main components: **Envoy Proxy** (authentication gateway), **OpenTelemetry Collector** (converts traces to RED metrics via spanmetrics), **Prometheus** (scrapes and queries metrics), and **VictoriaMetrics** (long-term storage with 10x compression). The pipeline supports multiple deployment profiles for integration with existing infrastructure, and includes comprehensive testing procedures and design rationale.
 
 ### Data Flow
 
@@ -253,30 +253,7 @@ open https://obs-dev.proveai.com:9090/targets
 
 ### Step 4: Send a Test Trace
 
-```bash
-# Note: Requires authentication via Envoy
-# For API Key auth (default):
-otel-cli span \
-  --service "otel-test" \
-  --name "demo-span" \
-  --endpoint https://obs-dev.proveai.com:4318/v1/traces \
-  --protocol http/protobuf \
-  --attrs "env=dev,component=demo" \
-  --start "$(date -Iseconds)" \
-  --end "$(date -Iseconds)" \
-  --otlp-headers "X-API-Key=placeholder_api_key"
-
-# For Basic Auth:
-  otel-cli span \
-  --service "otel-test" \
-  --name "demo-span" \
-  --endpoint https://obs-dev.proveai.com:4318/v1/traces \
-  --protocol http/protobuf \
-  --attrs "env=dev,component=demo" \
-  --start "$(date -Iseconds)" \
-  --end "$(date -Iseconds)" \
-  --otlp-headers "Authorization=Basic $(echo -n 'user:secretpassword' | base64)"
-```
+See the example in [Send Your First Trace](../quick-start.md#send-your-first-trace) above.
 
 ### Step 5: Verify Metrics Appear
 
