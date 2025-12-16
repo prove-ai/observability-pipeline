@@ -36,6 +36,13 @@ scrape_configs:
     static_configs:
       - targets: ["garage.proveai.com:18010"]
 
+  # vLLM metrics endpoint (if running more than one instance)
+  - job_name: "vllm-2"
+    scheme: "http"
+    metrics_path: "/metrics"
+    static_configs:
+      - targets: ["garage.proveai.com:18011"]
+
   # vLLM on Kubernetes (alternative to static_configs above)
   # Uncomment and adapt this:
   # This uses pod discovery to automatically find vLLM pods.
