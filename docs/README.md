@@ -25,7 +25,7 @@ The documentation is organized into 8 focused guides in the `guides/` directory:
 
 6. **[production-guide.md](guides/production-guide.md)** - Sizing, persistence, backups, and performance tuning
 
-7. **[security.md](guides/security.md)** - Authentication, network security, and securing debugging endpoints.
+7. **[security.md](guides/security.md)** - Authentication and network security.
 
 #### Reference
 

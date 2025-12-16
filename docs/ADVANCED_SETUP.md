@@ -57,7 +57,7 @@ This guide provides comprehensive instructions for deploying and configuring the
    Resource sizing, data persistence, backup strategies, and performance tuning.
 
 7. **[Security Guide](guides/security.md)**  
-   Authentication, network security, and securing debugging endpoints.
+   Authentication and network security
 
 ### Reference
 

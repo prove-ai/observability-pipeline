@@ -2,12 +2,11 @@
 
 [← Back to Advanced Setup](../ADVANCED_SETUP.md)
 
-This guide covers security best practices for the Observability Pipeline, focusing on authentication, securing debugging endpoints, and network security considerations.
+This guide covers security best practices for the Observability Pipeline, focusing on authentication and network security considerations.
 
 ## Table of Contents
 
 - [Authentication](#authentication)
-- [Securing Debugging Endpoints](#securing-debugging-endpoints)
 - [Network Security](#network-security)
 - [Security Checklist](#security-checklist)
 

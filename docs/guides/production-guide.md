@@ -77,7 +77,7 @@ Before going to production, ensure you address:
 - [ ] **Network Restrictions** - Limit access via firewalls/security groups
 - [ ] **Debug Endpoints** - Disable or restrict pprof (1888) and zpages (55679)
 
-**📖 Next:** See the [Security Guide](security.md) for detailed configuration instructions for authentication, network security, and securing debugging endpoints.
+**📖 Next:** See the [Security Guide](security.md) for detailed configuration instructions for authentication and network security.
 
 ---
 
