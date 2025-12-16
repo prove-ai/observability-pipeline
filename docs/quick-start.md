@@ -1,4 +1,4 @@
-# Getting Started Guide
+# Getting Started
 
 [← Back to Advanced Setup](../ADVANCED_SETUP.md)
 
@@ -136,3 +136,114 @@ open https://obs-dev.proveai.com:9090
 # Run this query in the Prometheus UI
 llm_traces_span_metrics_calls_total{service_name="otel-test"}
 ```
+
+---
+
+## Optional: Monitor vLLM Inference
+
+Add vLLM monitoring to your observability stack to track inference metrics like latency, throughput, and token generation.
+
+**Note:** Requires NVIDIA GPU. Skip this section if GPU is not available.
+
+### Deploy vLLM
+
+Create a `.env` file:
+
+```bash
+VLLM_IMAGE_VERSION=v0.6.3.post1
+VLLM_MODEL=Qwen/Qwen2.5-0.5B-Instruct
+VLLM_HOST=0.0.0.0
+VLLM_PORT=8000
+VLLM_MAX_MODEL_LEN=1024
+VLLM_GPU_MEMORY_UTILIZATION=0.9
+VLLM_DTYPE=half
+```
+
+Create `docker-compose.yml` for vLLM:
+
+```yaml
+services:
+  vllm:
+    image: vllm/vllm-openai:${VLLM_IMAGE_VERSION}
+    container_name: vllm-server
+    command: >
+      --model ${VLLM_MODEL}
+      --host ${VLLM_HOST}
+      --port ${VLLM_PORT}
+      --max-model-len ${VLLM_MAX_MODEL_LEN}
+      --gpu-memory-utilization ${VLLM_GPU_MEMORY_UTILIZATION}
+      --dtype ${VLLM_DTYPE}
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./models:/root/.cache/huggingface
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+    restart: unless-stopped
+```
+
+Start vLLM:
+
+```bash
+docker compose up -d
+```
+
+### Add vLLM to Prometheus
+
+Edit `docker-compose/prometheus.yaml` and add the vLLM scrape target:
+
+```yaml
+scrape_configs:
+  - job_name: "otel-collector"
+    static_configs:
+      - targets: ["otel-collector:8889"]
+
+  - job_name: "otel-collector-internal"
+    static_configs:
+      - targets: ["otel-collector:8888"]
+
+  # Add this section
+  - job_name: "vllm"
+    static_configs:
+      - targets: ["<vllm-host>:8000"] # Use hostname or IP where vLLM is running
+```
+
+Restart Prometheus:
+
+```bash
+cd docker-compose
+docker compose restart prometheus
+```
+
+### Verify vLLM Monitoring
+
+Send a test request:
+
+```bash
+curl http://localhost:8000/v1/chat/completions \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "Qwen/Qwen2.5-0.5B-Instruct",
+    "messages": [{"role": "user", "content": "Hello"}],
+    "max_tokens": 10
+  }'
+```
+
+Query vLLM metrics in Prometheus:
+
+```bash
+# For API Key auth (default):
+curl -H "X-API-Key: placeholder_api_key" \
+  'https://obs-dev.proveai.com:9090/api/v1/query?query=vllm:request_success_total' | jq
+
+# For Basic Auth:
+curl -u user:secretpassword \
+  'https://obs-dev.proveai.com:9090/api/v1/query?query=vllm:request_success_total' | jq
+```
+
+**📖 For detailed setup, troubleshooting, and PromQL queries:** [vLLM Observability Guide](guides/vllm-guide.md)
