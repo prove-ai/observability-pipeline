@@ -139,15 +139,17 @@ llm_traces_span_metrics_calls_total{service_name="otel-test"}
 
 ---
 
-## Optional: Monitor vLLM Inference
+## Optional: Monitor LLM Inference
 
-Add vLLM monitoring to your observability stack to track inference metrics like latency, throughput, and token generation.
+Monitor your LLM inference servers to track metrics like latency, throughput, and token generation. Choose the framework that matches your deployment:
 
-**Note:** Requires NVIDIA GPU. Skip this section if GPU is not available.
+### Option 1: vLLM
 
-### Deploy vLLM
+**Prerequisites:** NVIDIA GPU with Compute Capability ≥ 7.0, NVIDIA Container Toolkit
 
-Create a `.env` file:
+**Quick Setup:**
+
+1. **Create configuration** (`.env` file):
 
 ```bash
 VLLM_IMAGE_VERSION=v0.6.3.post1
@@ -159,7 +161,7 @@ VLLM_GPU_MEMORY_UTILIZATION=0.9
 VLLM_DTYPE=half
 ```
 
-Create `docker-compose.yml` for vLLM:
+2. **Create `docker-compose.yml`** with GPU support:
 
 ```yaml
 services:
@@ -187,63 +189,42 @@ services:
     restart: unless-stopped
 ```
 
-Start vLLM:
+3. **Deploy vLLM:**
 
 ```bash
 docker compose up -d
 ```
 
-### Add vLLM to Prometheus
-
-Edit `docker-compose/prometheus.yaml` and add the vLLM scrape target:
+4. **Add vLLM to Prometheus** - Edit `docker-compose/prometheus.yaml`:
 
 ```yaml
 scrape_configs:
-  - job_name: "otel-collector"
-    static_configs:
-      - targets: ["otel-collector:8889"]
+  # ... existing configs ...
 
-  - job_name: "otel-collector-internal"
-    static_configs:
-      - targets: ["otel-collector:8888"]
-
-  # Add this section
   - job_name: "vllm"
     static_configs:
       - targets: ["<vllm-host>:8000"] # Use hostname or IP where vLLM is running
 ```
 
-Restart Prometheus:
+Then restart Prometheus:
 
 ```bash
 cd docker-compose
 docker compose restart prometheus
 ```
 
-### Verify vLLM Monitoring
-
-Send a test request:
+5. **Verify metrics:**
 
 ```bash
-curl http://localhost:8000/v1/chat/completions \
-  -H "Content-Type: application/json" \
-  -d '{
-    "model": "Qwen/Qwen2.5-0.5B-Instruct",
-    "messages": [{"role": "user", "content": "Hello"}],
-    "max_tokens": 10
-  }'
+curl http://localhost:8000/metrics | grep vllm:request_success_total
 ```
 
-Query vLLM metrics in Prometheus:
+**📖 Full guide with troubleshooting and validation:** [vLLM Observability Guide](guides/vLLM-guide.md)
 
-```bash
-# For API Key auth (default):
-curl -H "X-API-Key: placeholder_api_key" \
-  'https://obs-dev.proveai.com:9090/api/v1/query?query=vllm:request_success_total' | jq
+---
 
-# For Basic Auth:
-curl -u user:secretpassword \
-  'https://obs-dev.proveai.com:9090/api/v1/query?query=vllm:request_success_total' | jq
-```
+### Option 2: Ollama
 
-**📖 For detailed setup, troubleshooting, and PromQL queries:** [vLLM Observability Guide](guides/vllm-guide.md)
+**Coming soon** - Ollama integration guide
+
+**📖 Full guide:** [Ollama Observability Guide](guides/ollama-guide.md)

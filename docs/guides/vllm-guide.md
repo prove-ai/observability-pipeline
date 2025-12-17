@@ -2,26 +2,29 @@
 
 [← Back to Advanced Setup](../ADVANCED_SETUP.md)
 
-This guide shows how to monitor vLLM inference servers by exposing and scraping vLLM's built-in Prometheus metrics.
+This guide shows how to deploy vLLM with GPU acceleration and configure Prometheus to scrape vLLM's built-in metrics.
+
+---
 
 ## Overview
 
-vLLM provides built-in Prometheus metrics at its `/metrics` endpoint, making it straightforward to integrate with observability systems. This guide covers two deployment approaches:
+vLLM provides a Prometheus-compatible `/metrics` endpoint for monitoring inference performance. This guide covers deploying vLLM with GPU support and setting up Prometheus to collect metrics.
 
-**Option 1: Standalone Setup** - Deploy vLLM with a dedicated Prometheus instance (ideal for development or isolated deployments)
+**By the end of this guide, you will have:**
 
-**Option 2: Integration with Observability Pipeline** - Add vLLM as a scrape target to an existing Prometheus deployment (recommended for production)
+- A running vLLM OpenAI-compatible inference server
+- GPU support via NVIDIA Container Toolkit
+- vLLM metrics exposed at `/metrics`
+- A Prometheus instance scraping these metrics
 
-### Key vLLM Metrics
-
-vLLM exposes metrics for inference performance monitoring:
+**Key vLLM Metrics:**
 
 ```
-vllm:time_to_first_token_seconds        # Latency to first token
-vllm:time_per_output_token_seconds      # Per-token generation time
-vllm:e2e_request_latency_seconds        # End-to-end request latency
-vllm:request_success_total              # Successful requests
-vllm:generation_tokens_total            # Total tokens generated
+vllm:time_to_first_token_seconds_bucket     # Time to first token histogram
+vllm:time_per_output_token_seconds_bucket   # Per-token generation time
+vllm:e2e_request_latency_seconds_bucket     # End-to-end request latency
+vllm:request_success_total                  # Successful requests counter
+vllm:generation_tokens_total                # Total tokens generated
 ```
 
 **Full metric list:** Available at `http://<vllm-host>:8000/metrics`
@@ -51,17 +54,30 @@ docker run --rm --gpus all nvidia/cuda:11.8.0-base-ubuntu22.04 nvidia-smi
 ### Network Requirements
 
 - **Port 8000**: vLLM API and metrics endpoint
-- **Port 9090**: Prometheus UI (if using standalone setup)
+- **Port 9090**: Prometheus UI
+
+**Network considerations:**
+
+- If Prometheus and vLLM run in the same Docker network, Prometheus scrapes using the container name: `vllm-server:8000`
+- If they run on different hosts, use: `http://<vllm-host-ip>:8000/metrics`
+- Ensure Prometheus can reach the vLLM host and port (check firewall rules)
+
+### Model Download Requirements
+
+- **Public models**: Internet access required for first pull
+- **Private models**: HuggingFace token required
+  - Set `HF_HOME` or mount an auth file
+  - Export `HUGGINGFACE_HUB_TOKEN` if needed
 
 ---
 
-## Option 1: Standalone Setup
+## vLLM Configuration
 
-Deploy vLLM with a dedicated Prometheus instance for quick setup or isolated environments.
+vLLM is configured using environment variables stored in a `.env` file.
 
-### Step 1: Configure vLLM
+### Create .env File
 
-Create a `.env` file with vLLM configuration:
+Create a `.env` file in the same directory as your `docker-compose.yml`:
 
 ```bash
 # vLLM Image Version
@@ -80,24 +96,37 @@ VLLM_GPU_MEMORY_UTILIZATION=0.9
 VLLM_DTYPE=half
 ```
 
-**Configuration Notes:**
+### Configuration Variables
 
 | Variable                      | Description                       | Common Values               |
 | ----------------------------- | --------------------------------- | --------------------------- |
+| `VLLM_IMAGE_VERSION`          | Docker image tag                  | v0.6.3.post1                |
 | `VLLM_MODEL`                  | HuggingFace model ID              | Any compatible model        |
+| `VLLM_HOST`                   | Bind HTTP server to interfaces    | 0.0.0.0                     |
+| `VLLM_PORT`                   | Port for API + /metrics           | 8000                        |
 | `VLLM_MAX_MODEL_LEN`          | Maximum context length            | 1024, 2048, 4096            |
 | `VLLM_GPU_MEMORY_UTILIZATION` | GPU memory allocation (0.0 - 1.0) | 0.9 (recommended)           |
 | `VLLM_DTYPE`                  | Model precision                   | `half`, `bfloat16`, `float` |
 
-**Optional:** For private HuggingFace models, add:
+**Optional:** For private HuggingFace models:
 
 ```bash
 HUGGINGFACE_HUB_TOKEN=your_token_here
 ```
 
-### Step 2: Deploy vLLM
+### Verify .env Loading
 
-Create `docker-compose.yml`:
+The docker-compose file references these variables. To confirm they're loaded:
+
+```bash
+docker compose config
+```
+
+---
+
+## Deploying vLLM
+
+### Create docker-compose.yml
 
 ```yaml
 services:
@@ -123,7 +152,68 @@ services:
               count: 1
               capabilities: [gpu]
     restart: unless-stopped
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+```
 
+**Notes:**
+
+- GPU passthrough handled by `deploy.resources.reservations.devices`
+- `models` folder caches HuggingFace weights to avoid re-downloading
+- Container restarts automatically if it stops
+
+### Start vLLM
+
+From the directory containing `docker-compose.yml` and `.env`:
+
+```bash
+docker compose up -d
+```
+
+### Verify vLLM Deployment
+
+**Check logs:**
+
+```bash
+docker logs -f vllm-server
+```
+
+Look for:
+
+- "Loading model: Qwen/Qwen2.5-0.5B-Instruct"
+- "vLLM OpenAI server running"
+- "Uvicorn running on http://0.0.0.0:8000"
+
+**Validate GPU access:**
+
+```bash
+docker exec -it vllm-server nvidia-smi
+```
+
+**Test API:**
+
+```bash
+curl http://localhost:8000/v1/models
+```
+
+**Test metrics endpoint:**
+
+```bash
+curl http://localhost:8000/metrics
+```
+
+---
+
+## Deploying Prometheus
+
+Prometheus scrapes the vLLM `/metrics` endpoint and stores metrics for querying.
+
+You can run Prometheus on the same host or a separate machine. Below assumes a separate `prometheus-docker-compose.yml`.
+
+### Create prometheus-docker-compose.yml
+
+```yaml
+services:
   prometheus:
     image: prom/prometheus:latest
     container_name: prometheus
@@ -138,7 +228,9 @@ volumes:
   prometheus_data:
 ```
 
-Create `prometheus.yml`:
+### Create prometheus.yml
+
+Minimal config to scrape a vLLM instance:
 
 ```yaml
 global:
@@ -147,284 +239,132 @@ global:
 scrape_configs:
   - job_name: "vllm"
     static_configs:
-      - targets: ["vllm-server:8000"]
+      - targets:
+          - "vllm-server:8000" # Same Docker network as vLLM
 ```
 
-**Start the services:**
-
-```bash
-docker compose up -d
-```
-
-### Step 3: Verify Deployment
-
-**Check container status:**
-
-```bash
-docker compose ps
-# Expected: Both vllm-server and prometheus showing "Up"
-```
-
-**Verify GPU access:**
-
-```bash
-docker exec -it vllm-server nvidia-smi
-```
-
-**Check vLLM logs:**
-
-```bash
-docker logs -f vllm-server
-# Look for: "Uvicorn running on http://0.0.0.0:8000"
-```
-
-**Test vLLM API:**
-
-```bash
-curl http://localhost:8000/v1/models
-```
-
-**Test metrics endpoint:**
-
-```bash
-curl http://localhost:8000/metrics | grep vllm
-```
-
-**Verify Prometheus scraping:**
-
-Open `http://localhost:9090/targets` and confirm:
-
-- Job: `vllm`
-- State: **UP**
-
----
-
-## Option 2: Integration with Observability Pipeline
-
-Add vLLM monitoring to an existing Prometheus deployment from the main observability pipeline.
-
-### Prerequisites
-
-Ensure the observability pipeline is already deployed. See:
-
-- [Quick Start](../quick-start.md) for initial deployment
-- [Deployment Guide](deployment-guide.md) for detailed setup instructions
-- [Deployment Profiles](deployment-profiles.md) for profile selection
-
-### Step 1: Deploy vLLM
-
-Use the same vLLM configuration from Option 1, but deploy only the vLLM service:
+**If Prometheus runs on a different host**, replace target with the vLLM host/IP:
 
 ```yaml
-services:
-  vllm:
-    image: vllm/vllm-openai:${VLLM_IMAGE_VERSION}
-    container_name: vllm-server
-    command: >
-      --model ${VLLM_MODEL}
-      --host ${VLLM_HOST}
-      --port ${VLLM_PORT}
-      --max-model-len ${VLLM_MAX_MODEL_LEN}
-      --gpu-memory-utilization ${VLLM_GPU_MEMORY_UTILIZATION}
-      --dtype ${VLLM_DTYPE}
-    ports:
-      - "${VLLM_PORT}:${VLLM_PORT}"
-    volumes:
-      - ./models:/root/.cache/huggingface
-    deploy:
-      resources:
-        reservations:
-          devices:
-            - driver: nvidia
-              count: 1
-              capabilities: [gpu]
-    restart: unless-stopped
-```
-
-**Start vLLM:**
-
-```bash
-docker compose up -d
-```
-
-### Step 2: Add vLLM to Prometheus Configuration
-
-Edit your existing `docker-compose/prometheus.yaml` to add vLLM as a scrape target:
-
-```yaml
-global:
-  scrape_interval: 10s
-
 scrape_configs:
-  - job_name: "otel-collector"
-    static_configs:
-      - targets: ["otel-collector:8889"]
-
-  - job_name: "otel-collector-internal"
-    static_configs:
-      - targets: ["otel-collector:8888"]
-
-  # Add vLLM scrape target
   - job_name: "vllm"
     static_configs:
-      - targets: ["<vllm-host>:8000"] # Replace with vLLM hostname or IP
+      - targets:
+          - "<VLLM_SERVER_IP>:8000"
 ```
 
-**Network Considerations:**
+### Start Prometheus
 
-- **Same Docker network**: Use container name (e.g., `vllm-server:8000`)
-- **Different host**: Use hostname or IP (e.g., `192.168.1.100:8000`)
-- **Ensure firewall rules** allow Prometheus to reach vLLM on port 8000
-
-**Restart Prometheus to apply changes:**
+From the directory containing `prometheus-docker-compose.yml` and `prometheus.yml`:
 
 ```bash
-cd docker-compose
-docker compose restart prometheus
+docker compose -f prometheus-docker-compose.yml up -d
 ```
 
-### Step 3: Verify Integration
-
-**Check Prometheus targets:**
+**Verify container:**
 
 ```bash
-# For API Key auth (default):
-curl -H "X-API-Key: placeholder_api_key" http://localhost:9090/api/v1/targets | jq '.data.activeTargets[] | select(.labels.job=="vllm")'
-
-# For Basic Auth:
-curl -u user:secretpassword http://localhost:9090/api/v1/targets | jq '.data.activeTargets[] | select(.labels.job=="vllm")'
+docker ps
 ```
 
-**Expected:** `health: "up"` for the vLLM target
+You should see a `prometheus` container running.
 
-**Query vLLM metrics:**
+### Validate Prometheus UI
 
-```bash
-# For API Key auth (default):
-curl -H "X-API-Key: placeholder_api_key" 'http://localhost:9090/api/v1/query?query=up{job="vllm"}' | jq
+Open in browser: `http://<PROMETHEUS_HOST>:9090`
 
-# For Basic Auth:
-curl -u user:secretpassword 'http://localhost:9090/api/v1/query?query=up{job="vllm"}' | jq
-```
+Go to **Status → Targets** and check:
 
-**Expected:** `value: [<timestamp>, "1"]`
+- job="vllm"
+- State: **UP**
 
-For more information on authentication, see the [Security Guide](security.md).
+If it's **DOWN**, check:
+
+- vLLM is reachable from Prometheus host
+- Target hostname/IP is correct
+- Port (8000) is open and not blocked by firewall
 
 ---
 
-## Validation
+## End-to-End Validation
 
-After deployment, verify the complete monitoring stack:
+This section verifies that vLLM serves requests, metrics are exposed, and Prometheus is scraping.
 
 ### 1. Send Test Request to vLLM
 
 ```bash
-curl http://localhost:8000/v1/chat/completions \
+curl http://<VLLM_HOST>:8000/v1/chat/completions \
   -H "Content-Type: application/json" \
   -d '{
     "model": "Qwen/Qwen2.5-0.5B-Instruct",
     "messages": [
-      {"role": "user", "content": "Say hello in one sentence."}
+      {"role": "user", "content": "Say hello in one short sentence."}
     ],
     "max_tokens": 10
   }'
 ```
 
-### 2. Check Metrics are Exposed
+### 2. Check vLLM Metrics Endpoint
 
 ```bash
-curl http://localhost:8000/metrics | grep -E "(vllm:request_success|vllm:generation_tokens)"
+curl http://<VLLM_HOST>:8000/metrics | head -n 40
 ```
 
-**Expected output:**
+You should see Prometheus-formatted output, including:
 
 ```
-vllm:request_success_total{...} 1
-vllm:generation_tokens_total{...} 10
+# HELP vllm:time_to_first_token_seconds Histogram of time to first token in seconds.
+# TYPE vllm:time_to_first_token_seconds histogram
+vllm:time_to_first_token_seconds_bucket{...}
 ```
 
-### 3. Query Metrics in Prometheus
+### 3. Verify Prometheus Target
 
-Open Prometheus UI (`http://localhost:9090`) or use the API:
+Open Prometheus UI: `http://<PROMETHEUS_HOST>:9090`
 
-```bash
-# Standalone setup:
-curl 'http://localhost:9090/api/v1/query?query=vllm:request_success_total' | jq
+Go to **Status → Targets** and check:
 
-# Integrated with observability pipeline (API Key):
-curl -H "X-API-Key: placeholder_api_key" 'http://localhost:9090/api/v1/query?query=vllm:request_success_total' | jq
+- `job="vllm"` is listed
+- State is **UP**
+- Last scrape shows a recent timestamp
 
-# Integrated with observability pipeline (Basic Auth):
-curl -u user:secretpassword 'http://localhost:9090/api/v1/query?query=vllm:request_success_total' | jq
-```
+### 4. Basic PromQL Checks
 
----
-
-## Useful PromQL Queries
-
-Query vLLM metrics in Prometheus for monitoring and dashboards:
-
-### Request Rate
+In the **Graph** tab, run:
 
 ```promql
-# Requests per second
-rate(vllm:request_success_total[5m])
-
-# Requests per second by model
-rate(vllm:request_success_total[5m]) by (model_name)
+up{job="vllm"}
 ```
 
-### Latency Percentiles
+Expected: value `1` for your vLLM instance.
+
+After sending a few requests to vLLM, query:
 
 ```promql
-# p95 time to first token
-histogram_quantile(0.95, rate(vllm:time_to_first_token_seconds_bucket[5m]))
-
-# p99 end-to-end latency
-histogram_quantile(0.99, rate(vllm:e2e_request_latency_seconds_bucket[5m]))
-
-# Median time per output token
-histogram_quantile(0.50, rate(vllm:time_per_output_token_seconds_bucket[5m]))
+vllm:request_success_total
+vllm:generation_tokens_total
+vllm:e2e_request_latency_seconds_count
 ```
 
-### Throughput
-
-```promql
-# Tokens generated per second
-rate(vllm:generation_tokens_total[5m])
-
-# Average tokens per request
-rate(vllm:generation_tokens_total[5m]) / rate(vllm:request_success_total[5m])
-```
-
-### Error Rate
-
-```promql
-# Failed requests per second
-rate(vllm:request_failure_total[5m])
-
-# Error percentage
-(rate(vllm:request_failure_total[5m]) / rate(vllm:request_success_total[5m])) * 100
-```
-
-For more information on Prometheus queries and configuration, see the [Configuration Reference](configuration-reference.md#prometheus-configuration).
+You should see non-zero values and increasing counters as you generate more traffic.
 
 ---
 
 ## Troubleshooting
 
-### vLLM Container Not Starting
+### vLLM Container Not Running
 
 **Symptoms:**
 
-- Container exits immediately after starting
-- `docker ps` doesn't show `vllm-server`
+- `docker ps` does not show `vllm-server`
+- `docker compose up -d` fails
 
-**Check logs:**
+**Checks:**
 
 ```bash
-docker logs vllm-server
+docker compose up -d
+docker ps
+docker logs -f vllm-server
 ```
 
 **Common causes:**
@@ -436,54 +376,52 @@ docker logs vllm-server
 | GPU not available       | Run `nvidia-smi` and check NVIDIA Container Toolkit       |
 | Insufficient GPU memory | Reduce `VLLM_GPU_MEMORY_UTILIZATION` or use smaller model |
 
-### GPU Not Detected
+### GPU Not Detected in Container
 
 **Symptoms:**
 
-- Logs show CUDA errors
-- vLLM falls back to CPU
+- vLLM crashes on startup
+- Logs mention CUDA or device errors
 
-**Verify GPU access:**
+**Checks:**
+
+On host:
 
 ```bash
-# On host
 nvidia-smi
+```
 
-# Inside container
+Inside container:
+
+```bash
 docker exec -it vllm-server nvidia-smi
 ```
 
 **Fixes:**
 
-1. Install/update NVIDIA driver
-2. Install NVIDIA Container Toolkit:
-   ```bash
-   # Ubuntu/Debian
-   curl -fsSL https://nvidia.github.io/libnvidia-container/gpgkey | sudo gpg --dearmor -o /usr/share/keyrings/nvidia-container-toolkit-keyring.gpg
-   curl -s -L https://nvidia.github.io/libnvidia-container/stable/deb/nvidia-container-toolkit.list | \
-     sed 's#deb https://#deb [signed-by=/usr/share/keyrings/nvidia-container-toolkit-keyring.gpg] https://#g' | \
-     sudo tee /etc/apt/sources.list.d/nvidia-container-toolkit.list
-   sudo apt-get update
-   sudo apt-get install -y nvidia-container-toolkit
-   sudo systemctl restart docker
-   ```
-3. Verify `deploy.resources.reservations.devices` in docker-compose.yml
+- Install/fix NVIDIA driver on host
+- Install NVIDIA Container Toolkit
+- Ensure Docker is configured with `--gpus` support
+- Verify `deploy.resources.reservations.devices` block is present in compose file
 
-### Metrics Endpoint Not Reachable
+### /metrics Endpoint Not Reachable
 
 **Symptoms:**
 
-- `curl http://localhost:8000/metrics` fails
-- Prometheus target shows DOWN
+- `curl http://<VLLM_HOST>:8000/metrics` fails or times out
 
 **Checks:**
 
-```bash
-# From vLLM host
-curl http://localhost:8000/metrics
+From the vLLM host:
 
-# From Prometheus host
-curl http://<vllm-host>:8000/metrics
+```bash
+curl http://localhost:8000/metrics
+```
+
+From the Prometheus host:
+
+```bash
+curl http://<VLLM_HOST>:8000/metrics
 ```
 
 **Fixes:**
@@ -491,24 +429,28 @@ curl http://<vllm-host>:8000/metrics
 | Issue                 | Solution                                    |
 | --------------------- | ------------------------------------------- |
 | Container not running | Check `docker ps` and container logs        |
-| Wrong port            | Verify `VLLM_PORT` in `.env`                |
+| Wrong port            | Confirm `VLLM_PORT` in `.env`               |
 | Firewall blocking     | Allow port 8000 in firewall/security groups |
 | Wrong hostname        | Update Prometheus config with correct host  |
 
-### Prometheus Target DOWN
+**Note:** Server must not be run with `--disable-log-stats` (metrics tracking requires this enabled)
+
+### Prometheus Target is DOWN
 
 **Symptoms:**
 
-- In Prometheus UI: Status → Targets → `job="vllm"` shows **DOWN**
+- In Prometheus UI → **Status → Targets** → `job="vllm"` shows **DOWN**
 
-**Verify target configuration:**
+**Verify target in prometheus.yml:**
 
 ```yaml
 scrape_configs:
   - job_name: "vllm"
     static_configs:
-      - targets: ["<vllm-host>:8000"] # Check this is correct
+      - targets: ["vllm-server:8000"] # or <VLLM_HOST>:8000
 ```
+
+If Prometheus and vLLM are not on the same Docker network, `vllm-server` will not resolve. Use the host IP instead.
 
 **Common errors:**
 
@@ -518,33 +460,61 @@ scrape_configs:
 | `connection refused`        | Port closed or wrong port | Verify vLLM is running on port 8000 |
 | `context deadline exceeded` | Firewall/network blocking | Check firewall rules                |
 
-**Network debugging:**
-
-```bash
-# From Prometheus container
-docker exec prometheus wget -O- http://<vllm-host>:8000/metrics
-```
-
-### Metrics Not Increasing
+### Metrics Are Empty or Not Increasing
 
 **Symptoms:**
 
-- `up{job="vllm"}` returns `1` but request counters stay at 0
+- `up{job="vllm"}` returns `1` but `vllm:*` metrics stay `0`
 
-**Verify:**
+**Checks:**
 
-1. Have you sent requests to vLLM? See [Validation](#validation) section
-2. Check metrics are being generated:
-   ```bash
-   curl http://localhost:8000/metrics | grep vllm:request_success_total
-   ```
-3. Wait for next scrape (default: 15 seconds)
+- Have you sent any requests to vLLM?
+- Re-run queries after sending test traffic
 
-**Increase scrape frequency** (if needed):
+**Fixes:**
+
+Send some test traffic (see validation section above).
+
+Lower scrape interval if needed (default 15s may delay updates):
 
 ```yaml
 global:
-  scrape_interval: 5s # Reduce from 15s
+  scrape_interval: 5s
+```
+
+---
+
+## Useful Commands
+
+### Container Management
+
+```bash
+docker compose up -d
+docker compose down
+docker logs -f vllm-server
+docker logs -f prometheus
+```
+
+### GPU Debugging
+
+```bash
+nvidia-smi
+docker exec -it vllm-server nvidia-smi
+```
+
+### Test Endpoints
+
+```bash
+curl http://<host>:8000/v1/models
+curl http://<host>:8000/metrics
+```
+
+### PromQL Quick Checks
+
+```promql
+up{job="vllm"}
+vllm:request_success_total
+vllm:generation_tokens_total
 ```
 
 ---
@@ -555,21 +525,12 @@ global:
 
 - ✅ vLLM metrics now visible in Prometheus
 - **Send inference requests** and monitor performance
-- **Create dashboards** using the PromQL queries above
-
-### For Production Environments
-
-- **Secure your deployment**: See [Security Guide](security.md) for authentication and network security
-- **Configure alerts**: Set up alerting for latency, error rates, and throughput
-- **Long-term storage**: If not already using VictoriaMetrics, see [Architecture Guide](architecture.md#why-victoriametrics)
-- **Performance tuning**: Adjust vLLM and Prometheus settings based on load
+- **Create dashboards** using PromQL queries
 
 ### Additional Resources
 
 - **vLLM Documentation**: [https://docs.vllm.ai](https://docs.vllm.ai)
-- **Configuration tuning**: [Configuration Reference](configuration-reference.md)
-- **Production best practices**: [Production Guide](production-guide.md)
-- **Prometheus configuration**: [Prometheus Documentation](https://prometheus.io/docs/)
+- **Prometheus Documentation**: [https://prometheus.io/docs/](https://prometheus.io/docs/)
 
 ---
 
