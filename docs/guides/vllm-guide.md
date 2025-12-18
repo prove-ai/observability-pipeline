@@ -2,13 +2,10 @@
 
 [← Back to Advanced Setup](../ADVANCED_SETUP.md)
 
-This guide shows how to deploy vLLM with GPU acceleration and configure Prometheus to scrape vLLM's built-in metrics.
-
----
-
 ## Overview
 
-vLLM provides a Prometheus-compatible `/metrics` endpoint for monitoring inference performance. This guide covers deploying vLLM with GPU support and setting up Prometheus to collect metrics.
+This guide provides detailed instructions for deploying vLLM with GPU acceleration using Docker Compose and configuring Prometheus to scrape vLLM’s built-in metrics.
+It covers only what is required with minimal complexity.
 
 **By the end of this guide, you will have:**
 
@@ -16,8 +13,37 @@ vLLM provides a Prometheus-compatible `/metrics` endpoint for monitoring inferen
 - GPU support via NVIDIA Container Toolkit
 - vLLM metrics exposed at `/metrics`
 - A Prometheus instance scraping these metrics
+- A validated observability pipeline
 
-**Key vLLM Metrics:**
+# Architecture Overview
+
+## High-Level Architecture
+
+Minimal Observability pipeline for vLLM:
+
+```
+┌────────────────────────────┐
+│ vLLM Server                │
+│ ┌────────────────────────┐ │
+│ │ OpenAI API + /metrics  │ │
+│ └────────────────────────┘ │
+└────────────────────────────┘
+               ↓
+┌────────────────────────────┐
+│ Prometheus                 |
+│ ┌────────────────────────┐ │
+│ │ Scrapes /metrics       | |
+│ └────────────────────────┘ │
+└────────────────────────────┘
+```
+
+**Key Points:**
+
+- vLLM exposes a **Prometheus-compatible `/metrics` endpoint**
+
+- Prometheus pulls (scrapes) metrics directly from the vLLM container.
+
+**Example vLLM Metrics:**
 
 ```
 vllm:time_to_first_token_seconds_bucket     # Time to first token histogram

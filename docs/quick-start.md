@@ -219,7 +219,7 @@ docker compose restart prometheus
 curl http://localhost:8000/metrics | grep vllm:request_success_total
 ```
 
-**📖 Full guide with troubleshooting and validation:** [vLLM Observability Guide](guides/vLLM-guide.md)
+**📖 Full guide with troubleshooting and validation:** [vLLM Observability Guide](guides/vllm-guide.md)
 
 ---
 
