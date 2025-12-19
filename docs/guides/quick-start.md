@@ -147,12 +147,14 @@ Monitor your LLM inference servers to track metrics like latency, throughput, an
 
 **Prerequisites:** NVIDIA GPU with Compute Capability ≥ 7.0, NVIDIA Container Toolkit
 
+> **Note:** This guide uses vLLM v0.12.0 (latest stable as of December 2025). Check the [vLLM releases page](https://github.com/vllm-project/vllm/releases) for newer versions. If upgrading from v0.6.x or earlier, review the [changelog](https://github.com/vllm-project/vllm/releases) for breaking changes.
+
 **Quick Setup:**
 
 1. **Create configuration** (`.env` file):
 
 ```bash
-VLLM_IMAGE_VERSION=v0.6.3.post1
+VLLM_IMAGE_VERSION=v0.11.2 # latest stable as of Dec 2025
 VLLM_MODEL=Qwen/Qwen2.5-0.5B-Instruct
 VLLM_HOST=0.0.0.0
 VLLM_PORT=8000
@@ -189,6 +191,8 @@ services:
     restart: unless-stopped
 ```
 
+> **⚠️ Important for Metrics:** Do NOT add `--disable-log-stats` to the command above. This flag would disable the statistics collection that Prometheus needs. The default configuration (without this flag) is correct for observability.
+
 3. **Deploy vLLM:**
 
 ```bash
@@ -218,6 +222,12 @@ docker compose restart prometheus
 ```bash
 curl http://localhost:8000/metrics | grep vllm:request_success_total
 ```
+
+**If metrics endpoint returns empty or no vLLM metrics appear:**
+
+- Ensure you did NOT add `--disable-log-stats` to your vLLM command
+- Check vLLM logs: `docker logs vllm-server`
+- Verify vLLM is running: `docker ps | grep vllm`
 
 **📖 Full guide with troubleshooting and validation:** [vLLM Observability Guide](guides/vllm-guide.md)
 

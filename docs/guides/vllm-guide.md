@@ -19,22 +19,30 @@ It covers only what is required with minimal complexity.
 
 ## High-Level Architecture
 
-Minimal Observability pipeline for vLLM:
+Integration of vLLM with the Observability Pipeline:
 
 ```
-┌────────────────────────────┐
-│ vLLM Server                │
-│ ┌────────────────────────┐ │
-│ │ OpenAI API + /metrics  │ │
-│ └────────────────────────┘ │
-└────────────────────────────┘
-               ↓
-┌────────────────────────────┐
-│ Prometheus                 |
-│ ┌────────────────────────┐ │
-│ │ Scrapes /metrics       | |
-│ └────────────────────────┘ │
-└────────────────────────────┘
+┌─────────────────────────────────────────┐
+│ vLLM Deployment (Separate Stack)        │
+│ ┌─────────────────────────────────────┐ │
+│ │ vLLM Server                         │ │
+│ │ - OpenAI API (port 8000)            │ │
+│ │ - /metrics endpoint                 │ │
+│ └─────────────────────────────────────┘ │
+└─────────────────────────────────────────┘
+                    ↓ (scrapes over network)
+┌─────────────────────────────────────────┐
+│ Observability Pipeline Stack            │
+│ ┌─────────────────────────────────────┐ │
+│ │ Prometheus                          │ │
+│ │ - Scrapes vLLM metrics              │ │
+│ │ - Stores metrics                    │ │
+│ └─────────────────────────────────────┘ │
+│ ┌─────────────────────────────────────┐ │
+│ │ VictoriaMetrics                     │ │
+│ │ - Long-term storage (12 months)     │ │
+│ └─────────────────────────────────────┘ │
+└─────────────────────────────────────────┘
 ```
 
 **Key Points:**
@@ -46,11 +54,11 @@ Minimal Observability pipeline for vLLM:
 **Example vLLM Metrics:**
 
 ```
-vllm:time_to_first_token_seconds_bucket     # Time to first token histogram
-vllm:time_per_output_token_seconds_bucket   # Per-token generation time
-vllm:e2e_request_latency_seconds_bucket     # End-to-end request latency
-vllm:request_success_total                  # Successful requests counter
-vllm:generation_tokens_total                # Total tokens generated
+vllm:time_to_first_token_seconds_bucket
+vllm:time_to_first_token_seconds_count
+vllm:time_per_output_token_seconds_bucket
+vllm:e2e_request_latency_seconds_bucket
+vllm:request_generation_tokens_count
 ```
 
 **Full metric list:** Available at `http://<vllm-host>:8000/metrics`
@@ -74,8 +82,8 @@ docker run --rm --gpus all nvidia/cuda:11.8.0-base-ubuntu22.04 nvidia-smi
 
 ### Software Requirements
 
-- Docker (20.10+)
-- Docker Compose (2.0+)
+- **Docker**: Version 20.10 or higher
+- **Docker Compose**: Version 2.0 or higher
 
 ### Network Requirements
 
@@ -106,8 +114,8 @@ vLLM is configured using environment variables stored in a `.env` file.
 Create a `.env` file in the same directory as your `docker-compose.yml`:
 
 ```bash
-# vLLM Image Version
-VLLM_IMAGE_VERSION=v0.6.3.post1
+# vLLM image version - v0.11.2 is latest stable as of Dec 2025
+VLLM_IMAGE_VERSION=v0.11.2
 
 # Model Configuration
 VLLM_MODEL=Qwen/Qwen2.5-0.5B-Instruct
@@ -139,6 +147,20 @@ VLLM_DTYPE=half
 ```bash
 HUGGINGFACE_HUB_TOKEN=your_token_here
 ```
+
+### ⚠️ Important: Metrics Collection Requirement
+
+For Prometheus to collect vLLM metrics, statistics logging must remain **enabled** (the default behavior).
+
+**Critical:** Do NOT add the `--disable-log-stats` flag to your vLLM command configuration.
+
+| Configuration            | Stats Logging | Prometheus Works? | Use This?                 |
+| ------------------------ | ------------- | ----------------- | ------------------------- |
+| No flag (default)        | ✅ Enabled    | ✅ Yes            | ✅ **Recommended**        |
+| `--disable-log-stats`    | ❌ Disabled   | ❌ No             | ❌ **Never use**          |
+| `--no-disable-log-stats` | ✅ Enabled    | ✅ Yes            | ⚠️ Explicit (unnecessary) |
+
+**Why this matters:** The `--disable-log-stats` flag disables vLLM's internal statistics collection, which breaks the `/metrics` endpoint that Prometheus depends on.
 
 ### Verify .env Loading
 
@@ -187,6 +209,7 @@ services:
 - GPU passthrough handled by `deploy.resources.reservations.devices`
 - `models` folder caches HuggingFace weights to avoid re-downloading
 - Container restarts automatically if it stops
+- **⚠️ Metrics requirement:** Do NOT include `--disable-log-stats` in the command section - this would break Prometheus metrics collection. Stats logging is enabled by default and must remain enabled.
 
 ### Start vLLM
 
@@ -245,13 +268,9 @@ services:
     container_name: prometheus
     volumes:
       - ./prometheus.yml:/etc/prometheus/prometheus.yml
-      - prometheus_data:/prometheus
     ports:
       - "9090:9090"
     restart: unless-stopped
-
-volumes:
-  prometheus_data:
 ```
 
 ### Create prometheus.yml
@@ -452,14 +471,22 @@ curl http://<VLLM_HOST>:8000/metrics
 
 **Fixes:**
 
-| Issue                 | Solution                                    |
-| --------------------- | ------------------------------------------- |
-| Container not running | Check `docker ps` and container logs        |
-| Wrong port            | Confirm `VLLM_PORT` in `.env`               |
-| Firewall blocking     | Allow port 8000 in firewall/security groups |
-| Wrong hostname        | Update Prometheus config with correct host  |
+| Issue                              | Solution                                                 |
+| ---------------------------------- | -------------------------------------------------------- |
+| Container not running              | Check `docker ps` and container logs                     |
+| Wrong port                         | Confirm `VLLM_PORT` in `.env`                            |
+| Firewall blocking                  | Allow port 8000 in firewall/security groups              |
+| Wrong hostname                     | Update Prometheus config with correct host               |
+| `--disable-log-stats` flag present | Remove this flag from docker-compose.yml command section |
 
-**Note:** Server must not be run with `--disable-log-stats` (metrics tracking requires this enabled)
+**Important:** If you added the `--disable-log-stats` flag to your vLLM command configuration, **remove it**. This flag disables the statistics collection that Prometheus requires. By default, stats logging is enabled - keep it that way.
+
+**To fix:**
+
+1. Check your `docker-compose.yml` command section
+2. Remove `--disable-log-stats` if present
+3. Restart the vLLM container: `docker compose restart vllm`
+4. Verify metrics are now available: `curl http://localhost:8000/metrics`
 
 ### Prometheus Target is DOWN
 
@@ -467,7 +494,7 @@ curl http://<VLLM_HOST>:8000/metrics
 
 - In Prometheus UI → **Status → Targets** → `job="vllm"` shows **DOWN**
 
-**Verify target in prometheus.yml:**
+**Verify target in prometheus.yaml:**
 
 ```yaml
 scrape_configs:
