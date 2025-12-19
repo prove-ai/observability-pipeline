@@ -147,7 +147,7 @@ Monitor your LLM inference servers to track metrics like latency, throughput, an
 
 **Prerequisites:** NVIDIA GPU with Compute Capability ≥ 7.0, NVIDIA Container Toolkit
 
-> **Note:** This guide uses vLLM v0.12.0 (latest stable as of December 2025). Check the [vLLM releases page](https://github.com/vllm-project/vllm/releases) for newer versions. If upgrading from v0.6.x or earlier, review the [changelog](https://github.com/vllm-project/vllm/releases) for breaking changes.
+> **Note:** This guide uses vLLM v0.11.2 (latest stable as of December 2025). Check the [vLLM releases page](https://github.com/vllm-project/vllm/releases) for newer versions. If upgrading from v0.6.x or earlier, review the [changelog](https://github.com/vllm-project/vllm/releases) for breaking changes.
 
 **Quick Setup:**
 

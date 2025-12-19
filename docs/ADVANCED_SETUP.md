@@ -24,11 +24,11 @@ This guide provides comprehensive instructions for deploying and configuring the
 | If you want to...                                       | Start here                                                                  |
 | ------------------------------------------------------- | --------------------------------------------------------------------------- |
 | Get started quickly with basic setup                    | [Quick Start Guide](guides/quick-start.md)                                  |
-| Monitor LLM inference servers (vLLM, Ollama)            | [vLLM Guide](guides/vllm-guide.md) / [Ollama Guide](guides/ollama-guide.md) |
 | Understand how the pipeline works                       | [Architecture Overview](guides/architecture.md)                             |
 | Choose the right deployment profile                     | [Deployment Profiles Guide](guides/deployment-profiles.md)                  |
 | Configure the collector, Prometheus, or VictoriaMetrics | [Configuration Reference](guides/configuration-reference.md)                |
 | Deploy via Docker Compose                               | [Deployment Guide](guides/deployment-guide.md)                              |
+| Integrate LLM observability (vLLM, Ollama)              | [vLLM Guide](guides/vllm-guide.md) / [Ollama Guide](guides/ollama-guide.md) |
 | Integrate via Hybrid Cloud (On-Prem + Cloud)            | [Hybrid Cloud Integration](guides/hybrid-cloud-integration.md)              |
 | Prepare for production (HA, backups, sizing)            | [Production Guide](guides/production-guide.md)                              |
 | Secure your deployment (auth, firewalls)                | [Security Guide](guides/security.md)                                        |
@@ -39,7 +39,7 @@ This guide provides comprehensive instructions for deploying and configuring the
 ### Getting Started
 
 1. **[Quick Start Guide](guides/quick-start.md)**  
-   Fast-track setup for new users. Deploy the full stack with one command, send your first trace, and optionally integrate LLM inference monitoring. **Start here if you're new to the pipeline.**
+   Fast-track setup for new users. Deploy the full stack with one command, send your first trace, and integrate LLM inference monitoring. **Start [here](guides/quick-start.md) if you're new to the pipeline.**
 
 ### Core Setup Guides
 
