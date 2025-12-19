@@ -139,7 +139,7 @@ llm_traces_span_metrics_calls_total{service_name="otel-test"}
 
 ---
 
-## Optional: Monitor LLM Inference
+## Monitor LLM Inference
 
 Monitor your LLM inference servers to track metrics like latency, throughput, and token generation. Choose the framework that matches your deployment:
 

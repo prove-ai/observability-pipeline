@@ -81,11 +81,11 @@ This guide provides comprehensive instructions for deploying and configuring the
 
 ## Getting Started
 
-1. **Just getting started?** Begin with the [Quick Start Guide](guides/quick-start.md) to deploy the full stack and send your first trace in minutes.
+1. **Just getting started?** Begin with the [Quick Start Guide](guides/quick-start.md) to deploy the full stack, send your first trace, and monitor LLM inference performance in minutes.
 
-2. **Want to monitor LLM inference?** After completing the quick start, add [vLLM](guides/vllm-guide.md) or [Ollama](guides/ollama-guide.md) monitoring to track inference metrics.
+2. **New to this pipeline?** Read the [Architecture Overview](guides/architecture.md) to understand how it works.
 
-3. **New to this pipeline?** Read the [Architecture Overview](guides/architecture.md) to understand how it works.
+3. **Have specific LLM inference needs?** Detailed information on monitoring LLM inference is available in the [vLLM](guides/vllm-guide.md) and [Ollama](guides/ollama-guide.md) guides.
 
 4. **Ready to deploy in a specific configuration?** Go to [Deployment Profiles Guide](guides/deployment-profiles.md) to choose your profile, then follow [Deployment Guide](guides/deployment-guide.md).
 
