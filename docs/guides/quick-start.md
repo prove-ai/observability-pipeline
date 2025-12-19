@@ -4,7 +4,7 @@
 
 ## What This Pipeline Does
 
-This observability pipeline, when deployed with the [full deployment profile](guides/deployment-profiles.md#profile-1-full-complete-stack), solves a common problem: **how to monitor distributed applications using OpenTelemetry traces**. Instead of instrumenting your application twice (once for traces, once for metrics), this pipeline automatically derives metrics from traces and stores them for long-term analysis.
+This observability pipeline, when deployed with the [full deployment profile](deployment-profiles.md#profile-1-full-complete-stack), solves a common problem: **how to monitor distributed applications using OpenTelemetry traces**. Instead of instrumenting your application twice (once for traces, once for metrics), this pipeline automatically derives metrics from traces and stores them for long-term analysis.
 
 **At a Glance:**
 
@@ -229,7 +229,7 @@ curl http://localhost:8000/metrics | grep vllm:request_success_total
 - Check vLLM logs: `docker logs vllm-server`
 - Verify vLLM is running: `docker ps | grep vllm`
 
-**📖 Full guide with troubleshooting and validation:** [vLLM Observability Guide](guides/vllm-guide.md)
+**📖 Full guide with troubleshooting and validation:** [vLLM Observability Guide](vllm-guide.md)
 
 ---
 
