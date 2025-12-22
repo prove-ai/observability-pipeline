@@ -238,3 +238,7 @@ curl http://localhost:8000/metrics | grep vllm:request_success_total
 **Coming soon** - Ollama integration guide
 
 **📖 Full guide:** [Ollama Observability Guide](guides/ollama-guide.md)
+
+---
+
+[← Back to Advanced Setup](../ADVANCED_SETUP.md)
