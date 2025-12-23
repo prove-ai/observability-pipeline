@@ -65,8 +65,6 @@ docker compose --profile full up -d --build
 
 ### Verify It's Working
 
-> **Note**: `obs-dev.proveai.com` should be used for internal testing
-
 ```bash
 # 1. Check all services are healthy
 docker compose ps
