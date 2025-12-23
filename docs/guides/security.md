@@ -152,9 +152,15 @@ When using Basic Auth mode, authentication varies by service:
 
 ```bash
 # OTLP receivers and VictoriaMetrics - authenticated by Envoy
-curl -u user:secretpassword \
-  -X POST http://<host>:4318/v1/traces \
-  -H "Content-Type: application/x-protobuf"
+otel-cli span \
+  --service "otel-test" \
+  --name "demo-span" \
+  --endpoint http://localhost:4318/v1/traces \
+  --protocol http/protobuf \
+  --attrs "env=dev,component=demo" \
+  --start "$(date -Iseconds)" \
+  --end "$(date -Iseconds)" \
+  --otlp-headers "Authorization=Basic $(echo -n 'user:secretpassword' | base64)"
 
 curl -u user:secretpassword \
   "http://<host>:8428/api/v1/query?query=up"
