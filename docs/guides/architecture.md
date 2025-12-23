@@ -1,6 +1,6 @@
 # Architecture
 
-[← Back to Advanced Setup](../ADVANCED_SETUP.md)
+[← Back to Observability Pipeline Guide](../index.md)
 
 This document describes the architecture of the observability pipeline, which transforms OpenTelemetry traces into metrics for long-term storage and analysis. The system consists of four main components: **Envoy Proxy** (authentication gateway), **OpenTelemetry Collector** (converts traces to RED metrics via spanmetrics), **Prometheus** (scrapes and queries metrics), and **VictoriaMetrics** (long-term storage with 10x compression). The pipeline supports multiple deployment profiles for integration with existing infrastructure, and includes comprehensive testing procedures and design rationale.
 
@@ -402,4 +402,4 @@ docker compose down -v
 
 ---
 
-[← Back to Advanced Setup](../ADVANCED_SETUP.md)
+[← Back to Observability Pipeline Guide](../index.md)

@@ -1,6 +1,6 @@
 # Production Deployment Guide
 
-[← Back to Advanced Setup](../ADVANCED_SETUP.md)
+[← Back to Observability Pipeline Guide](../index.md)
 
 This guide walks you through evaluating your production requirements and directs you to the appropriate documentation for implementing your observability pipeline in production.
 
@@ -237,7 +237,7 @@ Common production issues and where to find solutions:
 - **[Deployment Guide](deployment-guide.md)** - Step-by-step deployment instructions
 - **[Security Guide](security.md)** - Authentication, network security, and securing debugging endpoints
 - **[Configuration Reference](configuration-reference.md)** - Detailed configuration options
-- **[Advanced Setup Guide](../ADVANCED_SETUP.md)** - Comprehensive reference with all implementation details
+- **[Observability Pipeline Guide](../index.md)** - Comprehensive reference with all implementation details
 
 ### Architecture and Integration
 
@@ -250,4 +250,4 @@ Common production issues and where to find solutions:
 
 ---
 
-[← Back to Advanced Setup](../ADVANCED_SETUP.md)
+[← Back to Observability Pipeline Guide](../index.md)

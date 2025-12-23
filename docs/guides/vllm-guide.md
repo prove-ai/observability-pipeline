@@ -1,6 +1,6 @@
 # vLLM Observability Integration
 
-[← Back to Advanced Setup](../ADVANCED_SETUP.md)
+[← Back to Observability Pipeline Guide](../index.md)
 
 ## Overview
 
@@ -587,4 +587,4 @@ vllm:generation_tokens_total
 
 ---
 
-[← Back to Advanced Setup](../ADVANCED_SETUP.md)
+[← Back to Observability Pipeline Guide](../index.md)

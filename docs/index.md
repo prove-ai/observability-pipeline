@@ -1,4 +1,4 @@
-# Setup Guide - Observability Pipeline
+# Observability Pipeline Guide
 
 This guide provides comprehensive instructions for deploying and configuring the Observability Pipeline in production environments. The pipeline converts OpenTelemetry (OTLP) traces into Prometheus metrics, stores them in VictoriaMetrics for long-term retention, and provides flexible deployment options to integrate with your existing infrastructure.
 
@@ -92,9 +92,3 @@ This guide provides comprehensive instructions for deploying and configuring the
 5. **Configuring for your use case?** See [Configuration Reference](guides/configuration-reference.md) for tuning options.
 
 6. **Preparing for production?** Review [Production Guide](guides/production-guide.md) and [Security Guide](guides/security.md).
-
-## Additional Resources
-
-- **Project README**: [../README.md](../README.md) - Quick start and basic usage
-- **Docker Compose Profiles**: [../docker-compose/PROFILES.md](../docker-compose/PROFILES.md) - Profile overview
-- **Ansible Playbooks**: [../playbooks/README.md](../playbooks/README.md) - Ansible deployment details

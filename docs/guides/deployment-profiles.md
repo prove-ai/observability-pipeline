@@ -1,6 +1,6 @@
 # Deployment Profile Selection Guide
 
-[← Back to Advanced Setup](../ADVANCED_SETUP.md)
+[← Back to Observability Pipeline Guide](../index.md)
 
 The Observability Pipeline supports six deployment profiles to accommodate various infrastructure scenarios. You **MUST** specify a profile when starting the stack because all services are profile-scoped.
 
@@ -378,4 +378,4 @@ For Basic Auth examples, see [VictoriaMetrics Commands](reference.md#victoriamet
 - **Hybrid cloud setup**: [Hybrid Cloud Integration](hybrid-cloud-integration.md)
 - **Prepare for production**: [Production Guide](production-guide.md)
 
-[← Back to Advanced Setup](../ADVANCED_SETUP.md)
+[← Back to Observability Pipeline Guide](../index.md)

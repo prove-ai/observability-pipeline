@@ -1,6 +1,6 @@
 # Hybrid Cloud Integration
 
-[← Back to Advanced Setup](../ADVANCED_SETUP.md)
+[← Back to Observability Pipeline Guide](../index.md)
 
 This guide describes how to integrate the Observability Pipeline in a hybrid cloud architecture where on-premises applications send traces to a cloud-hosted observability stack.
 
@@ -245,4 +245,4 @@ docker compose logs otel-collector | grep "traces"
 - **Configure components**: [Configuration Reference](configuration-reference.md)
 - **Reference materials**: [Reference Guide](reference.md)
 
-[← Back to Advanced Setup](../ADVANCED_SETUP.md)
+[← Back to Observability Pipeline Guide](../index.md)

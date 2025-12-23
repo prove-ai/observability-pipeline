@@ -1,6 +1,6 @@
 # Deployment Guide
 
-[← Back to Advanced Setup](../ADVANCED_SETUP.md)
+[← Back to Observability Pipeline Guide](../index.md)
 
 This guide provides step-by-step instructions for deploying the Observability Pipeline using Docker Compose for development, testing, or single-server deployments.
 
@@ -222,4 +222,4 @@ docker exec prometheus wget -O- http://otel-collector:8889/metrics
 
 ---
 
-[← Back to Advanced Setup](../ADVANCED_SETUP.md)
+[← Back to Observability Pipeline Guide](../index.md)

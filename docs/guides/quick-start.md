@@ -1,6 +1,6 @@
 # Getting Started
 
-[← Back to Advanced Setup](../ADVANCED_SETUP.md)
+[← Back to Observability Pipeline Guide](../index.md)
 
 ## What This Pipeline Does
 
@@ -256,4 +256,4 @@ curl http://localhost:8000/metrics | grep vllm:request_success_total
 
 ---
 
-[← Back to Advanced Setup](../ADVANCED_SETUP.md)
+[← Back to Observability Pipeline Guide](../index.md)

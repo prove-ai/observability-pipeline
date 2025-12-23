@@ -1,6 +1,6 @@
 # Configuration Reference Guide
 
-[← Back to Advanced Setup](../ADVANCED_SETUP.md)
+[← Back to Observability Pipeline Guide](../index.md)
 
 This comprehensive reference provides all configuration options for tuning the Observability Pipeline components. Use this guide to customize the default setup for your specific requirements.
 
@@ -805,4 +805,4 @@ Now it's time to deploy and integrate:
 
 ---
 
-[← Back to Advanced Setup](../ADVANCED_SETUP.md)
+[← Back to Observability Pipeline Guide](../index.md)

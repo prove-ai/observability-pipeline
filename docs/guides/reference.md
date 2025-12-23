@@ -1,6 +1,6 @@
 # Reference Guide
 
-[← Back to Advanced Setup](../ADVANCED_SETUP.md)
+[← Back to Observability Pipeline Guide](../index.md)
 
 This guide provides reference information including metric definitions, port mappings, example queries, useful commands, and common configurations.
 
@@ -538,7 +538,6 @@ service:
 
 ## Next Steps
 
-- **Return to main guide**: [Advanced Setup](../ADVANCED_SETUP.md)
 - **Deploy your stack**: [Deployment Guide](deployment-guide.md)
 
-[← Back to Advanced Setup](../ADVANCED_SETUP.md)
+[← Back to Observability Pipeline Guide](../index.md)

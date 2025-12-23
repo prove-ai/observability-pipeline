@@ -1,6 +1,6 @@
 # Security Guide
 
-[← Back to Advanced Setup](../ADVANCED_SETUP.md)
+[← Back to Observability Pipeline Guide](../index.md)
 
 This guide covers security best practices for the Observability Pipeline, focusing on authentication and network security considerations.
 
@@ -247,6 +247,5 @@ Before deploying to production, ensure:
 
 - **Configuration options**: [Configuration Reference](configuration-reference.md)
 - **Production deployment**: [Production Guide](production-guide.md)
-- **Return to main guide**: [Advanced Setup](../ADVANCED_SETUP.md)
 
-[← Back to Advanced Setup](../ADVANCED_SETUP.md)
+[← Back to Observability Pipeline Guide](../index.md)
