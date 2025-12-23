@@ -67,24 +67,26 @@ curl https://obs-dev.proveai.com:13133/health/status
 
 ```bash
 # 3. Verify Prometheus can reach targets
-# Note: Prometheus endpoints require authentication via Envoy
+# Note: Prometheus authentication depends on your ENVOY_AUTH_METHOD setting
 # For API Key auth (default):
 curl -H "X-API-Key: placeholder_api_key" https://obs-dev.proveai.com:9090/api/v1/targets | jq
 # Expected: All targets showing "up"
 
-# For Basic Auth:
-curl -u user:secretpassword https://obs-dev.proveai.com:9090/api/v1/targets | jq
+# For Basic Auth (uses Prometheus native authentication):
+curl -u prometheus_user:prometheus_password https://obs-dev.proveai.com:9090/api/v1/targets | jq
+# Note: Use credentials from prometheus-web-config.yaml, not ENVOY_BASIC_AUTH_CREDENTIALS
 ```
 
 ```bash
 # 4. Verify VictoriaMetrics is running
-# Note: VictoriaMetrics endpoints require authentication via Envoy
+# Note: VictoriaMetrics endpoints are authenticated via Envoy
 # For API Key auth (default):
 curl -H "X-API-Key: placeholder_api_key" https://obs-dev.proveai.com:8428/health
 # Expected: "OK"
 
-# For Basic Auth:
+# For Basic Auth (uses Envoy credentials):
 curl -u user:secretpassword https://obs-dev.proveai.com:8428/health
+# Note: Use credentials from ENVOY_BASIC_AUTH_CREDENTIALS in .env file
 ```
 
 ### Send Your First Trace
@@ -103,7 +105,7 @@ chmod +x /usr/local/bin/otel-cli
 ## Send a test trace:
 
 ```bash
-# Note: Requires authentication via Envoy
+# Note: OTLP receivers are authenticated via Envoy
 # For API Key auth (default):
 otel-cli span \
   --service "otel-test" \
@@ -115,8 +117,8 @@ otel-cli span \
   --end "$(date -Iseconds)" \
   --otlp-headers "X-API-Key=placeholder_api_key"
 
-# For Basic Auth:
-  otel-cli span \
+# For Basic Auth (uses Envoy credentials from ENVOY_BASIC_AUTH_CREDENTIALS):
+otel-cli span \
   --service "otel-test" \
   --name "demo-span" \
   --endpoint https://obs-dev.proveai.com:4318/v1/traces \
@@ -237,7 +239,7 @@ curl http://localhost:8000/metrics | grep vllm:request_success_total
 
 **Coming soon** - Ollama integration guide
 
-**📖 Full guide:** [Ollama Observability Guide](guides/ollama-guide.md)
+**📖 Full guide:** [Ollama Observability Guide](ollama-guide.md) _(Coming soon)_
 
 ---
 

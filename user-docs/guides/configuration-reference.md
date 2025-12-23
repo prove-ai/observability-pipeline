@@ -493,7 +493,9 @@ pipelines:
 
 **File Location:** `docker-compose/prometheus.yaml`
 
-**When to Edit:** Adjusting scrape intervals, configuring remote storage, or modifying scrape targets based on your deployment profile
+**When to Edit:** Adjusting scrape intervals, configuring remote storage, modifying scrape targets based on your deployment profile, or configuring basic authentication
+
+**Note on Authentication:** When using Basic Auth mode (`ENVOY_AUTH_METHOD=basic-auth`), Prometheus handles its own authentication using its native basic auth feature. See the [Security Guide](security.md) for detailed configuration instructions.
 
 ### Configuration Overview
 
@@ -608,9 +610,70 @@ scrape_configs:
 
 ---
 
+---
+
+### 4. Basic Authentication Configuration
+
+**Purpose:** Secure Prometheus UI and API access when using Basic Auth mode.
+
+**When to Configure:** When `ENVOY_AUTH_METHOD=basic-auth` in your `.env` file.
+
+**Important:** In Basic Auth mode, Prometheus handles its own authentication using its native basic auth feature (not Envoy). This provides better security and aligns with standard Prometheus deployment patterns.
+
+> **📖 Complete Setup Guide:** For detailed instructions including security best practices and troubleshooting, see [Security Guide - Prometheus Basic Auth Configuration](security.md#important---prometheus-basic-auth-configuration)
+
+#### Quick Setup Steps
+
+**1. Generate Password Hash:**
+
+```bash
+htpasswd -nBC 10 "" | tr -d ':\n'  # Enter password when prompted
+# Copy the resulting hash (starts with $2y$10$...)
+```
+
+**2. Create `docker-compose/prometheus-web-config.yaml`:**
+
+```yaml
+basic_auth_users:
+  admin: $2y$10$your_bcrypt_password_hash_here
+```
+
+**3. Update `docker-compose/docker-compose.yaml`:**
+
+```yaml
+prometheus:
+  command:
+    - "--config.file=/etc/prometheus/prometheus.yaml"
+    - "--web.config.file=/etc/prometheus/web-config.yaml" # Add this line
+  volumes:
+    - ./prometheus.yaml:/etc/prometheus/prometheus.yaml
+    - ./prometheus-web-config.yaml:/etc/prometheus/web-config.yaml # Add this line
+```
+
+**4. Restart Prometheus:**
+
+```bash
+docker compose restart prometheus
+```
+
+#### Verification
+
+```bash
+# Should return 401 Unauthorized without credentials
+curl https://obs-dev.proveai.com:9090/api/v1/query?query=up
+
+# Should succeed with valid credentials
+curl -u admin:your_password \
+  "https://obs-dev.proveai.com:9090/api/v1/query?query=up"
+```
+
+**Troubleshooting:** Check Prometheus logs with `docker compose logs prometheus`. See [Security Guide](security.md#important---prometheus-basic-auth-configuration) for complete troubleshooting steps.
+
+---
+
 ### Additional Resources
 
-For advanced Prometheus configuration options not covered in this setup (alerting rules, service discovery, TLS, authentication, etc.), see the [official Prometheus documentation](https://prometheus.io/docs/prometheus/latest/configuration/configuration/).
+For advanced Prometheus configuration options not covered in this setup (alerting rules, service discovery, TLS, advanced authentication, etc.), see the [official Prometheus documentation](https://prometheus.io/docs/prometheus/latest/configuration/configuration/).
 
 ---
 

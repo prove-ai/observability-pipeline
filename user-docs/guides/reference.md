@@ -222,49 +222,51 @@ docker compose down -v
 
 ### Prometheus Commands
 
-**⚠️ Authentication Required:** All Prometheus endpoints require authentication via Envoy. The authentication method depends on your `ENVOY_AUTH_METHOD` configuration:
+**⚠️ Authentication Required:** All Prometheus endpoints require authentication. The authentication method depends on your `ENVOY_AUTH_METHOD` configuration:
 
-- **API Key** (default): Use `-H "X-API-Key: your-api-key"`
-- **Basic Auth**: Use `-u username:password`
+- **API Key mode** (default): Authenticated by Envoy. Use `-H "X-API-Key: your-api-key"`
+- **Basic Auth mode**: Authenticated by Prometheus (not Envoy). Use `-u prometheus_user:prometheus_password` (credentials from `prometheus-web-config.yaml`)
 
-**Common Error:** If you see `401 Unauthorized` or `jq: parse error` when piping to `jq`, you're missing authentication. The response body is plain text "Unauthorized" instead of JSON.
+**Important:** In Basic Auth mode, Prometheus uses its own credentials configured in `prometheus-web-config.yaml`, which may be different from the Envoy credentials used by other services. See [Security Guide](security.md) for configuration details.
+
+**Common Error:** If you see `401 Unauthorized` or `jq: parse error` when piping to `jq`, you're missing authentication or using incorrect credentials. The response body is plain text "Unauthorized" instead of JSON.
 
 ```bash
 # Check configuration
 # For API Key auth (default):
 curl -H "X-API-Key: placeholder_api_key" https://obs-dev.proveai.com:9090/api/v1/status/config
-# For Basic Auth:
-curl -u user:secretpassword https://obs-dev.proveai.com:9090/api/v1/status/config
+# For Basic Auth (uses Prometheus credentials):
+curl -u prometheus_user:prometheus_password https://obs-dev.proveai.com:9090/api/v1/status/config
 
 # Check targets
 # For API Key auth (default):
 curl -H "X-API-Key: placeholder_api_key" https://obs-dev.proveai.com:9090/api/v1/targets
-# For Basic Auth:
-curl -u user:secretpassword https://obs-dev.proveai.com:9090/api/v1/targets
+# For Basic Auth (uses Prometheus credentials):
+curl -u prometheus_user:prometheus_password https://obs-dev.proveai.com:9090/api/v1/targets
 
 # Query API
 # For API Key auth (default):
 curl -H "X-API-Key: placeholder_api_key" 'https://obs-dev.proveai.com:9090/api/v1/query?query=up'
-# For Basic Auth:
-curl -u user:secretpassword 'https://obs-dev.proveai.com:9090/api/v1/query?query=up'
+# For Basic Auth (uses Prometheus credentials):
+curl -u prometheus_user:prometheus_password 'https://obs-dev.proveai.com:9090/api/v1/query?query=up'
 
 # Check TSDB status
 # For API Key auth (default):
 curl -H "X-API-Key: placeholder_api_key" https://obs-dev.proveai.com:9090/api/v1/status/tsdb
-# For Basic Auth:
-curl -u user:secretpassword https://obs-dev.proveai.com:9090/api/v1/status/tsdb
+# For Basic Auth (uses Prometheus credentials):
+curl -u prometheus_user:prometheus_password https://obs-dev.proveai.com:9090/api/v1/status/tsdb
 
 # Health check
 # For API Key auth (default):
 curl -H "X-API-Key: placeholder_api_key" https://obs-dev.proveai.com:9090/-/healthy
-# For Basic Auth:
-curl -u user:secretpassword https://obs-dev.proveai.com:9090/-/healthy
+# For Basic Auth (uses Prometheus credentials):
+curl -u prometheus_user:prometheus_password https://obs-dev.proveai.com:9090/-/healthy
 
 # Readiness check
 # For API Key auth (default):
 curl -H "X-API-Key: placeholder_api_key" https://obs-dev.proveai.com:9090/-/ready
-# For Basic Auth:
-curl -u user:secretpassword https://obs-dev.proveai.com:9090/-/ready
+# For Basic Auth (uses Prometheus credentials):
+curl -u prometheus_user:prometheus_password https://obs-dev.proveai.com:9090/-/ready
 ```
 
 ### VictoriaMetrics Commands

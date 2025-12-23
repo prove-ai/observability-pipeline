@@ -134,7 +134,7 @@ VLLM_DTYPE=half
 
 | Variable                      | Description                       | Common Values               |
 | ----------------------------- | --------------------------------- | --------------------------- |
-| `VLLM_IMAGE_VERSION`          | Docker image tag                  | v0.6.3.post1                |
+| `VLLM_IMAGE_VERSION`          | Docker image tag                  | v0.11.2 (latest Dec 2025)   |
 | `VLLM_MODEL`                  | HuggingFace model ID              | Any compatible model        |
 | `VLLM_HOST`                   | Bind HTTP server to interfaces    | 0.0.0.0                     |
 | `VLLM_PORT`                   | Port for API + /metrics           | 8000                        |

@@ -8,7 +8,7 @@ This guide provides step-by-step instructions for deploying the Observability Pi
 
 ## Prerequisites
 
-See [Prerequisites in Architecture Guide](architecture.md#prerequisites) for detailed requirements and setup verification.
+See [Prerequisites in Quick Start Guide](quick-start.md#prerequisites) for detailed requirements and setup verification.
 
 ---
 
@@ -33,7 +33,7 @@ Before deploying, choose your profile based on existing infrastructure:
 
 ### Command Reference
 
-For complete command reference, see [Useful Commands in Architecture Guide](architecture.md#useful-commands).
+For complete command reference, see [Useful Commands in Reference Guide](reference.md#useful-commands).
 
 **Quick deployment:**
 
@@ -86,7 +86,7 @@ victoriametrics   Up        0.0.0.0:8428->8428/tcp
 
 ### 2. Health Check Endpoints
 
-For complete health check commands and expected responses, see [Verify It's Working in Architecture Guide](architecture.md#verify-its-working).
+For complete health check commands and expected responses, see [Verify It's Working in Quick Start Guide](quick-start.md#verify-its-working).
 
 | Service         | Endpoint                                          | Authentication       |
 | --------------- | ------------------------------------------------- | -------------------- |
@@ -96,7 +96,7 @@ For complete health check commands and expected responses, see [Verify It's Work
 
 ### 3. Test Trace Ingestion
 
-For detailed instructions on installing `otel-cli` and sending test traces, see [Send Your First Trace in Architecture Guide](architecture.md#send-your-first-trace).
+For detailed instructions on installing `otel-cli` and sending test traces, see [Send Your First Trace in Quick Start Guide](quick-start.md#send-your-first-trace).
 
 **Quick verification after sending a test trace:**
 
@@ -121,7 +121,7 @@ Use this checklist after deployment:
 
 ### Health Checks
 
-For detailed health check procedures, see [Verify It's Working in Architecture Guide](architecture.md#verify-its-working).
+For detailed health check procedures, see [Verify It's Working in Quick Start Guide](quick-start.md#verify-its-working).
 
 - [ ] OTel Collector health endpoint responds
 - [ ] Prometheus health endpoint responds (auth required via Envoy)

@@ -237,7 +237,7 @@ Common production issues and where to find solutions:
 - **[Deployment Guide](deployment-guide.md)** - Step-by-step deployment instructions
 - **[Security Guide](security.md)** - Authentication, network security, and securing debugging endpoints
 - **[Configuration Reference](configuration-reference.md)** - Detailed configuration options
-- **[ADVANCED_SETUP_DOCS.md](../../ADVANCED_SETUP_DOCS.md)** - Comprehensive reference with all implementation details
+- **[Advanced Setup Guide](../ADVANCED_SETUP.md)** - Comprehensive reference with all implementation details
 
 ### Architecture and Integration
 
