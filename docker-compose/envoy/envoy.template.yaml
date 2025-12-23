@@ -34,6 +34,7 @@ static_resources:
                             return string.char(c)
                           end))
                         end
+
                         function envoy_on_request(request_handle)
                           local auth_method = "__ENVOY_AUTH_METHOD__"
                           local authenticated = false
@@ -140,6 +141,7 @@ static_resources:
                             return string.char(c)
                           end))
                         end
+
                         function envoy_on_request(request_handle)
                           local auth_method = "__ENVOY_AUTH_METHOD__"
                           local authenticated = false
