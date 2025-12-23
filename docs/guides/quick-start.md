@@ -93,8 +93,9 @@ curl -H "X-API-Key: placeholder_api_key" http://localhost:9090/api/v1/targets | 
 
 # For Basic Auth (uses Prometheus native authentication):
 curl -u prometheus_user:prometheus_password http://localhost:9090/api/v1/targets | jq
-# Note: Use credentials from prometheus-web-config.yaml, not ENVOY_BASIC_AUTH_CREDENTIALS
 ```
+
+**⚠️ For Basic Auth:** Use credentials from prometheus-web-config.yaml, not ENVOY_BASIC_AUTH_CREDENTIALS. [See details about Prometheus authentication](security.md#important---prometheus-basic-auth-configuration)
 
 ```bash
 # 4. Verify VictoriaMetrics is running

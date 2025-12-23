@@ -131,9 +131,15 @@ Requests are rejected at the Envoy layer and never reach backend services.
 
 ```bash
 # Send trace with API key (all services)
-curl -H "X-API-Key: my_secret_key_1" \
-  -X POST http://<host>:4318/v1/traces \
-  -H "Content-Type: application/x-protobuf"
+otel-cli span \
+  --service "otel-test" \
+  --name "demo-span" \
+  --endpoint http://localhost:4318/v1/traces \
+  --protocol http/protobuf \
+  --attrs "env=dev,component=demo" \
+  --start "$(date -Iseconds)" \
+  --end "$(date -Iseconds)" \
+  --otlp-headers "X-API-Key= Y"
 
 # Query Prometheus with API key
 curl -H "X-API-Key: my_secret_key_1" \
