@@ -10,7 +10,7 @@ This observability pipeline, when deployed with the [full deployment profile](de
 
 - Your application sends traces (using OpenTelemetry)
 - The pipeline converts those traces into useful metrics (request rate, errors, latency)
-- You can query and visualize these metrics using the ProveAI client
+- You can query and visualize these metrics in any Prometheus-compatible tool
 - All metrics are stored for 12 months with efficient compression
 
 ## Quick Start
@@ -31,6 +31,17 @@ docker --version        # Should show Docker 20.10+
 docker compose version  # Should show Docker Compose 2.0+
 ```
 
+### Authentication
+
+By default, the pipeline uses **API Key authentication** with placeholder credentials for quick testing. All external requests to observability services (OTLP receivers, Prometheus, VictoriaMetrics) are authenticated via the Envoy proxy.
+
+**Default credentials for testing:**
+
+- API Key: `placeholder_api_key` (header: `X-API-Key: placeholder_api_key`)
+- Basic Auth: `user:secretpassword` (if switching to Basic Auth mode)
+
+**⚠️ For production:** Change these credentials before deployment. See the [detailed authentication guide](security.md#authentication) for configuration options, security best practices, and how to switch authentication methods.
+
 ### Start the Full Stack (Greenfield Setup)
 
 If you're starting from scratch with no existing monitoring infrastructure:
@@ -41,7 +52,7 @@ cd /path/to/observability-pipeline
 
 # Start everything with one command
 cd docker-compose
-docker compose --profile full up -d
+docker compose --profile full up -d --build
 ```
 
 **That's it!** You now have a complete observability stack running:
@@ -54,6 +65,8 @@ docker compose --profile full up -d
 
 ### Verify It's Working
 
+> **Note**: `obs-dev.proveai.com` should be used for internal testing
+
 ```bash
 # 1. Check all services are healthy
 docker compose ps
@@ -61,7 +74,7 @@ docker compose ps
 
 ```bash
 # 2. Verify OpenTelemetry Collector is ready
-curl https://obs-dev.proveai.com:13133/health/status
+curl http://localhost:13133/health/status
 # Expected: {"status":"Server available"}
 ```
 
@@ -69,11 +82,11 @@ curl https://obs-dev.proveai.com:13133/health/status
 # 3. Verify Prometheus can reach targets
 # Note: Prometheus authentication depends on your ENVOY_AUTH_METHOD setting
 # For API Key auth (default):
-curl -H "X-API-Key: placeholder_api_key" https://obs-dev.proveai.com:9090/api/v1/targets | jq
+curl -H "X-API-Key: placeholder_api_key" http://localhost:9090/api/v1/targets | jq
 # Expected: All targets showing "up"
 
 # For Basic Auth (uses Prometheus native authentication):
-curl -u prometheus_user:prometheus_password https://obs-dev.proveai.com:9090/api/v1/targets | jq
+curl -u prometheus_user:prometheus_password http://localhost:9090/api/v1/targets | jq
 # Note: Use credentials from prometheus-web-config.yaml, not ENVOY_BASIC_AUTH_CREDENTIALS
 ```
 
@@ -81,11 +94,11 @@ curl -u prometheus_user:prometheus_password https://obs-dev.proveai.com:9090/api
 # 4. Verify VictoriaMetrics is running
 # Note: VictoriaMetrics endpoints are authenticated via Envoy
 # For API Key auth (default):
-curl -H "X-API-Key: placeholder_api_key" https://obs-dev.proveai.com:8428/health
+curl -H "X-API-Key: placeholder_api_key" http://localhost:8428/health
 # Expected: "OK"
 
 # For Basic Auth (uses Envoy credentials):
-curl -u user:secretpassword https://obs-dev.proveai.com:8428/health
+curl -u user:secretpassword http://localhost:8428/health
 # Note: Use credentials from ENVOY_BASIC_AUTH_CREDENTIALS in .env file
 ```
 
@@ -110,7 +123,7 @@ chmod +x /usr/local/bin/otel-cli
 otel-cli span \
   --service "otel-test" \
   --name "demo-span" \
-  --endpoint https://obs-dev.proveai.com:4318/v1/traces \
+  --endpoint http://localhost:4318/v1/traces \
   --protocol http/protobuf \
   --attrs "env=dev,component=demo" \
   --start "$(date -Iseconds)" \
@@ -121,7 +134,7 @@ otel-cli span \
 otel-cli span \
   --service "otel-test" \
   --name "demo-span" \
-  --endpoint https://obs-dev.proveai.com:4318/v1/traces \
+  --endpoint http://localhost:4318/v1/traces \
   --protocol http/protobuf \
   --attrs "env=dev,component=demo" \
   --start "$(date -Iseconds)" \
@@ -133,7 +146,7 @@ otel-cli span \
 
 ```bash
 # Open Prometheus in your browser
-open https://obs-dev.proveai.com:9090
+open http://obs-dev.proveai.com:9090
 
 # Run this query in the Prometheus UI
 llm_traces_span_metrics_calls_total{service_name="otel-test"}

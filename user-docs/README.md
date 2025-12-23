@@ -1,4 +1,4 @@
-# Advanced Setup Guide - Observability Pipeline
+# Setup Guide - Observability Pipeline
 
 This guide provides comprehensive instructions for deploying and configuring the Observability Pipeline in production environments. The pipeline converts OpenTelemetry (OTLP) traces into Prometheus metrics, stores them in VictoriaMetrics for long-term retention, and provides flexible deployment options to integrate with your existing infrastructure.
 

@@ -88,11 +88,11 @@ victoriametrics   Up        0.0.0.0:8428->8428/tcp
 
 For complete health check commands and expected responses, see [Verify It's Working in Quick Start Guide](quick-start.md#verify-its-working).
 
-| Service         | Endpoint                                          | Authentication       |
-| --------------- | ------------------------------------------------- | -------------------- |
-| OTel Collector  | `https://obs-dev.proveai.com:13133/health/status` | None required        |
-| Prometheus      | `https://obs-dev.proveai.com:9090/-/healthy`      | Required (via Envoy) |
-| VictoriaMetrics | `https://obs-dev.proveai.com:8428/health`         | Required (via Envoy) |
+| Service         | Endpoint                            | Authentication       |
+| --------------- | ----------------------------------- | -------------------- |
+| OTel Collector  | `http://<host>:13133/health/status` | None required        |
+| Prometheus      | `http://<host>:9090/-/healthy`      | Required (via Envoy) |
+| VictoriaMetrics | `http://<host>:8428/health`         | Required (via Envoy) |
 
 ### 3. Test Trace Ingestion
 
@@ -102,7 +102,7 @@ For detailed instructions on installing `otel-cli` and sending test traces, see 
 
 ```bash
 # Wait 15 seconds, then verify metrics appear
-curl -H "X-API-Key: placeholder_api_key" 'https://obs-dev.proveai.com:9090/api/v1/query?query=llm_traces_span_metrics_calls_total' | jq
+curl -H "X-API-Key: placeholder_api_key" 'http://<host>:9090/api/v1/query?query=llm_traces_span_metrics_calls_total' | jq
 ```
 
 **Note:** For Basic Auth examples, see [Prometheus Commands](reference.md#prometheus-commands).
@@ -189,7 +189,7 @@ See [Step 3: Verify Prometheus Targets in Architecture Guide](architecture.md#st
 **Check if spanmetrics are exported:**
 
 ```bash
-curl https://obs-dev.proveai.com:8889/metrics | grep llm_traces
+curl http://<host>:8889/metrics | grep llm_traces
 ```
 
 **Check network connectivity:**

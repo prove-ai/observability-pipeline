@@ -117,7 +117,7 @@ Your Application
 - `docker-compose/prometheus.yaml` - Main configuration
 - `docker-compose/prometheus-web-config.yaml` - Basic auth configuration (when using Basic Auth mode)
 
-**Access the UI:** `https://obs-dev.proveai.com:9090` (requires authentication)
+**Access the UI:** `http://<host>:9090` (requires authentication)
 
 #### VictoriaMetrics
 
@@ -129,7 +129,7 @@ Your Application
 - **Retention**: 12 months (configurable via `-retentionPeriod` flag)
 - **API**: Prometheus-compatible query API
 
-**Access the API:** `https://obs-dev.proveai.com:8428` (requires authentication via Envoy)
+**Access the API:** `http://<host>:8428` (requires authentication via Envoy)
 
 **Why use it?** VictoriaMetrics uses ~10x less disk space than Prometheus for the same data.
 
@@ -140,7 +140,7 @@ All services run on a Docker bridge network named `observability`:
 ```
 External Applications
      ↓
-     ↓ (send traces to obs-dev.proveai.com:4317 or :4318)
+     ↓ (send traces to <host>:4317 or :4318)
      ↓
 ┌─────────────────────────────────────────┐
 │  observability Docker network           │
@@ -162,7 +162,7 @@ External Applications
 
 **Important:**
 
-- External applications send traces to `obs-dev.proveai.com:4317/4318`, which routes through Envoy for authentication before reaching the collector.
+- External applications send traces to `<host>:4317/4318` (e.g., `localhost:4317` for local development), which routes through Envoy for authentication before reaching the collector.
 - Services inside Docker communicate directly using service names (e.g., `otel-collector:4317`) without authentication.
 
 ---
@@ -242,7 +242,7 @@ docker compose ps
 
 ```bash
 # Health check
-curl https://obs-dev.proveai.com:13133/health/status
+curl http://<host>:13133/health/status
 
 # Expected: {"status":"Server available","upSince":"..."}
 ```
@@ -251,13 +251,13 @@ curl https://obs-dev.proveai.com:13133/health/status
 
 ```bash
 # For API Key authentication (default):
-curl -H "X-API-Key: placeholder_api_key" https://obs-dev.proveai.com:9090/api/v1/targets | jq '.data.activeTargets[] | {job: .labels.job, health: .health}'
+curl -H "X-API-Key: placeholder_api_key" http://<host>:9090/api/v1/targets | jq '.data.activeTargets[] | {job: .labels.job, health: .health}'
 
 # For Basic Auth (uses Prometheus native authentication):
-curl -u prometheus_user:prometheus_password https://obs-dev.proveai.com:9090/api/v1/targets | jq '.data.activeTargets[] | {job: .labels.job, health: .health}'
+curl -u prometheus_user:prometheus_password http://<host>:9090/api/v1/targets | jq '.data.activeTargets[] | {job: .labels.job, health: .health}'
 
 # Or open in browser (authentication required)
-open https://obs-dev.proveai.com:9090/targets
+open http://<host>:9090/targets
 ```
 
 **Expected:** Both targets showing `health: "up"`:
@@ -276,13 +276,13 @@ Wait 15 seconds, then query Prometheus:
 ```bash
 # Via API (requires authentication)
 # For API Key auth (default):
-curl -H "X-API-Key: placeholder_api_key" 'https://obs-dev.proveai.com:9090/api/v1/query?query=llm_traces_span_metrics_calls_total' | jq
+curl -H "X-API-Key: placeholder_api_key" 'http://<host>:9090/api/v1/query?query=llm_traces_span_metrics_calls_total' | jq
 
 # For Basic Auth (uses Prometheus native authentication):
-curl -u prometheus_user:prometheus_password 'https://obs-dev.proveai.com:9090/api/v1/query?query=llm_traces_span_metrics_calls_total' | jq
+curl -u prometheus_user:prometheus_password 'http://<host>:9090/api/v1/query?query=llm_traces_span_metrics_calls_total' | jq
 
 # Or open Prometheus UI (authentication required)
-open https://obs-dev.proveai.com:9090
+open http://<host>:9090
 # Then run: llm_traces_span_metrics_calls_total{service_name="my-app"}
 ```
 
@@ -291,21 +291,21 @@ open https://obs-dev.proveai.com:9090
 ```bash
 # Health check (requires authentication via Envoy)
 # For API Key auth (default):
-curl -H "X-API-Key: placeholder_api_key" https://obs-dev.proveai.com:8428/health
+curl -H "X-API-Key: placeholder_api_key" http://<host>:8428/health
 # Expected: OK
 
 # For Basic Auth (uses Envoy credentials):
-curl -u user:secretpassword https://obs-dev.proveai.com:8428/health
+curl -u user:secretpassword http://<host>:8428/health
 
 ```
 
 ```bash
 # Query metrics (same as Prometheus API, requires authentication via Envoy)
 # For API Key auth (default):
-curl -H "X-API-Key: placeholder_api_key" 'https://obs-dev.proveai.com:8428/api/v1/query?query=up' | jq
+curl -H "X-API-Key: placeholder_api_key" 'http://<host>:8428/api/v1/query?query=up' | jq
 
 # For Basic Auth (uses Envoy credentials from ENVOY_BASIC_AUTH_CREDENTIALS):
-curl -u user:secretpassword 'https://obs-dev.proveai.com:8428/api/v1/query?query=up' | jq
+curl -u user:secretpassword 'http://<host>:8428/api/v1/query?query=up' | jq
 ```
 
 ---
@@ -392,13 +392,13 @@ docker compose down -v
 
 ### Important URLs
 
-- **Prometheus UI**: https://obs-dev.proveai.com:9090
+- **Prometheus UI**: `http://<host>:9090`
   - API Key mode: Authenticated by Envoy
   - Basic Auth mode: Authenticated by Prometheus (use `prometheus-web-config.yaml` credentials)
-- **VictoriaMetrics API**: https://obs-dev.proveai.com:8428 (authenticated by Envoy in both modes)
-- **Collector Health**: https://obs-dev.proveai.com:13133/health/status (no authentication required)
-- **Collector Internal Metrics**: https://obs-dev.proveai.com:8888/metrics (no authentication required)
-- **Collector Spanmetrics**: https://obs-dev.proveai.com:8889/metrics (internal only, no authentication required)
+- **VictoriaMetrics API**: `http://<host>:8428` (authenticated by Envoy in both modes)
+- **Collector Health**: `http://<host>:13133/health/status` (no authentication required)
+- **Collector Internal Metrics**: `http://<host>:8888/metrics` (no authentication required)
+- **Collector Spanmetrics**: `http://<host>:8889/metrics` (internal only, no authentication required)
 
 ---
 

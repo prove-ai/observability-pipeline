@@ -234,39 +234,39 @@ docker compose down -v
 ```bash
 # Check configuration
 # For API Key auth (default):
-curl -H "X-API-Key: placeholder_api_key" https://obs-dev.proveai.com:9090/api/v1/status/config
+curl -H "X-API-Key: placeholder_api_key" http://<host>:9090/api/v1/status/config
 # For Basic Auth (uses Prometheus credentials):
-curl -u prometheus_user:prometheus_password https://obs-dev.proveai.com:9090/api/v1/status/config
+curl -u prometheus_user:prometheus_password http://<host>:9090/api/v1/status/config
 
 # Check targets
 # For API Key auth (default):
-curl -H "X-API-Key: placeholder_api_key" https://obs-dev.proveai.com:9090/api/v1/targets
+curl -H "X-API-Key: placeholder_api_key" http://<host>:9090/api/v1/targets
 # For Basic Auth (uses Prometheus credentials):
-curl -u prometheus_user:prometheus_password https://obs-dev.proveai.com:9090/api/v1/targets
+curl -u prometheus_user:prometheus_password http://<host>:9090/api/v1/targets
 
 # Query API
 # For API Key auth (default):
-curl -H "X-API-Key: placeholder_api_key" 'https://obs-dev.proveai.com:9090/api/v1/query?query=up'
+curl -H "X-API-Key: placeholder_api_key" 'http://<host>:9090/api/v1/query?query=up'
 # For Basic Auth (uses Prometheus credentials):
-curl -u prometheus_user:prometheus_password 'https://obs-dev.proveai.com:9090/api/v1/query?query=up'
+curl -u prometheus_user:prometheus_password 'http://<host>:9090/api/v1/query?query=up'
 
 # Check TSDB status
 # For API Key auth (default):
-curl -H "X-API-Key: placeholder_api_key" https://obs-dev.proveai.com:9090/api/v1/status/tsdb
+curl -H "X-API-Key: placeholder_api_key" http://<host>:9090/api/v1/status/tsdb
 # For Basic Auth (uses Prometheus credentials):
-curl -u prometheus_user:prometheus_password https://obs-dev.proveai.com:9090/api/v1/status/tsdb
+curl -u prometheus_user:prometheus_password http://<host>:9090/api/v1/status/tsdb
 
 # Health check
 # For API Key auth (default):
-curl -H "X-API-Key: placeholder_api_key" https://obs-dev.proveai.com:9090/-/healthy
+curl -H "X-API-Key: placeholder_api_key" http://<host>:9090/-/healthy
 # For Basic Auth (uses Prometheus credentials):
-curl -u prometheus_user:prometheus_password https://obs-dev.proveai.com:9090/-/healthy
+curl -u prometheus_user:prometheus_password http://<host>:9090/-/healthy
 
 # Readiness check
 # For API Key auth (default):
-curl -H "X-API-Key: placeholder_api_key" https://obs-dev.proveai.com:9090/-/ready
+curl -H "X-API-Key: placeholder_api_key" http://<host>:9090/-/ready
 # For Basic Auth (uses Prometheus credentials):
-curl -u prometheus_user:prometheus_password https://obs-dev.proveai.com:9090/-/ready
+curl -u prometheus_user:prometheus_password http://<host>:9090/-/ready
 ```
 
 ### VictoriaMetrics Commands
@@ -279,61 +279,61 @@ curl -u prometheus_user:prometheus_password https://obs-dev.proveai.com:9090/-/r
 ```bash
 # Health check
 # For API Key auth (default):
-curl -H "X-API-Key: placeholder_api_key" https://obs-dev.proveai.com:8428/health
+curl -H "X-API-Key: placeholder_api_key" http://<host>:8428/health
 # For Basic Auth:
-curl -u user:secretpassword https://obs-dev.proveai.com:8428/health
+curl -u user:secretpassword http://<host>:8428/health
 
 # Metrics
 # For API Key auth (default):
-curl -H "X-API-Key: placeholder_api_key" https://obs-dev.proveai.com:8428/metrics
+curl -H "X-API-Key: placeholder_api_key" http://<host>:8428/metrics
 # For Basic Auth:
-curl -u user:secretpassword https://obs-dev.proveai.com:8428/metrics
+curl -u user:secretpassword http://<host>:8428/metrics
 
 # Query (Prometheus-compatible)
 # For API Key auth (default):
-curl -H "X-API-Key: placeholder_api_key" 'https://obs-dev.proveai.com:8428/api/v1/query?query=up'
+curl -H "X-API-Key: placeholder_api_key" 'http://<host>:8428/api/v1/query?query=up'
 # For Basic Auth:
-curl -u user:secretpassword 'https://obs-dev.proveai.com:8428/api/v1/query?query=up'
+curl -u user:secretpassword 'http://<host>:8428/api/v1/query?query=up'
 
 # Create snapshot
 # For API Key auth (default):
-curl -H "X-API-Key: placeholder_api_key" https://obs-dev.proveai.com:8428/snapshot/create
+curl -H "X-API-Key: placeholder_api_key" http://<host>:8428/snapshot/create
 # For Basic Auth:
-curl -u user:secretpassword https://obs-dev.proveai.com:8428/snapshot/create
+curl -u user:secretpassword http://<host>:8428/snapshot/create
 
 # List snapshots
 ls /victoria-metrics-data/snapshots/
 
 # Delete old data (use with caution)
 # For API Key auth (default):
-curl -X POST -H "X-API-Key: placeholder_api_key" 'https://obs-dev.proveai.com:8428/api/v1/admin/tsdb/delete_series?match[]={__name__="old_metric"}'
+curl -X POST -H "X-API-Key: placeholder_api_key" 'http://<host>:8428/api/v1/admin/tsdb/delete_series?match[]={__name__="old_metric"}'
 # For Basic Auth:
-curl -X POST -u user:secretpassword 'https://obs-dev.proveai.com:8428/api/v1/admin/tsdb/delete_series?match[]={__name__="old_metric"}'
+curl -X POST -u user:secretpassword 'http://<host>:8428/api/v1/admin/tsdb/delete_series?match[]={__name__="old_metric"}'
 ```
 
 ### OpenTelemetry Collector Commands
 
 ```bash
 # Check collector health
-curl https://obs-dev.proveai.com:13133/health/status
+curl http://<host>:13133/health/status
 
 # View zpages service status (if enabled)
-curl https://obs-dev.proveai.com:55679/debug/servicez
+curl http://<host>:55679/debug/servicez
 
 # View pipeline information (if zpages enabled)
-curl https://obs-dev.proveai.com:55679/debug/pipelinez
+curl http://<host>:55679/debug/pipelinez
 
 # Capture CPU profile (if pprof enabled)
-curl https://obs-dev.proveai.com:1888/debug/pprof/profile?seconds=30 -o cpu.prof
+curl http://<host>:1888/debug/pprof/profile?seconds=30 -o cpu.prof
 
 # Capture memory heap profile (if pprof enabled)
-curl https://obs-dev.proveai.com:1888/debug/pprof/heap -o heap.prof
+curl http://<host>:1888/debug/pprof/heap -o heap.prof
 
 # Check collector metrics
-curl https://obs-dev.proveai.com:8888/metrics
+curl http://<host>:8888/metrics
 
 # Check spanmetrics output
-curl https://obs-dev.proveai.com:8889/metrics | grep llm_traces
+curl http://<host>:8889/metrics | grep llm_traces
 ```
 
 ### System Commands
@@ -506,16 +506,16 @@ service:
 
 ### Common Tasks
 
-| Task                       | Command                                                                                           |
-| -------------------------- | ------------------------------------------------------------------------------------------------- |
-| Start full stack           | `docker compose --profile full up -d`                                                             |
-| View logs                  | `docker compose logs -f`                                                                          |
-| Check health               | `curl https://obs-dev.proveai.com:13133/health/status`                                            |
-| Query metrics (API Key)    | `curl -H "X-API-Key: placeholder_api_key" https://obs-dev.proveai.com:9090/api/v1/query?query=up` |
-| Query metrics (Basic Auth) | `curl -u user:secretpassword https://obs-dev.proveai.com:9090/api/v1/query?query=up`              |
-| Stop stack                 | `docker compose down`                                                                             |
-| Restart collector          | `docker compose restart otel-collector`                                                           |
-| View resource usage        | `docker stats`                                                                                    |
+| Task                       | Command                                                                             |
+| -------------------------- | ----------------------------------------------------------------------------------- |
+| Start full stack           | `docker compose --profile full up -d`                                               |
+| View logs                  | `docker compose logs -f`                                                            |
+| Check health               | `curl http://<host>:13133/health/status`                                            |
+| Query metrics (API Key)    | `curl -H "X-API-Key: placeholder_api_key" http://<host>:9090/api/v1/query?query=up` |
+| Query metrics (Basic Auth) | `curl -u user:secretpassword http://<host>:9090/api/v1/query?query=up`              |
+| Stop stack                 | `docker compose down`                                                               |
+| Restart collector          | `docker compose restart otel-collector`                                             |
+| View resource usage        | `docker stats`                                                                      |
 
 ### Common Queries
 

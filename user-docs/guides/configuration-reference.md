@@ -412,8 +412,8 @@ extensions:
 **Additional Configuration Notes**:
 
 - `health_check`: Required for monitoring and health probes
-- `pprof`: Provides runtime profiling data (CPU, memory, goroutines). Access at `https://obs-dev.proveai.com:1888/debug/pprof/`
-- `zpages`: Provides live debugging pages for pipelines, extensions, and feature gates. Access at `https://obs-dev.proveai.com:55679/debug/servicez`
+- `pprof`: Provides runtime profiling data (CPU, memory, goroutines). Access at `http://<host>:1888/debug/pprof/`
+- `zpages`: Provides live debugging pages for pipelines, extensions, and feature gates. Access at `http://<host>:55679/debug/servicez`
 
 **Advanced health_check options**:
 
@@ -635,7 +635,7 @@ htpasswd -nBC 10 "" | tr -d ':\n'  # Enter password when prompted
 
 ```yaml
 basic_auth_users:
-  admin: $2y$10$your_bcrypt_password_hash_here
+  user: $2y$10$your_bcrypt_password_hash_here
 ```
 
 **3. Update `docker-compose/docker-compose.yaml`:**
@@ -660,11 +660,11 @@ docker compose restart prometheus
 
 ```bash
 # Should return 401 Unauthorized without credentials
-curl https://obs-dev.proveai.com:9090/api/v1/query?query=up
+curl http://<host>:9090/api/v1/query?query=up
 
 # Should succeed with valid credentials
-curl -u admin:your_password \
-  "https://obs-dev.proveai.com:9090/api/v1/query?query=up"
+curl -u user:your_password \
+  "http://<host>:9090/api/v1/query?query=up"
 ```
 
 **Troubleshooting:** Check Prometheus logs with `docker compose logs prometheus`. See [Security Guide](security.md#important---prometheus-basic-auth-configuration) for complete troubleshooting steps.

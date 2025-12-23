@@ -59,7 +59,7 @@ ENVOY_API_KEYS=my_secret_key_1,my_secret_key_2
 Add your credentials as a comma-separated list of `username:password` pairs in `ENVOY_BASIC_AUTH_CREDENTIALS`:
 
 ```bash
-ENVOY_BASIC_AUTH_CREDENTIALS=admin:secretpassword
+ENVOY_BASIC_AUTH_CREDENTIALS=user:secretpassword
 ```
 
 **Important - Prometheus Basic Auth Configuration:**
@@ -132,13 +132,12 @@ Requests are rejected at the Envoy layer and never reach backend services.
 ```bash
 # Send trace with API key (all services)
 curl -H "X-API-Key: my_secret_key_1" \
-  -X POST https://obs-dev.proveai.com:4318/v1/traces \
-  -H "Content-Type: application/x-protobuf" \
-  --data-binary @trace.pb
+  -X POST http://<host>:4318/v1/traces \
+  -H "Content-Type: application/x-protobuf"
 
 # Query Prometheus with API key
 curl -H "X-API-Key: my_secret_key_1" \
-  "https://obs-dev.proveai.com:9090/api/v1/query?query=up"
+  "http://<host>:9090/api/v1/query?query=up"
 ```
 
 **Basic Authentication:**
@@ -147,18 +146,17 @@ When using Basic Auth mode, authentication varies by service:
 
 ```bash
 # OTLP receivers and VictoriaMetrics - authenticated by Envoy
-curl -u admin:secretpassword \
-  -X POST https://obs-dev.proveai.com:4318/v1/traces \
-  -H "Content-Type: application/x-protobuf" \
-  --data-binary @trace.pb
+curl -u user:secretpassword \
+  -X POST http://<host>:4318/v1/traces \
+  -H "Content-Type: application/x-protobuf"
 
-curl -u admin:secretpassword \
-  "https://obs-dev.proveai.com:8428/api/v1/query?query=up"
+curl -u user:secretpassword \
+  "http://<host>:8428/api/v1/query?query=up"
 
 # Prometheus - authenticated by Prometheus (not Envoy)
 # Use credentials configured in prometheus-web-config.yaml
 curl -u prometheus_user:prometheus_password \
-  "https://obs-dev.proveai.com:9090/api/v1/query?query=up"
+  "http://<host>:9090/api/v1/query?query=up"
 ```
 
 **Important:** In Basic Auth mode, Prometheus uses its own credentials (configured in `prometheus-web-config.yaml`), which may be different from the Envoy basic auth credentials used by other services.
