@@ -151,8 +151,14 @@ otel-cli span \
 **View the results** (wait 10-15 seconds for metrics to appear):
 
 ```bash
-# Open Prometheus in your browser
+# For API Key auth (default) - use curl:
+curl -H "X-API-Key: placeholder_api_key" \
+  --data-urlencode 'query=llm_traces_span_metrics_calls_total{service_name="otel-test"}' \
+  'http://localhost:9090/api/v1/query' | jq
+
+# For Basic Auth - open browser (after configuring prometheus-web-config.yaml):
 open http://localhost:9090
+# Login with your Prometheus credentials when prompted
 
 # Run this query in the Prometheus UI
 llm_traces_span_metrics_calls_total{service_name="otel-test"}
