@@ -31,16 +31,24 @@ docker --version        # Should show Docker 20.10+
 docker compose version  # Should show Docker Compose 2.0+
 ```
 
-### Authentication
+### Initial Setup
 
-By default, the pipeline uses **API Key authentication** with placeholder credentials for quick testing. All external requests to observability services (OTLP receivers, Prometheus, VictoriaMetrics) are authenticated via the Envoy proxy.
+Create your environment configuration file:
 
-**Default credentials for testing:**
+```bash
+# Navigate to the repository root
+cd /path/to/observability-pipeline
+
+# Copy the example configuration
+cp .env.example .env
+```
+
+The default `.env` file uses **API Key authentication** with placeholder credentials suitable for testing:
 
 - API Key: `placeholder_api_key` (header: `X-API-Key: placeholder_api_key`)
-- Basic Auth: `user:secretpassword` (if switching to Basic Auth mode)
+- Basic Auth: `user:secretpassword` (for Basic Auth mode)
 
-**⚠️ For production:** Change these credentials before deployment. See the [detailed authentication guide](security.md#authentication) for configuration options, security best practices, and how to switch authentication methods.
+**⚠️ For production:** Edit `.env` to change these credentials before deployment. See the [detailed authentication guide](security.md#authentication) for configuration options, security best practices, and how to switch authentication methods.
 
 ### Start the Full Stack (Greenfield Setup)
 
@@ -144,7 +152,7 @@ otel-cli span \
 
 ```bash
 # Open Prometheus in your browser
-open http://obs-dev.proveai.com:9090
+open http://localhost:9090
 
 # Run this query in the Prometheus UI
 llm_traces_span_metrics_calls_total{service_name="otel-test"}
