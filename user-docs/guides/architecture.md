@@ -17,7 +17,6 @@ Your Application
 │  Envoy Proxy                   │
 │  ┌──────────────────────────┐  │
 │  │ • API Key Authentication │  │
-│  │ • Basic Authentication   │  │
 │  │ • Centralized auth       │  │
 │  └──────────────────────────┘  │
 └────────────────────────────────┘
@@ -109,11 +108,12 @@ Your Application
 - **Port**: `9090` (Web UI and API, accessed via Envoy)
 - **Scrape Interval**: 10 seconds (configurable in `prometheus.yaml`)
 - **Storage**: Local TSDB + remote write to VictoriaMetrics
-- **Authentication**: 
+- **Authentication**:
   - **API Key mode**: Authenticated by Envoy
   - **Basic Auth mode**: Authenticated by Prometheus using native basic auth (configured in `prometheus-web-config.yaml`)
 
-**Configuration files:** 
+**Configuration files:**
+
 - `docker-compose/prometheus.yaml` - Main configuration
 - `docker-compose/prometheus-web-config.yaml` - Basic auth configuration (when using Basic Auth mode)
 
