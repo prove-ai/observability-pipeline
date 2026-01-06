@@ -6,7 +6,7 @@
     deploy_user: "{{ ansible_user | default('ubuntu') }}"
     deploy_path: "/opt/observability-pipeline"
     compose_profile: "full"
-    
+
   tasks:
     - name: Update apt cache
       apt:
@@ -60,7 +60,7 @@
       file:
         path: /var/run/docker.sock
         group: docker
-        mode: '0664'
+        mode: "0664"
         state: file
 
     - name: Verify docker access
@@ -78,7 +78,7 @@
         state: directory
         owner: "{{ deploy_user }}"
         group: "{{ deploy_user }}"
-        mode: '0755'
+        mode: "0755"
 
     - name: Create docker-compose subdirectory
       file:
@@ -86,7 +86,7 @@
         state: directory
         owner: "{{ deploy_user }}"
         group: "{{ deploy_user }}"
-        mode: '0755'
+        mode: "0755"
 
     - name: Copy docker-compose.yaml
       copy:
@@ -94,7 +94,7 @@
         dest: "{{ deploy_path }}/docker-compose/docker-compose.yaml"
         owner: "{{ deploy_user }}"
         group: "{{ deploy_user }}"
-        mode: '0644'
+        mode: "0644"
 
     - name: Copy otel-collector-config.yaml
       copy:
@@ -102,7 +102,7 @@
         dest: "{{ deploy_path }}/docker-compose/otel-collector-config.yaml"
         owner: "{{ deploy_user }}"
         group: "{{ deploy_user }}"
-        mode: '0644'
+        mode: "0644"
 
     - name: Copy prometheus.yaml
       copy:
@@ -110,7 +110,7 @@
         dest: "{{ deploy_path }}/docker-compose/prometheus.yaml"
         owner: "{{ deploy_user }}"
         group: "{{ deploy_user }}"
-        mode: '0644'
+        mode: "0644"
 
     - name: Copy .env file
       copy:
@@ -118,7 +118,7 @@
         dest: "{{ deploy_path }}/.env"
         owner: "{{ deploy_user }}"
         group: "{{ deploy_user }}"
-        mode: '0600'
+        mode: "0600"
 
     - name: Copy envoy configuration directory
       copy:
@@ -126,7 +126,15 @@
         dest: "{{ deploy_path }}/docker-compose/"
         owner: "{{ deploy_user }}"
         group: "{{ deploy_user }}"
-        mode: '0755'
+        mode: "0755"
+
+    - name: Copy prometheus configuration directory
+      copy:
+        src: "../docker-compose/prometheus"
+        dest: "{{ deploy_path }}/docker-compose/"
+        owner: "{{ deploy_user }}"
+        group: "{{ deploy_user }}"
+        mode: "0755"
 
     - name: Check if Docker Compose services are already running
       shell: sg docker -c "cd {{ deploy_path }}/docker-compose && docker compose --profile {{ compose_profile }} ps"
@@ -145,7 +153,7 @@
         PATH: "/usr/local/bin:/usr/bin:/bin"
 
     - name: Start Docker Compose services
-      shell: sg docker -c "cd {{ deploy_path }}/docker-compose && docker compose --profile {{ compose_profile }} up -d"
+      shell: sg docker -c "cd {{ deploy_path }}/docker-compose && docker compose --profile {{ compose_profile }} up -d --build"
       become_user: "{{ deploy_user }}"
       environment:
         PATH: "/usr/local/bin:/usr/bin:/bin"
@@ -157,10 +165,10 @@
         delay: 10
         timeout: 60
       loop:
-        - 4317  # OTLP gRPC
-        - 4318  # OTLP HTTP
-        - 9090  # Prometheus
-        - 8428  # VictoriaMetrics
+        - 4317 # OTLP gRPC
+        - 4318 # OTLP HTTP
+        - 9090 # Prometheus
+        - 8428 # VictoriaMetrics
 
     - name: Display service status
       shell: sg docker -c "cd {{ deploy_path }}/docker-compose && docker compose --profile {{ compose_profile }} ps"
@@ -185,4 +193,3 @@
           - ""
           - "Note: Make sure your EC2 security group allows inbound traffic on these ports."
           - "Note: VictoriaMetrics provides long-term storage (12 months retention) for all metrics."
-
