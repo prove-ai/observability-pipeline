@@ -18,13 +18,12 @@ services:
       - observability
     restart: unless-stopped
     profiles:
-      - full 
-      - no-prometheus 
-      - no-vm 
+      - full
+      - no-prometheus
+      - no-vm
       - no-collector
-      - vm-only 
-      - prom-only 
- 
+      - vm-only
+      - prom-only
 
   # OpenTelemetry Collector - Receives OTLP traces and converts them to Prometheus metrics
   otel-collector:
@@ -51,14 +50,18 @@ services:
       - no-vm # otel + prometheus
 
   x-prometheus-base: &prometheus-base
-    image: prom/prometheus:latest
+    build:
+      context: ./prometheus
+      dockerfile: Dockerfile.prometheus
+    image: observability-pipeline-prometheus:latest
     command:
       - "--config.file=/etc/prometheus/prometheus.yaml"
       - "--storage.tsdb.path=/prometheus"
       - "--web.config.file=/etc/prometheus/web.config.yml"
+    env_file:
+      - ../.env
     volumes:
       - ./prometheus.yaml:/etc/prometheus/prometheus.yaml:ro
-      - ./web.config.yml:/etc/prometheus/web.config.yml:ro
       - prometheus_data:/prometheus
     # Port 9090 is now exposed through Envoy proxy only
     # ports:

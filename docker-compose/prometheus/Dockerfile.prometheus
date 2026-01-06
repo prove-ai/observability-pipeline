@@ -1,0 +1,17 @@
+FROM prom/prometheus:latest AS prometheus-bin
+
+FROM alpine:latest
+
+RUN apk add --no-cache apache2-utils
+
+COPY --from=prometheus-bin /bin/prometheus /bin/prometheus
+
+RUN mkdir -p /etc/prometheus /prometheus
+
+COPY --chmod=755 generate-prometheus-config.sh /etc/prometheus/generate-prometheus-config.sh
+COPY --chmod=755 prometheus-entrypoint.sh /etc/prometheus/prometheus-entrypoint.sh
+
+WORKDIR /prometheus
+EXPOSE 9090
+
+ENTRYPOINT ["/bin/sh", "/etc/prometheus/prometheus-entrypoint.sh"]
