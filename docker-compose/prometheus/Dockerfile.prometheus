@@ -5,6 +5,7 @@ FROM alpine:latest
 RUN apk add --no-cache apache2-utils
 
 COPY --from=prometheus-bin /bin/prometheus /bin/prometheus
+COPY --from=prometheus-bin /bin/promtool /bin/promtool
 
 RUN mkdir -p /etc/prometheus /prometheus
 
