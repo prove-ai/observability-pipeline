@@ -618,43 +618,26 @@ scrape_configs:
 
 **When to Configure:** When `ENVOY_AUTH_METHOD=basic-auth` in your `.env` file.
 
-**Important:** In Basic Auth mode, Prometheus handles its own authentication using its native basic auth feature (not Envoy). This provides better security and aligns with standard Prometheus deployment patterns.
+#### Automatic Configuration
 
-> **📖 Complete Setup Guide:** For detailed instructions including security best practices and troubleshooting, see [Security Guide - Prometheus Basic Auth Configuration](security.md#important---prometheus-basic-auth-configuration)
+In Basic Auth mode, Prometheus automatically uses the same credentials from `ENVOY_BASIC_AUTH_CREDENTIALS`. **No manual configuration needed.**
 
-#### Quick Setup Steps
+**How it works:**
 
-**1. Generate Password Hash:**
+1. Set credentials in `.env`:
 
-```bash
-htpasswd -nBC 10 "" | tr -d ':\n'  # Enter password when prompted
-# Copy the resulting hash (starts with $2y$10$...)
-```
+   ```bash
+   ENVOY_AUTH_METHOD=basic-auth
+   ENVOY_BASIC_AUTH_CREDENTIALS=admin:secretpassword
+   ```
 
-**2. Create `docker-compose/prometheus-web-config.yaml`:**
+2. Start services with `--build` to ensure the custom Prometheus image is used:
 
-```yaml
-basic_auth_users:
-  user: $2y$10$your_bcrypt_password_hash_here
-```
+   ```bash
+   docker compose --profile full up -d --build
+   ```
 
-**3. Update `docker-compose/docker-compose.yaml`:**
-
-```yaml
-prometheus:
-  command:
-    - "--config.file=/etc/prometheus/prometheus.yaml"
-    - "--web.config.file=/etc/prometheus/web-config.yaml" # Add this line
-  volumes:
-    - ./prometheus.yaml:/etc/prometheus/prometheus.yaml
-    - ./prometheus-web-config.yaml:/etc/prometheus/web-config.yaml # Add this line
-```
-
-**4. Restart Prometheus:**
-
-```bash
-docker compose restart prometheus
-```
+3. At startup, Prometheus automatically generates its `web.config.yml` with bcrypt-hashed credentials.
 
 #### Verification
 

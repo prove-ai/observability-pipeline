@@ -62,51 +62,28 @@ Add your credentials as a comma-separated list of `username:password` pairs in `
 ENVOY_BASIC_AUTH_CREDENTIALS=user:secretpassword
 ```
 
-**Important - Prometheus Basic Auth Configuration:**
+**Prometheus Basic Auth Configuration:**
 
-When using Basic Authentication (`ENVOY_AUTH_METHOD=basic-auth`), Prometheus handles its own authentication using its native basic auth feature, not Envoy. You must configure Prometheus with basic auth credentials:
+When using Basic Authentication (`ENVOY_AUTH_METHOD=basic-auth`), Prometheus automatically uses the same credentials from `ENVOY_BASIC_AUTH_CREDENTIALS`. No manual configuration needed.
 
-1. **Generate a bcrypt password hash:**
+**How it works:**
 
-```bash
-# Install htpasswd (if not already installed)
-# Ubuntu/Debian: sudo apt-get install apache2-utils
-# macOS: brew install httpd
+1. You set credentials in `.env`:
 
-# Generate password hash
-htpasswd -nBC 10 "" | tr -d ':\n'
-# Enter your password when prompted
-# Copy the resulting hash
-```
+   ```bash
+   ENVOY_AUTH_METHOD=basic-auth
+   ENVOY_BASIC_AUTH_CREDENTIALS=user:secretpassword
+   ```
 
-2. **Create Prometheus web config file** (`docker-compose/prometheus-web-config.yaml`):
+2. At container startup, Prometheus automatically:
 
-```yaml
-basic_auth_users:
-  admin: $2y$10$your_bcrypt_password_hash_here
-```
+   - Reads the plaintext password from `ENVOY_BASIC_AUTH_CREDENTIALS`
+   - Generates a bcrypt hash using `htpasswd`
+   - Creates its `web.config.yml` with the hashed password
 
-3. **Update docker-compose.yaml** to mount the web config file and enable Prometheus basic auth:
+3. Both Envoy and Prometheus use the same credentials - single source of truth.
 
-```yaml
-prometheus:
-  image: prom/prometheus:latest
-  command:
-    - "--config.file=/etc/prometheus/prometheus.yaml"
-    - "--web.config.file=/etc/prometheus/web-config.yaml" # Add this line
-  volumes:
-    - ./prometheus.yaml:/etc/prometheus/prometheus.yaml
-    - ./prometheus-web-config.yaml:/etc/prometheus/web-config.yaml # Add this line
-    - prometheus_data:/prometheus
-```
-
-4. **Restart the stack** for changes to take effect:
-
-```bash
-docker compose restart prometheus
-```
-
-**Note:** For the OTLP receivers and VictoriaMetrics, basic auth credentials are still handled by Envoy using `ENVOY_BASIC_AUTH_CREDENTIALS`. Only Prometheus uses native basic auth when this mode is enabled.
+**Note:** For the OTLP receivers and VictoriaMetrics, basic auth credentials are handled by Envoy. Prometheus uses its native basic auth feature with auto-generated bcrypt hashes.
 
 ### Default Behavior
 
@@ -148,7 +125,7 @@ curl -H "X-API-Key: my_secret_key_1" \
 
 **Basic Authentication:**
 
-When using Basic Auth mode, authentication varies by service:
+When using Basic Auth mode, all services use the same credentials from `ENVOY_BASIC_AUTH_CREDENTIALS`:
 
 ```bash
 # OTLP receivers and VictoriaMetrics - authenticated by Envoy
@@ -171,7 +148,7 @@ curl -u prometheus_user:prometheus_password \
   "http://<host>:9090/api/v1/query?query=up"
 ```
 
-**Important:** In Basic Auth mode, Prometheus uses its own credentials (configured in `prometheus-web-config.yaml`), which may be different from the Envoy basic auth credentials used by other services.
+**Note:** All services use the same credentials configured in `.env`. Prometheus auto-generates its bcrypt hash at startup.
 
 ---
 
@@ -219,7 +196,8 @@ The default Docker Compose configuration exposes the following ports:
 
 3. **Internal Service Communication**: Services communicate internally within the Docker network without authentication. This is appropriate since the network is isolated and only accessible to containers in the same network. The Envoy proxy ensures all external access is properly routed and (in most cases) authenticated.
 
-4. **Prometheus Authentication**: When using Basic Auth mode, Prometheus handles its own authentication using its native basic auth feature. This provides more flexibility and aligns with standard Prometheus deployment patterns. Ensure you configure strong passwords in the `prometheus-web-config.yaml` file.
+4. **Prometheus Authentication**: When using Basic Auth mode, Prometheus handles its own authentication using its native basic auth feature. This
+   provides more flexibility and aligns with standard Prometheus deployment patterns. The password is automatically hashed at container startup from the plaintext value in `ENVOY_BASIC_AUTH_CREDENTIALS`. Ensure you use strong passwords in your `.env` file.
 
 5. **Envoy Admin Interface**: The Envoy admin interface (port 9901) is bound to localhost only, preventing external access. This interface provides debugging and monitoring capabilities for Envoy itself.
 
@@ -243,7 +221,7 @@ Before deploying to production, ensure:
 
 - [ ] **Authentication configured** - Set `ENVOY_AUTH_METHOD` and appropriate credentials in `.env`
 - [ ] **Placeholder keys removed** - Replace `placeholder_api_key` with secure credentials
-- [ ] **Prometheus basic auth configured** - If using Basic Auth mode, configure `prometheus-web-config.yaml` with strong bcrypt password hashes
+- [ ] **Strong passwords** - If using Basic Auth mode, use strong passwords in `ENVOY_BASIC_AUTH_CREDENTIALS`
 - [ ] **Debugging endpoints secured** - Keep pprof and zpages disabled, or bind to localhost only
 - [ ] **Port exposure reviewed** - Verify only necessary ports are exposed
 - [ ] **Firewall rules configured** - Restrict access to observability ports in your deployment environment
