@@ -6,8 +6,10 @@ services:
       dockerfile: Dockerfile.envoy
     image: observability-pipeline-envoy:latest
     container_name: envoy
-    env_file:
-      - ../.env
+    # env_file is optional - entrypoint scripts use defaults (placeholder_api_key) if not provided
+    # Uncomment the lines below and create a .env file if you want to customize credentials
+    # env_file:
+    #   - ../.env
     ports:
       - 4317:4317 # OTLP gRPC receiver (proxied)
       - 4318:4318 # OTLP HTTP receiver (proxied)
@@ -49,7 +51,8 @@ services:
       - no-prometheus # otel + vm
       - no-vm # otel + prometheus
 
-  x-prometheus-base: &prometheus-base
+  # x-prometheus-base: &prometheus-base 
+  prometheus-base: &prometheus-base
     build:
       context: ./prometheus
       dockerfile: Dockerfile.prometheus
@@ -58,8 +61,10 @@ services:
       - "--config.file=/etc/prometheus/prometheus.yaml"
       - "--storage.tsdb.path=/prometheus"
       - "--web.config.file=/etc/prometheus/web.config.yml"
-    env_file:
-      - ../.env
+    # env_file is optional - entrypoint scripts use defaults (placeholder_api_key) if not provided
+    # Uncomment the lines below and create a .env file if you want to customize credentials
+    # env_file:
+    #   - ../.env
     volumes:
       - ./prometheus.yaml:/etc/prometheus/prometheus.yaml:ro
       - prometheus_data:/prometheus
@@ -119,6 +124,8 @@ services:
       - no-collector # prometheus + vm
       - vm-only # vm
       - no-prometheus # otel + vm
+
+
 
 volumes:
   prometheus_data:
