@@ -4,14 +4,14 @@
 
 ## What This Pipeline Does
 
-This observability pipeline, when deployed with the [full deployment profile](deployment-profiles.md#profile-1-full-complete-stack), solves a common problem: **how to monitor distributed applications using OpenTelemetry traces**. Instead of instrumenting your application twice (once for traces, once for metrics), this pipeline automatically derives metrics from traces and stores them for long-term analysis.
+When deployed with the [full deployment profile](deployment-profiles.md#profile-1-full-complete-stack), this observability pipeline solves a common problem: **how to monitor distributed applications using OpenTelemetry traces**. Instead of instrumenting your application twice (once for traces, once for metrics), this pipeline automatically derives metrics from traces and stores them for long-term analysis.
 
 **At a Glance:**
 
 - Your application sends traces (using OpenTelemetry)
 - The pipeline converts those traces into useful metrics (request rate, errors, latency)
 - You can query and visualize these metrics in any Prometheus-compatible tool
-- All metrics are stored for 12 months with efficient compression
+- All metrics are efficiently compressed and stored for 12 months in VictoriaMetrics
 
 ## Quick Start
 
@@ -31,39 +31,82 @@ docker --version        # Should show Docker 20.10+
 docker compose version  # Should show Docker Compose 2.0+
 ```
 
+**Clone the repository:**
+
+```bash
+git clone https://github.com/CasperLabs/observability-pipeline/tree/dev
+```
+
 ### Initial Setup
 
-Create your environment configuration file:
+In going through this guide, there are two modes you can operate in:
+
+- Default mode
+- Custom configuration mode
+
+**Default mode** 
+
+Because the default `.env.example` file uses **API Key authentication** with placeholder credentials suitable for testing, the pipeline works out-of-the-box without requiring a `.env` file. The system automatically uses `placeholder_api_key` as the API key, allowing you to run the demo immediately. When making requests, include `placeholder_api_key` in your `X-API-Key` header like so:
+
+- API Key: `placeholder_api_key` (header: `X-API-Key: placeholder_api_key`)
+
+All subsequent code snippets designated as 'default mode' are written with this convention.
+
+**Custom configuration mode**
+
+If you want to customize credentials or use Basic Auth mode, there are a handful of extra steps. 
+
+Make sure you're in the repository root:
 
 ```bash
 # Navigate to the repository root
 cd /path/to/observability-pipeline
+```
 
-# Copy the example configuration
+Create your environment configuration file by copying the provided `env.example` file into your own `.env` file:
+
+```bash 
 cp .env.example .env
 ```
 
-The default `.env` file uses **API Key authentication** with placeholder credentials suitable for testing:
+(The pipeline will work with its defaults if you skip this)
 
-- API Key: `placeholder_api_key` (header: `X-API-Key: placeholder_api_key`)
+`.env.example` uses **API Key authentication** with placeholder credentials suitable for testing:
+
 - Basic Auth: `user:secretpassword` (for Basic Auth mode)
+
+By default, the `env_file` directives in `docker-compose/docker-compose.yaml` are commented out so that the pipeline will work without a `.env` file. If you created your own `.env` file in the previous step, you'll need to uncomment the `env_file` sections in the `docker-compose.yaml` file for the `envoy` and `prometheus-base` services.
+
+Look for these lines:
+
+```yaml
+# env_file:
+#   - ../.env
+```
+
+And uncomment them so Docker Compose will load your `.env` file.
 
 **⚠️ For production:** Edit `.env` to change these credentials before deployment. See the [detailed authentication guide](security.md#authentication) for configuration options, security best practices, and how to switch authentication methods.
 
 ### Start the Full Stack (Greenfield Setup)
+Whether you went through default or custom configuration mode, you're ready to stand up the observability pipeline.
 
-If you're starting from scratch with no existing monitoring infrastructure:
+To do so, navigate to the repository root if you're not already there:
 
 ```bash
-# Clone or navigate to the repository
 cd /path/to/observability-pipeline
+```
 
-# Start everything with one command
+> **💡 Note:** Before proceeding, make sure Docker Desktop (or Docker Engine) is running. Start Docker Desktop from your applications menu and wait for it to fully boot up before proceeding.
+
+With that done, you can start everything with the following command:
+
+```bash
 cd docker-compose
 docker compose --profile full up -d --build
 ```
 
-**That's it!** You now have a complete observability stack running:
+**That's it!** You now have a complete observability stack running with:
 
 ```
 ✓ OpenTelemetry Collector (receiving traces)
@@ -72,46 +115,71 @@ docker compose --profile full up -d --build
 ```
 
 ### Verify It's Working
+To make sure that the observability stack is functioning as expected, run through the steps below. 
+
+1. Check all services are healthy
 
 ```bash
-# 1. Check all services are healthy
 docker compose ps
 ```
 
+**Expected output:** A table listing the stack’s containers (for example, envoy, otel-collector, prometheus, and victoriametrics) with their STATUS shown as Up/Running, plus the PORTS each service is exposing. If all services are healthy, you should see each container listed and running with no error or restart loops.
+
+2. Verify OpenTelemetry Collector is ready
+
 ```bash
-# 2. Verify OpenTelemetry Collector is ready
 curl http://localhost:13133/health/status
-# Expected: {"status":"Server available"}
 ```
 
+**Expected output:** You should see `{"status":"Server available"}`, and you may also see `"upSince":"<some_datetime_string>"` and `"uptime":"<some_number_of_milliseconds>"`
+
+3. Verify Prometheus can reach targets
+
+This snippet will use the default API key and should work out of the box:
+
 ```bash
-# 3. Verify Prometheus can reach targets
-# Note: Prometheus authentication depends on your ENVOY_AUTH_METHOD setting
-# For API Key auth (default):
 curl -H "X-API-Key: placeholder_api_key" http://localhost:9090/api/v1/targets | jq
-# Expected: All targets showing "up"
-
-# For Basic Auth (uses Prometheus native authentication):
-curl -u prometheus_user:prometheus_password http://localhost:9090/api/v1/targets | jq
 ```
 
-**⚠️ For Basic Auth:** Use credentials from prometheus-web-config.yaml, not ENVOY_BASIC_AUTH_CREDENTIALS. [See details about Prometheus authentication](security.md#important---prometheus-basic-auth-configuration)
+For Basic Auth, there are a few preliminary configuration steps that must be completed, because Prometheus authentication depends on your ENVOY_AUTH_METHOD setting. You must:
+
+- Create a `.env` file (or modify the one you created above) with:
+  - `ENVOY_AUTH_METHOD=basic-auth`
+  - `ENVOY_BASIC_AUTH_CREDENTIALS=username:password`
+- Uncomment the `env_file` sections in `docker-compose.yaml` if you haven't already
+- Restart the services with the `--build` flag
+
+Then use the credentials from your `ENVOY_BASIC_AUTH_CREDENTIALS` setting:
+
+```bash 
+curl -u username:password http://localhost:9090/api/v1/targets | jq
+```
+
+See the [security guide](security.md#authentication) for more details.
+
+**Expected output:** Whether you use default or Basic Auth, all targets should be showing `"up"`.
+
+4. Verify VictoriaMetrics is running
+
+To use the default API Key authentication, run:
 
 ```bash
-# 4. Verify VictoriaMetrics is running
 # Note: VictoriaMetrics endpoints are authenticated via Envoy
-# For API Key auth (default):
-curl -H "X-API-Key: placeholder_api_key" http://localhost:8428/health
-# Expected: "OK"
 
-# For Basic Auth (uses Envoy credentials):
-curl -u user:secretpassword http://localhost:8428/health
-# Note: Use credentials from ENVOY_BASIC_AUTH_CREDENTIALS in .env file
+curl -H "X-API-Key: placeholder_api_key" http://localhost:8428/health
 ```
 
-### Send Your First Trace
+For Basic Auth, use the credentials from `ENVOY_BASIC_AUTH_CREDENTIALS` in the `.env` file:
 
-Install `otel-cli` (optional but helpful for testing):
+```bash
+curl -u user:secretpassword http://localhost:8428/health
+```
+
+**Expected output:** `"OK"`
+
+## Send Your First Trace
+
+This requires you to install `otel-cli`; this is optional but helpful for testing. The snippets provided below will help you install `otel-cli` on different systems: 
 
 ```bash
 # macOS
@@ -122,11 +190,11 @@ curl -L https://github.com/equinix-labs/otel-cli/releases/latest/download/otel-c
 chmod +x /usr/local/bin/otel-cli
 ```
 
-## Send a test trace:
+### Send a test trace:
+
+OTLP receivers are authenticated via Envoy. To use the default API Key authentication, run:
 
 ```bash
-# Note: OTLP receivers are authenticated via Envoy
-# For API Key auth (default):
 otel-cli span \
   --service "otel-test" \
   --name "demo-span" \
@@ -136,8 +204,11 @@ otel-cli span \
   --start "$(date -Iseconds)" \
   --end "$(date -Iseconds)" \
   --otlp-headers "X-API-Key=placeholder_api_key"
+```
 
-# For Basic Auth (uses Envoy credentials from ENVOY_BASIC_AUTH_CREDENTIALS):
+For Basic Auth, use Envoy credentials from `ENVOY_BASIC_AUTH_CREDENTIALS` in the `.env` file:
+
+```bash
 otel-cli span \
   --service "otel-test" \
   --name "demo-span" \
@@ -149,21 +220,20 @@ otel-cli span \
   --otlp-headers "Authorization=Basic $(echo -n 'user:secretpassword' | base64)"
 ```
 
-**View the results** (wait 10-15 seconds for metrics to appear):
+**View the results**
+(It will likely take 10-15 seconds for metrics to appear):
+
+To use the default API Key authentication, use curl:
 
 ```bash
-# For API Key auth (default) - use curl:
 curl -H "X-API-Key: placeholder_api_key" \
   --data-urlencode 'query=llm_traces_span_metrics_calls_total{service_name="otel-test"}' \
   'http://localhost:9090/api/v1/query' | jq
-
-# For Basic Auth - open browser (after configuring prometheus-web-config.yaml):
-open http://localhost:9090
-# Login with your Prometheus credentials when prompted
-
-# Run this query in the Prometheus UI
-llm_traces_span_metrics_calls_total{service_name="otel-test"}
 ```
+
+For Basic Auth, configure `prometheus-web-config.yaml` and navigate to `http://localhost:9090` in a browser and login with your Prometheus credentials when prompted. Then run `llm_traces_span_metrics_calls_total{service_name="otel-test"}` in the Prometheus UI.
+
+**Expected output:** With the default API key authentication approach, you should see a JSON response from the Prometheus HTTP API with "status": "success", along with a "data" object containing "resultType": "vector" and a "result" array. For the Basic Auth approach, you should see roughly the same information in the Prometheus UI.
 
 ---
 
@@ -177,9 +247,13 @@ Monitor your LLM inference servers to track metrics like latency, throughput, an
 
 > **Note:** This guide uses vLLM v0.11.2 (latest stable as of December 2025). Check the [vLLM releases page](https://github.com/vllm-project/vllm/releases) for newer versions. If upgrading from v0.6.x or earlier, review the [changelog](https://github.com/vllm-project/vllm/releases) for breaking changes.
 
+> **Note:** There is no 'default mode' for running vLLM; if you didn't create and modify a `.env` file as part of the 'Basic Auth' workflow above, you'll need to do it to proceed.
+
 **Quick Setup:**
 
-1. **Create configuration** (`.env` file):
+1. **Create configuration**:
+
+Add the following vLLM-specific values to your `.env` file.
 
 ```bash
 VLLM_IMAGE_VERSION=v0.11.2 # latest stable as of Dec 2025
@@ -191,10 +265,14 @@ VLLM_GPU_MEMORY_UTILIZATION=0.9
 VLLM_DTYPE=half
 ```
 
-2. **Create `docker-compose.yml`** with GPU support:
+2. **Modify `docker-compose.yml`:**
+
+Under `services:`, add the following vLLM-specific values to `docker-compose.yml` to run vLLM with GPU support. Note that Docker Compose does **not** automatically populate the `${...}` values in `docker-compose.yaml` from your repo-root `.env` when you run Compose from the `docker-compose/` directory. You can either:
+
+- Replace the `${...}` placeholders with the values above (or your own), or
+- Run `docker compose` with the repo-root env file explicitly: `cd docker-compose && docker compose --env-file ../.env --profile full up -d --build`.
 
 ```yaml
-services:
   vllm:
     image: vllm/vllm-openai:${VLLM_IMAGE_VERSION}
     container_name: vllm-server
@@ -227,7 +305,9 @@ services:
 docker compose up -d
 ```
 
-4. **Add vLLM to Prometheus** - Edit `docker-compose/prometheus.yaml`:
+4. **Add vLLM to Prometheus** 
+
+Edit `docker-compose/prometheus.yaml` by adding the new target below (this should replace the `- targets: ["garage.proveai.com:18010"]` line that already exists in `prometheus.yaml`):
 
 ```yaml
 scrape_configs:
@@ -242,7 +322,7 @@ Then restart Prometheus:
 
 ```bash
 cd docker-compose
-docker compose restart prometheus
+docker compose --profile full restart prometheus
 ```
 
 5. **Verify metrics:**
