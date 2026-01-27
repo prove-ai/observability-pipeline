@@ -5,6 +5,7 @@
 ## Overview
 
 This guide provides detailed instructions for deploying vLLM with GPU acceleration using Docker Compose and configuring Prometheus to scrape vLLM’s built-in metrics.
+
 It covers only what is required with minimal complexity.
 
 **By the end of this guide, you will have:**
@@ -85,6 +86,13 @@ docker run --rm --gpus all nvidia/cuda:11.8.0-base-ubuntu22.04 nvidia-smi
 - **Docker**: Version 20.10 or higher
 - **Docker Compose**: Version 2.0 or higher
 
+You can check your versions by running the following commands:
+
+```bash 
+docker --version 
+docker compose version 
+```
+
 ### Network Requirements
 
 - **Port 8000**: vLLM API and metrics endpoint
@@ -111,7 +119,7 @@ vLLM is configured using environment variables stored in a `.env` file.
 
 ### Create .env File
 
-Create a `.env` file in the same directory as your `docker-compose.yml`:
+Create a `.env` file in the same directory as your `docker-compose.yml` and add the following values:
 
 ```bash
 # vLLM image version - v0.11.2 is latest stable as of Dec 2025
@@ -131,6 +139,8 @@ VLLM_DTYPE=half
 ```
 
 ### Configuration Variables
+
+The following environment variables control vLLM's behavior and can be customized based on your hardware and model requirements. These variables are set in your `.env` file and passed to the Docker container at runtime.
 
 | Variable                      | Description                       | Common Values               |
 | ----------------------------- | --------------------------------- | --------------------------- |
@@ -164,7 +174,7 @@ For Prometheus to collect vLLM metrics, statistics logging must remain **enabled
 
 ### Verify .env Loading
 
-The docker-compose file references these variables. To confirm they're loaded:
+The docker-compose file references these variables. Run the following command to confirm they're loaded:
 
 ```bash
 docker compose config
@@ -209,7 +219,8 @@ services:
 - GPU passthrough handled by `deploy.resources.reservations.devices`
 - `models` folder caches HuggingFace weights to avoid re-downloading
 - Container restarts automatically if it stops
-- **⚠️ Metrics requirement:** Do NOT include `--disable-log-stats` in the command section - this would break Prometheus metrics collection. Stats logging is enabled by default and must remain enabled.
+- The `docker-compose` file may not automatically fill in the `$` values, in which case you'll need to add the manually from the `.env` file
+- **⚠️ Metrics requirement:** Do NOT include `--disable-log-stats` in the command section - this would break Prometheus metrics collection. Stats logging is enabled by default and must remain enabled
 
 ### Start vLLM
 
@@ -257,7 +268,7 @@ curl http://localhost:8000/metrics
 
 Prometheus scrapes the vLLM `/metrics` endpoint and stores metrics for querying.
 
-You can run Prometheus on the same host or a separate machine. Below assumes a separate `prometheus-docker-compose.yml`.
+You can run Prometheus on the same host or a separate machine. The code below assumes there is a separate `prometheus-docker-compose.yml` available.
 
 ### Create prometheus-docker-compose.yml
 
@@ -275,7 +286,7 @@ services:
 
 ### Create prometheus.yml
 
-Minimal config to scrape a vLLM instance:
+Here is the minimal configuration required to scrape a vLLM instance:
 
 ```yaml
 global:
@@ -288,7 +299,7 @@ scrape_configs:
           - "vllm-server:8000" # Same Docker network as vLLM
 ```
 
-**If Prometheus runs on a different host**, replace target with the vLLM host/IP:
+**If Prometheus runs on a different host**, replace `targets` with the vLLM host/IP:
 
 ```yaml
 scrape_configs:
@@ -300,7 +311,7 @@ scrape_configs:
 
 ### Start Prometheus
 
-From the directory containing `prometheus-docker-compose.yml` and `prometheus.yml`:
+Run the following command from the directory containing `prometheus-docker-compose.yml` and `prometheus.yml`:
 
 ```bash
 docker compose -f prometheus-docker-compose.yml up -d
@@ -316,14 +327,14 @@ You should see a `prometheus` container running.
 
 ### Validate Prometheus UI
 
-Open in browser: `http://<PROMETHEUS_HOST>:9090`
+Open this link in a browser: `http://<PROMETHEUS_HOST>:9090`
 
 Go to **Status → Targets** and check:
 
 - job="vllm"
 - State: **UP**
 
-If it's **DOWN**, check:
+If it's **DOWN**, check the following:
 
 - vLLM is reachable from Prometheus host
 - Target hostname/IP is correct
@@ -333,7 +344,7 @@ If it's **DOWN**, check:
 
 ## End-to-End Validation
 
-This section verifies that vLLM serves requests, metrics are exposed, and Prometheus is scraping.
+This section verifies that vLLM serves requests, metrics are exposed, and Prometheus is scraping as expected.
 
 ### 1. Send Test Request to vLLM
 
