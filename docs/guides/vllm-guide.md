@@ -49,7 +49,6 @@ Integration of vLLM with the Observability Pipeline:
 **Key Points:**
 
 - vLLM exposes a **Prometheus-compatible `/metrics` endpoint**
-
 - Prometheus pulls (scrapes) metrics directly from the vLLM container.
 
 **Example vLLM Metrics:**
@@ -81,6 +80,8 @@ nvidia-smi
 docker run --rm --gpus all nvidia/cuda:11.8.0-base-ubuntu22.04 nvidia-smi
 ```
 
+**Note:** This command fails on Linux if NVIDIA Container Toolkit isn’t installed configured. 
+
 ### Software Requirements
 
 - **Docker**: Version 20.10 or higher
@@ -100,7 +101,7 @@ docker compose version
 
 **Network considerations:**
 
-- If Prometheus and vLLM run in the same Docker network, Prometheus scrapes using the container name: `vllm-server:8000`
+- If Prometheus and vLLM run in the same Docker network (as the code snippets below assume), Prometheus scrapes using the container name: `vllm-server:8000`
 - If they run on different hosts, use: `http://<vllm-host-ip>:8000/metrics`
 - Ensure Prometheus can reach the vLLM host and port (check firewall rules)
 
@@ -122,8 +123,8 @@ vLLM is configured using environment variables stored in a `.env` file.
 Create a `.env` file in the same directory as your `docker-compose.yml` and add the following values:
 
 ```bash
-# vLLM image version - v0.11.2 is latest stable as of Dec 2025
-VLLM_IMAGE_VERSION=v0.11.2
+# Choose a recent vLLM release; note that some vLLM image tags are CUDA-specific, so you should pick a tag that matches your driver and CUDA environment
+VLLM_IMAGE_VERSION=v0.14.0
 
 # Model Configuration
 VLLM_MODEL=Qwen/Qwen2.5-0.5B-Instruct
@@ -135,42 +136,28 @@ VLLM_PORT=8000
 # Runtime Settings
 VLLM_MAX_MODEL_LEN=1024
 VLLM_GPU_MEMORY_UTILIZATION=0.9
-VLLM_DTYPE=half
+VLLM_DTYPE=auto #vLLM supports --dtype=auto and picks an appropriate dtype based on the model and GPU.
 ```
 
 ### Configuration Variables
 
 The following environment variables control vLLM's behavior and can be customized based on your hardware and model requirements. These variables are set in your `.env` file and passed to the Docker container at runtime.
 
-| Variable                      | Description                       | Common Values               |
-| ----------------------------- | --------------------------------- | --------------------------- |
-| `VLLM_IMAGE_VERSION`          | Docker image tag                  | v0.11.2 (latest Dec 2025)   |
-| `VLLM_MODEL`                  | HuggingFace model ID              | Any compatible model        |
-| `VLLM_HOST`                   | Bind HTTP server to interfaces    | 0.0.0.0                     |
-| `VLLM_PORT`                   | Port for API + /metrics           | 8000                        |
-| `VLLM_MAX_MODEL_LEN`          | Maximum context length            | 1024, 2048, 4096            |
-| `VLLM_GPU_MEMORY_UTILIZATION` | GPU memory allocation (0.0 - 1.0) | 0.9 (recommended)           |
-| `VLLM_DTYPE`                  | Model precision                   | `half`, `bfloat16`, `float` |
+| Variable                      | Description                       | Common Values                   |
+| ----------------------------- | --------------------------------- | ------------------------------- |
+| `VLLM_IMAGE_VERSION`          | Docker image tag                  | v0.14.0                         |
+| `VLLM_MODEL`                  | HuggingFace model ID              | Any compatible model            |
+| `VLLM_HOST`                   | Bind HTTP server to interfaces    | 0.0.0.0                         |
+| `VLLM_PORT`                   | Port for API + /metrics           | 8000                            |
+| `VLLM_MAX_MODEL_LEN`          | Maximum context length            | 1024, 2048, 4096                |
+| `VLLM_GPU_MEMORY_UTILIZATION` | GPU memory allocation (0.0 - 1.0) | 0.9 (recommended)               |
+| `VLLM_DTYPE`                  | Model precision                   | `auto` (recommended), `half`, `bfloat16`, `float` |
 
 **Optional:** For private HuggingFace models:
 
 ```bash
 HUGGINGFACE_HUB_TOKEN=your_token_here
 ```
-
-### ⚠️ Important: Metrics Collection Requirement
-
-For Prometheus to collect vLLM metrics, statistics logging must remain **enabled** (the default behavior).
-
-**Critical:** Do NOT add the `--disable-log-stats` flag to your vLLM command configuration.
-
-| Configuration            | Stats Logging | Prometheus Works? | Use This?                 |
-| ------------------------ | ------------- | ----------------- | ------------------------- |
-| No flag (default)        | ✅ Enabled    | ✅ Yes            | ✅ **Recommended**        |
-| `--disable-log-stats`    | ❌ Disabled   | ❌ No             | ❌ **Never use**          |
-| `--no-disable-log-stats` | ✅ Enabled    | ✅ Yes            | ⚠️ Explicit (unnecessary) |
-
-**Why this matters:** The `--disable-log-stats` flag disables vLLM's internal statistics collection, which breaks the `/metrics` endpoint that Prometheus depends on.
 
 ### Verify .env Loading
 
@@ -185,6 +172,8 @@ docker compose config
 ## Deploying vLLM
 
 ### Create docker-compose.yml
+
+Create a `docker-compose.yml` file and include the values below. Note that it includes both vLLM and Prometheus services. Prometheus scrapes the vLLM `/metrics` endpoint and stores metrics for querying, and having both tools in the same `.yml` file means they can interact with one another without needing to attach each to a common network.
 
 ```yaml
 services:
@@ -212,6 +201,15 @@ services:
     restart: unless-stopped
     extra_hosts:
       - "host.docker.internal:host-gateway"
+
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: prometheus
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml
+    ports:
+      - "9090:9090"
+    restart: unless-stopped
 ```
 
 **Notes:**
@@ -219,8 +217,22 @@ services:
 - GPU passthrough handled by `deploy.resources.reservations.devices`
 - `models` folder caches HuggingFace weights to avoid re-downloading
 - Container restarts automatically if it stops
-- The `docker-compose` file may not automatically fill in the `$` values, in which case you'll need to add the manually from the `.env` file
-- **⚠️ Metrics requirement:** Do NOT include `--disable-log-stats` in the command section - this would break Prometheus metrics collection. Stats logging is enabled by default and must remain enabled
+- The `docker-compose` file may not automatically grab the `$` values from the `env` file, in which case you'll need to add them manually
+- the `docker-compose.yaml` file above also contains the Prometheus specification. You can keep this in a separate `.yaml` file, but you'll then need to create a common network that the Docker and Prometheus instances can reference
+
+### ⚠️ Important: Metrics Collection Requirement
+
+For Prometheus to collect vLLM metrics, statistics logging must remain **enabled** (the default behavior).
+
+**Critical:** Do NOT add the `--disable-log-stats` flag to your vLLM command configuration.
+
+| Configuration            | Stats Logging | Prometheus Works? | Use This?                 |
+| ------------------------ | ------------- | ----------------- | ------------------------- |
+| No flag (default)        | ✅ Enabled    | ✅ Yes            | ✅ **Recommended**        |
+| `--disable-log-stats`    | ❌ Disabled   | ❌ No             | ❌ **Never use**          |
+| `--no-disable-log-stats` | ✅ Enabled    | ✅ Yes            | ⚠️ Explicit (unnecessary) |
+
+**Why this matters:** The `--disable-log-stats` flag disables vLLM's internal statistics collection, which breaks the `/metrics` endpoint that Prometheus depends on.
 
 ### Start vLLM
 
@@ -264,26 +276,6 @@ curl http://localhost:8000/metrics
 
 ---
 
-## Deploying Prometheus
-
-Prometheus scrapes the vLLM `/metrics` endpoint and stores metrics for querying.
-
-You can run Prometheus on the same host or a separate machine. The code below assumes there is a separate `prometheus-docker-compose.yml` available.
-
-### Create prometheus-docker-compose.yml
-
-```yaml
-services:
-  prometheus:
-    image: prom/prometheus:latest
-    container_name: prometheus
-    volumes:
-      - ./prometheus.yml:/etc/prometheus/prometheus.yml
-    ports:
-      - "9090:9090"
-    restart: unless-stopped
-```
-
 ### Create prometheus.yml
 
 Here is the minimal configuration required to scrape a vLLM instance:
@@ -308,22 +300,6 @@ scrape_configs:
       - targets:
           - "<VLLM_SERVER_IP>:8000"
 ```
-
-### Start Prometheus
-
-Run the following command from the directory containing `prometheus-docker-compose.yml` and `prometheus.yml`:
-
-```bash
-docker compose -f prometheus-docker-compose.yml up -d
-```
-
-**Verify container:**
-
-```bash
-docker ps
-```
-
-You should see a `prometheus` container running.
 
 ### Validate Prometheus UI
 
