@@ -123,7 +123,8 @@ vLLM is configured using environment variables stored in a `.env` file.
 Create a `.env` file in the same directory as your `docker-compose.yml` and add the following values:
 
 ```bash
-# Choose a recent vLLM release; note that some vLLM image tags are CUDA-specific, so you should pick a tag that matches your driver and CUDA environment
+# Choose a recent vLLM release.
+# Note that some vLLM image tags are CUDA-specific, so you should pick a tag that matches your driver and CUDA environment
 VLLM_IMAGE_VERSION=v0.14.0
 
 # Model Configuration
@@ -399,12 +400,12 @@ docker logs -f vllm-server
 
 **Common causes:**
 
-| Issue                   | Solution                                                  |
-| ----------------------- | --------------------------------------------------------- |
-| Invalid model name      | Verify `VLLM_MODEL` exists on HuggingFace                 |
-| Wrong dtype for model   | Try `half`, `bfloat16`, or `float` in `VLLM_DTYPE`        |
-| GPU not available       | Run `nvidia-smi` and check NVIDIA Container Toolkit       |
-| Insufficient GPU memory | Reduce `VLLM_GPU_MEMORY_UTILIZATION` or use smaller model |
+| Issue                   | Solution                                                                                                                   |
+| ----------------------- | ---------------------------------------------------------------------------------------------------------------------------|
+| Invalid model name      | Verify `VLLM_MODEL` exists on HuggingFace                                                                                  |
+| Wrong dtype for model   | `VLLM_DTYPE` is set to `auto` above, you can try `half`, `bfloat16`, or `float` to see if that resolves your issue.        |
+| GPU not available       | Run `nvidia-smi` and check NVIDIA Container Toolkit                                                                        |
+| Insufficient GPU memory | Reduce `VLLM_GPU_MEMORY_UTILIZATION` or use smaller model                                                                  |
 
 ### GPU Not Detected in Container
 
