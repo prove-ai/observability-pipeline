@@ -234,6 +234,31 @@ For Prometheus to collect vLLM metrics, statistics logging must remain **enabled
 
 **Why this matters:** The `--disable-log-stats` flag disables vLLM's internal statistics collection, which breaks the `/metrics` endpoint that Prometheus depends on.
 
+### Create prometheus.yml
+
+Here is the minimal configuration required to scrape a vLLM instance:
+
+```yaml
+global:
+  scrape_interval: 15s
+
+scrape_configs:
+  - job_name: "vllm"
+    static_configs:
+      - targets:
+          - "vllm-server:8000" # Same Docker network as vLLM
+```
+
+**If Prometheus runs on a different host**, replace `targets` with the vLLM host/IP:
+
+```yaml
+scrape_configs:
+  - job_name: "vllm"
+    static_configs:
+      - targets:
+          - "<VLLM_SERVER_IP>:8000"
+```
+
 ### Start vLLM
 
 From the directory containing `docker-compose.yml` and `.env`:
@@ -272,33 +297,6 @@ curl http://localhost:8000/v1/models
 
 ```bash
 curl http://localhost:8000/metrics
-```
-
----
-
-### Create prometheus.yml
-
-Here is the minimal configuration required to scrape a vLLM instance:
-
-```yaml
-global:
-  scrape_interval: 15s
-
-scrape_configs:
-  - job_name: "vllm"
-    static_configs:
-      - targets:
-          - "vllm-server:8000" # Same Docker network as vLLM
-```
-
-**If Prometheus runs on a different host**, replace `targets` with the vLLM host/IP:
-
-```yaml
-scrape_configs:
-  - job_name: "vllm"
-    static_configs:
-      - targets:
-          - "<VLLM_SERVER_IP>:8000"
 ```
 
 ### Validate Prometheus UI
