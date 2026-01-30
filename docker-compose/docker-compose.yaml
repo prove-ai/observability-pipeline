@@ -1,5 +1,5 @@
 services:
-  # Envoy Proxy - Central authentication gateway
+  # Envoy Proxy
   envoy:
     build:
       context: ./envoy
@@ -11,7 +11,7 @@ services:
     ports:
       - 4317:4317 # OTLP gRPC receiver (proxied)
       - 4318:4318 # OTLP HTTP receiver (proxied)
-      - 9090:9090 # Prometheus (proxied)
+      # - 9090:9090 # Prometheus (proxied)
       - 8428:8428 # VictoriaMetrics (proxied)
       - 9901:9901 # Envoy admin interface (localhost only)
     networks:
@@ -63,9 +63,8 @@ services:
     volumes:
       - ./prometheus.yaml:/etc/prometheus/prometheus.yaml:ro
       - prometheus_data:/prometheus
-    # Port 9090 is now exposed through Envoy proxy only
-    # ports:
-    #   - "9090:9090"
+    ports:
+      - "9090:9090"
     networks:
       - observability
     restart: unless-stopped

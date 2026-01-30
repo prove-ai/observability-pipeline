@@ -43,16 +43,16 @@ build:
 
 # Ansible deployment commands
 deploy:
-	cd playbooks && ansible-playbook deploy.yml
+	cd playbooks && uv run -- ansible-playbook deploy.yml
 
 ansible-ping:
-	cd playbooks && ansible all -m ping
+	cd playbooks && uv run -- ansible all -m ping
 
 ansible-check:
-	cd playbooks && ansible-playbook deploy.yml --syntax-check
+	cd playbooks && uv run -- ansible-playbook deploy.yml --syntax-check
 
 ansible-deploy-dry-run:
-	cd playbooks && ansible-playbook deploy.yml --check --diff
+	cd playbooks && uv run -- ansible-playbook deploy.yml --check --diff
 
 # Show help
 help:
