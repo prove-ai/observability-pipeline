@@ -1,0 +1,719 @@
+## Overview 
+
+The Prove AI dashboard is an observability platform designed for containerized generative AI workloads. The platform provides monitoring, evaluation, and compliance capabilities for LLM inference services, RAG pipelines, and embedding systems.
+
+The dashboard consists of the following components:
+- Dashboard: Customizable metrics visualization and incident management
+- Guardrail Metrics: Safety and content filtering monitoring
+- Datasets: Dataset management and compliance tracking
+- Models: Model registry and version control
+- Access Request: Permission management interface
+- Module Manager: Prompt Playground and context configuration
+- Compliance: Risk frameworks, audits, and evidence collection
+- User Management: Organization user administration
+- Evaluations: Model evaluation and performance comparison
+- Configuration: Prometheus integration and notification setup
+
+## Signing In and Making an Account
+The application is accessible at https://proveai-integration.proveai.com/.
+
+You may log in using email and password credentials or Single Sign-On (SSO). For optimal experience, bookmark the application URL and enable browser notifications.
+
+### User Registration
+
+The Organization Administrator (Org Admin) registers users and sends invitation emails to access the application. To complete registration:
+
+1) Click "Accept Invitation" in the invitation email
+2) You will be redirected to a one-time registration page
+3) Set your login credentials (password requirements apply)
+4) After successful registration, log in using your new credentials
+
+### Dashboard 
+The Dashboard provides a customizable interface for monitoring infrastructure and model performance metrics. Users can add individual metrics and create visualizations to track system health and performance trends.
+
+The main elements are described below.
+
+- Time Range Selector (top left): Dropdown menu for selecting the data time window:
+    - Last 24h
+    - Last 7d
+    - Last 30d
+- Refresh Data (top right): Manually refresh dashboard data to display the latest metrics.
+- Create Incident (top right): Open the incident creation panel for documenting issues or outages.
+- Add Metric panels: Empty metric cards for displaying individual metric values or simple visualizations. These provide at-a-glance monitoring for key performance indicators.
+- Add Chart panels: Larger panels for creating complex visualizations including time-series graphs, histograms, and other chart types for analyzing metric trends over time.
+
+### Adding Metrics
+To add a metric to the dashboard:
+
+1) Click the + Add Metric button
+2) Use the search function to locate the desired metric
+3) Select the metric from the results list
+
+The platform supports three primary metric types:
+- Counter: Tracks cumulative values that only increase over time (e.g., total requests, token counts, successfully processed requests)
+- Gauge: Represents current state values that can increase or decrease (e.g., queue depth, active connections, KV-cache usage percentage)
+- Histogram: Provides distribution data for debugging performance issues. Histograms track percentile distributions (p50, p95, p99), which are more operationally relevant than averages for understanding LLM system behavior, particularly for latency and token generation metrics.
+
+A full list of available metrics can be found in Appendix A, below.
+
+## Creating an Incident
+If you click 'create incident,' you'll be shown a panel that allows you to document and track issues or outages. The panel includes:
+
+- Integration selector: Shows which system will receive the incident (in this case, GitHub). You can click "Manage integrations" to configure where incidents are sent.
+- Title field: A text input for a descriptive incident name, with a helpful example placeholder: "p95 latency spiking on vLLM."
+- Date and time pickers: Set to the current date/time (Jan 21, 2026, 01:09 PM), allowing you to specify when the incident occurred or was detected.
+- Description field: A larger text area for detailed information including what happened, the scope of the issue, suspected causes, steps already taken, and links to relevant traces or logs for investigation.
+- Create Incident button: Submits the incident to your configured integration (like creating a GitHub issue).
+- Cancel button: Closes the panel without creating an incident.
+
+This is a streamlined way to create incident reports directly from your observability dashboard, automatically linking them to your existing workflow tools.
+
+## Guardrail Metrics 
+The Guardrail Metrics dashboard monitors safety and content filtering performance for LLM applications. This interface tracks guardrail effectiveness, processing overhead, and policy violations.
+
+Here's are the main design elements:
+- Configuration selector (top left): Dropdown menu for switching between guardrail configurations (e.g., "Main", "Hedera Config"). Select the appropriate configuration for your environment.
+- Guardrail Config Overview (top right): Opens detailed guardrail configuration settings for policy management.
+- Time range selector (top right): Toggle between viewing metrics for Last 24h, 7 days, or 30 days.
+
+Summary metrics (top row): Four key indicators showing:
+- LLM Calls: Total number of LLM API requests processed
+- Blocked Requests: Number of requests rejected by guardrail policies
+- Ave. Tokens / Request: Average token consumption per request
+- Total Tokens: Cumulative token count across all requests
+
+Performance section: Five timing and overhead metrics:
+
+- Total Processing Time: End-to-end request processing duration
+- Generation Rails Duration: Time spent on output filtering and validation
+- LLM Calls Duration: Time spent on LLM inference
+- Dialogue Rails Duration: Time spent on conversational safety checks
+- Guardrails Overhead: Performance impact of safety checks (percentage)
+
+Processing Outcomes: Displays actions taken by guardrails (blocks, modifications, approvals).
+
+Top Activated Rails: Shows which guardrail policies trigger most frequently.
+
+To configure custom guardrail policies, click Guardrail Config Overview.
+
+## Datasets
+This is a dataset management interface through which users can browse, create, and organize datasets, with the ability to toggle between the My Datasets tab (which shows datasets owned by or created by you) and the Other Datasets tab (which shows shared datasets or datasets created by other users in the organization). 
+
+### Dataset Table
+
+The interface includes two tabs:
+- My Datasets: Datasets owned by or created by the current user
+- Other Datasets: Datasets shared by other users in the organization
+
+Table columns:
+- Dataset ID: Unique identifier
+- Dataset Name: Descriptive name
+- Owner Organization: Organization that owns the dataset
+- Action: Details button for viewing complete dataset information
+
+Pagination controls (bottom):
+- Rows per page: Dropdown to adjust entries displayed (default: 10)
+- Page indicator: Shows current range and total count (e.g., "1-10 of 80")
+- Navigation arrows: Move between result pages
+
+### Viewing Dataset Details
+Click the Details button under the Action column to view:
+
+- Dataset type (e.g., Training, RAG)
+- Custom attributes
+- Creation and last updated timestamps
+- Compliance certifications (PII Free, Copyright Free, HAP Free status)
+- Governance platform association
+
+### Creating a new dataset
+
+Click Create New (top right) to open the dataset creation form.
+
+**Basic Information:**
+- Name: The unique name for the dataset
+- Dataset Type: Classifies the dataset’s intended use (e.g., Training)
+- Dataset Hash: Cryptographic hash used to track dataset version
+- Card URL: Link to the dataset’s documentation card
+
+Organizational Details:
+- Tags: Categorization labels
+- Promo Text: Brief description
+- Description: Comprehensive dataset documentation
+
+Custom Metadata: Key-value pairs for additional attributes
+
+Privacy Setting: Mark dataset as private or public
+
+Compliance Certifications: Declare verification status for:
+- PII Free: No personally identifiable information
+- Copyright Free: No copyrighted content
+- HAP Free: No hate speech, abuse, or profanity
+- Options: Yes / No / Not Verified
+
+Governance: Select governance platform (optional)
+
+Action buttons:
+- Publish: Make dataset available
+- Save as Draft: Save without publishing
+- Cancel: Discard changes
+
+## Models 
+The Models interface provides model registry and version management capabilities. Users can browse, document, and organize models with compliance tracking. 
+
+### Model Table
+The interface includes two tabs:
+- My Models: Models owned by or created by the current user
+- Other Models: Models shared by other users in the organization
+
+Table columns:
+- Model ID: Unique identifier
+- Model Name: Descriptive name
+- Status: Current state (e.g., Published)
+- Action: Details button for viewing complete model information
+
+Pagination controls (bottom):
+- Rows per page: Dropdown to adjust entries displayed (default: 10)
+- Page indicator: Shows current range and total count (e.g., "1-7 of 7")
+- Navigation arrows: Move between result pages
+
+### Viewing Model Details
+Click the Details button under the Action column to view:
+- Service provider (e.g., AWS Bedrock)
+- Custom attributes
+- Creation and last updated timestamps
+- Compliance certifications (PII Free, Copyright Free, HAP Free, Bias Free status)
+- Associated datasets
+- Governance platform association
+
+### Creating a New Model
+Click Create New (top right) to open the model creation form.
+
+Basic Information:
+- Name: Model identifier
+- Service Provider: Hosting platform (e.g., AWS Bedrock)
+- Card URL: Link to model documentation
+
+Organizational Details:
+- Tags: Categorization labels
+- Promo Text: Brief description
+- Description: Comprehensive model documentation
+
+Custom Metadata: Key-value pairs for additional attributes
+
+Privacy Setting: Mark model as private or public
+
+Additional Info:
+- Prove AI Datasets: Link datasets used for training or evaluation
+- Outside Datasets: Reference external dataset sources
+
+Compliance Certifications: Declare verification status for:
+- PII Free: No personally identifiable information in training data
+- Copyright Free: No copyrighted content in training data
+- HAP Free: No hate speech, abuse, or profanity in training data
+- Bias Free: Verified for bias mitigation
+- Options: Yes / No / Not Verified
+
+Governance: Select governance platform (optional)
+
+Action buttons:
+- Publish: Make model available
+- Save as Draft: Save without publishing
+- Cancel: Discard changes
+
+## Access Request 
+The Access Request interface manages permissions for datasets and models. Users can request access to resources, approve pending requests, and review access history.
+
+### Dataset Access
+My Requests tab: Displays access requests submitted by the current user
+
+Table columns:
+- Request ID: Unique identifier for each request
+- Dataset Name: Target dataset
+- Owner Organization: Organization that owns the dataset
+- Status: Current state
+    - Approved
+    - Submitted
+    - Rejected
+    - Cancelled
+- Action: Details button
+
+Approver Comment panel: Displays feedback or reasoning from the approver
+
+Pending Actions tab: Shows access requests awaiting approval by the current user
+
+Table columns:
+- Request ID: Unique identifier
+- Dataset Name: Requested dataset
+- Requesting Organization: Origin of the request
+- Date Raised: Request submission timestamp
+- Action: Details button for approval workflow
+
+Processed Actions tab: Historical record of completed access requests with final status
+
+### Model Access
+
+My Requests tab: Displays access requests submitted by the current user
+
+Table columns:
+- Request ID: Unique identifier for each request
+- Model Name: Target model
+- Owner Organization: Organization that owns the model
+- Status: Current state
+    - Approved
+    - Submitted
+    - Rejected
+    - Cancelled
+- Action: Details button
+
+Approver Comment panel: Displays feedback or reasoning from the approver
+
+Pending Actions tab: Shows access requests awaiting approval by the current user
+
+Table columns:
+- Request ID: Unique identifier
+- Model Name: Requested model
+- Requesting Organization: Origin of the request
+- Date Raised: Request submission timestamp
+- Action: Details button for approval workflow
+
+Processed Actions tab: Historical record of completed access requests with final status.
+
+## Module Manager
+### Prompt Playground
+The Prompt Playground provides an interface for testing and experimenting with language model prompts. Users can configure model parameters, test different configurations, and validate prompts before production deployment.
+
+### Interface Elements
+Header (top):
+- Prompt Playground: Page title
+- Report Chat: Report issues or problematic outputs
+- Select Config: Dropdown to choose from saved configurations (e.g., Hedera, Main)
+
+Conversation area (left): Large panel displaying model responses and conversation history. Shows "(Unsaved)" when no configuration has been saved.
+
+Configuration panel (right):
+
+Model Selection: Click Select Model to choose a language model. The interface displays two tabs:
+- My Models: Models owned by or created by the current user
+- Other Models: Models created by other users in the organization (includes Owner Org ID)
+
+Each model listing shows:
+- Service ID: Service provider identifier
+- Model ID: Unique model identifier
+- Model Name: Descriptive name
+- Status: Current state (e.g., Published)
+
+Parameters:
+- Decoding Parameter: Slider to toggle between Greedy (deterministic) and Sampling (random) decoding strategies
+- Repetition Penalty: Adjustable from 1.00 to 2.00. Controls token repetition avoidance (default: 1.00)
+- Random Seed: Set to -1 for random outputs, or specify a positive integer for reproducible results
+- Min Token: Minimum number of tokens to generate (default: 0)
+- Max Token: Maximum number of tokens to generate (default: 900)
+- Stop Sequence: Custom strings that terminate generation when encountered
+
+Prompt Input (bottom):
+- Text field: Enter prompt text
+- Submit button: Arrow icon to send prompt to selected model
+
+Action buttons (bottom right):
+- Publish: Save and publish the prompt configuration
+- Save as Draft: Save configuration without publishing
+- Reset to default: Restore all parameters to default values
+
+The Prompt Playground allows iterative prompt development and parameter tuning before deploying configurations to production environments.
+
+### Contexts
+The Contexts interface manages prompt context configurations for language models. Users can view, create, and launch contexts in the Prompt Playground.
+
+The interface includes two tabs:
+- My Contexts: Contexts owned by or created by the current user
+- Other Contexts: Contexts created by other users in the organization
+
+Table columns:
+
+For My Contexts:
+- Context ID: Unique identifier
+- Context Name: Descriptive name
+- Model Name: Associated language model
+- Status: Current state
+
+For Other Contexts:
+- Context ID: Unique identifier
+- Context Name: Descriptive name
+- Model Name: Associated language model
+- Owner Org: Organization that owns the context
+
+Action buttons:
+- Create New +: Create a new context configuration
+- Launch Playground: Open the selected context in the Prompt Playground
+
+## Compliance
+The Compliance section provides tools for risk assessment, audit management, and evidence documentation.
+
+### Risk Framework
+The Risk Framework allows users to define and track compliance risks across the organization.
+
+### Audits
+The Audits interface manages compliance audit workflows and documentation.
+
+### Evidence Folders
+The Evidence Folders section manages compliance documentation and supporting materials. Users can create folders, upload documents, and track evidence status.
+
+Accessing Evidence Folders: Click Evidence Folders in the left-side menu.
+
+Viewing Folder Details: Click View Details for a specific evidence folder to access:
+- Folder metadata and status
+- Internal notes (visible to all users in the Auditee Organization)
+- Supporting documents
+
+Adding Notes:
+- Enter note text in the provided field
+- Notes are saved automatically and visible to all users in the Auditee Organization
+
+Updating Folder Details:
+- Click the edit option to modify folder information
+- Update required fields in the pop-up window
+- Save changes
+- A success message confirms the update
+
+Adding Supporting Documents:
+- Click Add Document under the Supporting Document section
+- In the pop-up window:
+    - Attach the document file
+    - Provide a description (required)
+- Click Upload
+- A success message confirms the upload
+- The document appears in the evidence folder
+
+Document Management:
+- Update Effective Date: Click the edit icon next to the document name to modify the effective date
+- Delete Document: Click the delete option next to the document name, then confirm deletion
+- File Limits: Maximum 50 MB per attachment, multiple documents supported
+
+## User Management
+The User Management interface allows administrators to manage organization users, assign roles, and control access permissions.
+
+### Interface Elements
+Main User Table (center):
+
+Table columns:
+- User ID: Unique identifier for each user
+- Name: User's name or email (displays "No name provided" if not set)
+- Is Admin: Shows "Yes" for users with admin privileges
+- Status: Either "Active" (green badge) or "Inactive" (red badge)
+
+Invite User (top right): Add new users to the organization
+
+User Details Panel (right side):
+
+When a user is selected from the table, the panel displays:
+- User ID: Unique identifier
+- Name: User's name (or note if no name provided)
+- Auth0 User ID: Authentication system identifier
+- User Role(s): Assigned permissions (e.g., Org Admin, Org Operator)
+- Status: Current account state
+- Creation Date: Timestamp of account creation
+- Updated By: User ID and timestamp of last modification
+De- activate button: Disable the selected user account
+
+Pagination Controls (bottom):
+- Rows per page: Dropdown to adjust entries displayed (default: 10)
+- Page indicator: Shows current range and total count
+- Navigation arrows: Move between result pages
+
+## Evaluations
+The Evaluations interface manages model evaluation test suites, execution runs, and performance comparisons.
+
+### Main Evaluations Interface
+Evaluations Table (left side):
+
+Table columns:
+- Evaluation: Name of the evaluation
+- Category: Classification type (e.g., Other)
+- Status: Current state with badge indicator (e.g., "Active" in green)
+- Action: Details link to view full information
+
+Create New (top right): Create a new evaluation test suite
+
+Evaluation Details Panel (right side):
+
+When an evaluation is selected, the panel displays:
+- Evaluation name: With status badge
+- Description: Text description of the evaluation purpose
+- Category: Classification type
+- Number of Runs: Total execution count
+- Created By: User ID of the creator
+- Evaluation Tests File:
+    - Clickable filename link
+    - Number of Rows: Test count in the file
+
+Action buttons:
+- Edit: Modify evaluation configuration
+- Delete: Remove the evaluation
+- View Details: Open execution history view
+
+Pagination Controls (bottom):
+- Rows per page: Dropdown to adjust entries displayed (default: 10)
+- Page indicator: Shows current range and total count
+- Navigation arrows: Move between result pages
+
+### Evaluation Runs
+Click View Details on an evaluation to access the Evaluation Runs page.
+
+Breadcrumb Navigation (top left): Evaluations > [Evaluation Name]
+
+Action Buttons (top right):
+- Compare Runs: Compare results across selected evaluation runs
+- Create New Run: Execute a new evaluation instance
+
+Evaluation Runs Table (left side):
+
+Table columns:
+- Checkbox: Select runs for comparison (maximum 2)
+- Run Name: Timestamp-based identifier
+- Evaluated Version Name: Version identifier
+- Threshold: Success threshold value
+- Date/Time: Execution timestamp
+
+Run Details Panel (right side): When a run is selected, the panel displays:
+- Run name: With timestamp and status badge
+- Target Model Name: Model being evaluated
+- Target Model Version: Version identifier
+- Judge Model: Configuration for the evaluation model
+    - Model name
+    - Temperature setting
+    - Max Tokens
+    - Seed value (for reproducibility)
+
+Action buttons:
+- Delete: Remove this evaluation run
+- View Details: Open full results and metrics view
+
+Pagination Controls (bottom):
+- Rows per page: Dropdown to adjust entries displayed (default: 10)
+- Page indicator: Shows current range and total count
+- Navigation arrows: Move between result pages
+
+### Comparing Evaluation Runs
+
+Select exactly two runs using the checkboxes, then click Compare Runs.
+
+Breadcrumb Navigation (top): Evaluations > Evaluation Runs > Evaluation Run Compare
+
+Comparison Layout: Two side-by-side panels displaying:
+
+For each run:
+- Model Version Name: Version identifier
+- Average Score: Overall performance percentage (large display)
+
+Performance Metrics (with progress bars):
+- Answer Relevancy: Measures response relevance to input
+- Faithfulness: Accuracy to source information
+- Contextual Precision: Precision in retrieval-augmented scenarios
+- Contextual Relevancy: Relevance in retrieval-augmented scenarios
+- Contextual Recall: Recall in retrieval-augmented scenarios
+- Bias: Bias detection score
+- Toxicity: Toxic content detection score
+- Hallucination: Hallucination detection score
+
+Metric Display: Each metric shows:
+- Metric name with info icon for definition
+- Percentage score (color-coded: green for high performance, red for low performance)
+- Progress bar visualization
+
+Metrics requiring retrieval context display "N/A - Requires retrieval context" if not applicable.
+
+### Creating a New Evaluation Run
+Click Create New Run to open the run configuration form.
+
+Header:
+- Title: "Create New Run"
+- Subtitle: "Create a new evaluation run for '[Evaluation Name]'"
+
+Run Configuration Fields:
+
+Run Label: Text input for naming the evaluation run (e.g., "Production Test - January 2025")
+
+Target Model: Dropdown to select the model to evaluate
+
+Target Model Version: Dropdown to select the specific model version (populated based on model selection)
+
+Threshold: Numeric input for success threshold (default: 0.7 / 70%). Determines the minimum score for a passing result.
+
+Judge Model Section: Configuration for the model that evaluates target model outputs:
+- Model: Judge model name (e.g., llama3.1:8b)
+- Temperature: Sampling temperature (set to 0 for deterministic evaluation)
+- Max Tokens: Maximum response length (default: 2048)
+- Seed: Random seed for reproducibility (default: 42)
+
+Action Buttons (bottom right):
+- Create Run: Execute the evaluation with specified configuration
+- Cancel: Close the form without creating a run
+
+This form enables running the same evaluation test suite against different models or versions with consistent judge model parameters.
+
+## Configuration 
+The Configuration page establishes connections between Prove AI and external monitoring and incident management systems.
+
+Page header: "Connect Prometheus and add destinations for notifications - this is all you need to get Prove AI running."
+
+### Environment Setup
+Configure monitoring environment and data source connections.
+
+Prometheus Connection:
+
+Status badge: Displays connection state (e.g., "Connected")
+
+URL field: Enter Prometheus endpoint (e.g., https://obs-dev.proveai.com:9090)
+
+Use Basic Auth toggle: Enable if Prometheus requires authentication
+- When enabled, displays:
+    - Username field
+    - Password field (masked)
+
+Use Proxy toggle: Enable if Prometheus requires proxy connection
+
+Connection status panel: Real-time log displaying:
+- Timestamp for each operation
+- Test progress messages
+- HTTP requests and responses
+- Status confirmation
+
+Connection result message: Displays outcome at bottom of panel (e.g., "Successfully connected.")
+
+Action buttons:
+- Test connection: Verify Prometheus connectivity
+- Save: Store configuration settings
+
+### Getting Started
+Sidebar panel (right):
+- Instructions for installing OTel/OpenLLMetry to emit AI metrics to Prometheus
+- Documents section: Link to View Setup Github Repo containing observability pipeline documentation
+
+### Integrations & Notifications
+
+Here, you set up automations that send messages with the context your engineers need to resolve your issues. 
+
+GitHub Integration:
+- Status badge: Displays connection state (e.g., "Connected")
+- Description: "Opens issues in your GitHub repo."
+- Settings button: Configure GitHub integration details
+- Disable button (red): Disconnect the integration
+
+Jira Integration:
+- Status badge: Displays connection state (e.g., "Not connected")
+- Description: "Creates issues in your Jira project."
+- Settings button: Configure Jira integration details
+- Connect button (white): Establish the integration
+- Disable button (red, if connected): Disconnect the integration
+
+The Configuration page centralizes observability infrastructure connections and incident management integrations, enabling automated ticket creation and notification workflows.
+
+
+## Appendix A - Available Metrics
+List of metrics:
+vllm:prefix_cache_hits_total (COUNTER) - Prefix cache hits, in terms of number of cached tokens.
+vllm:external_prefix_cache_hits_created - External prefix cache hits from KV connector cross-instance cache sharing, in terms of num[ber]
+vllm:request_prefill_time_seconds_created (GAUGE) - Histogram of time spent in PREFILL phase for request.
+vllm:prefix_cache_hits_created (GAUGE) - Prefix cache hits, in terms of number of cached tokens.
+vllm:request_success_created (GAUGE) - Count of successfully processed requests.
+vllm:request_max_num_generation_tokens_created (GAUGE) - Histogram of maximum number of requested generation tokens.
+vllm:request_queue_time_seconds_created (GAUGE) - Histogram of time spent in WAITING phase for request.
+vllm:e2e_request_latency_seconds (HISTOGRAM) - Histogram of e2e request latency in seconds.
+vllm:request_decode_time_seconds_created (GAUGE) - Histogram of time spent in DECODE phase for request.
+vllm:engine_sleep_state - Engine sleep state; awake = 0 means engine is sleeping; awake = 1 means engine is awake;
+vllm:request_prompt_tokens (HISTOGRAM) - Number of prefill tokens processed.
+vllm:inter_token_latency_seconds_created (GAUGE) - Histogram of inter-token latency in seconds.
+vllm:request_inference_time_seconds (HISTOGRAM) - Histogram of time spent in RUNNING phase for request.
+vllm:num_preemptions_total (COUNTER) - Cumulative number of preemption from the engine.
+vllm:time_to_first_token_seconds_created (GAUGE) - Histogram of time to first token in seconds.
+vllm:request_time_per_output_token_seconds (HISTOGRAM) - Histogram of time_per_output_token_seconds per request.
+vllm:prefix_cache_queries_created (GAUGE) - Prefix cache queries, in terms of number of queried tokens.
+vllm:request_prompt_tokens_created (GAUGE) - Number of prefill tokens processed.
+vllm:request_queue_time_seconds (HISTOGRAM) - Histogram of time spent in WAITING phase for request.
+vllm:request_inference_time_seconds_created (GAUGE) - Histogram of time spent in RUNNING phase for request.
+vllm:mm_cache_hits_created (GAUGE) - Multi-modal cache hits, in terms of number of cached items.
+vllm:generation_tokens_total (COUNTER) - Number of generation tokens processed.
+vllm:request_success_total (COUNTER) - Count of successfully processed requests.
+vllm:request_generation_tokens_created (GAUGE) - Number of generation tokens processed.
+vllm:inter_token_latency_seconds (HISTOGRAM) - Histogram of inter-token latency in seconds.
+vllm:cache_config_info (GAUGE) - Information of the LLMEngine CacheConfig
+vllm:iteration_tokens_total (HISTOGRAM) - Histogram of number of tokens per engine_step.
+vllm:request_params_n_created (GAUGE) - Histogram of the n request parameter.
+vllm:mm_cache_hits_total (COUNTER) - Multi-modal cache hits, in terms of number of cached items.
+vllm:request_params_max_tokens (HISTOGRAM) - Histogram of the max_tokens request parameter.
+vllm:request_prefill_time_seconds (HISTOGRAM) - Histogram of time spent in PREFILL phase for request.
+vllm:num_requests_waiting (GAUGE) - Number of requests waiting to be processed.
+vllm:kv_cache_usage_perc (GAUGE) - KV-cache usage. 1 means 100 percent usage.
+vllm:mm_cache_queries_created (GAUGE) - Multi-modal cache queries, in terms of number of queried items.
+vllm:generation_tokens_created (GAUGE) - Number of generation tokens processed.
+vllm:iteration_tokens_total_created (GAUGE) - Histogram of number of tokens per engine_step.
+vllm:request_max_num_generation_tokens (HISTOGRAM) - Histogram of maximum number of requested generation tokens.
+vllm:prefix_cache_queries_total (COUNTER) - Prefix cache queries, in terms of number of queried tokens.
+vllm:request_generation_tokens (HISTOGRAM) - Number of generation tokens processed.
+vllm:num_requests_running (GAUGE) - Number of requests in model execution batches.
+vllm:external_prefix_cache_queries_total - External prefix cache queries from KV connector cross-instance cache sharing, in terms of n[umber]
+vllm:request_params_max_tokens_created (GAUGE) - Histogram of the max_tokens request parameter.
+vllm:mm_cache_queries_total (COUNTER) - Multi-modal cache queries, in terms of number of queried items.
+vllm:request_params_n (HISTOGRAM) - Histogram of the n request parameter.
+vllm:num_preemptions_created (GAUGE) - Cumulative number of preemption from the engine.
+vllm:prompt_tokens_total (COUNTER) - Number of prefill tokens processed.
+vllm:prompt_tokens_created (GAUGE) - Number of prefill tokens processed.
+vllm:external_prefix_cache_queries_created - External prefix cache queries from KV connector cross-instance cache sharing, in terms of n[umber]
+vllm:external_prefix_cache_hits_total - External prefix cache hits from KV connector cross-instance cache sharing, in terms of nu[mber]
+vllm:time_to_first_token_seconds (HISTOGRAM) - Histogram of time to first token in seconds.
+vllm:request_time_per_output_token_seconds_created (GAUGE) - Histogram of time_per_output_token_seconds per request.
+vllm:e2e_request_latency_seconds_created (GAUGE) - Histogram of e2e request latency in seconds.
+vllm:request_decode_time_seconds (HISTOGRAM) - Histogram of time spent in DECODE phase for request.
+vllm:request_time_per_output_token_seconds_created (GAUGE)
+vllm:request_inference_time_seconds (HISTOGRAM) - Histogram of time spent in RUNNING phase for request.
+vllm:num_preemptions_total (COUNTER) - Cumulative number of preemption from the engine.
+vllm:generation_tokens_total (COUNTER) - Number of generation tokens processed.
+vllm:request_max_num_generation_tokens (HISTOGRAM) - Histogram of maximum number of requested generation tokens.
+vllm:inter_token_latency_seconds_created (GAUGE) - Histogram of inter-token latency in seconds.
+vllm:prefix_cache_queries_total (COUNTER) - Prefix cache queries, in terms of number of queried tokens.
+vllm:request_generation_tokens_created (GAUGE) - Number of generation tokens processed.
+vllm:request_prompt_tokens_created (GAUGE) - Number of prefill tokens processed.
+vllm:iteration_tokens_total (HISTOGRAM) - Histogram of number of tokens per engine_step.
+vllm:request_prefill_time_seconds (HISTOGRAM) - Histogram of time spent in PREFILL phase for request.
+vllm:mm_cache_queries_created (GAUGE) - Multi-modal cache queries, in terms of number of queried items.
+vllm:generation_tokens_created (GAUGE) - Number of generation tokens processed.
+vllm:request_success_total (COUNTER) - Count of successfully processed requests.
+vllm:iteration_tokens_total_created (GAUGE) - Histogram of number of tokens per engine_step.
+vllm:e2e_request_latency_seconds (HISTOGRAM) - Histogram of e2e request latency in seconds.
+vllm:mm_cache_hits_created (GAUGE) - Multi-modal cache hits, in terms of number of cached items.
+vllm:prompt_tokens_created (GAUGE) - Number of prefill tokens processed.
+vllm:request_params_max_tokens_created (GAUGE) - Histogram of the max_tokens request parameter.
+vllm:request_prefill_time_seconds_created (GAUGE) - Histogram of time spent in PREFILL phase for request.
+vllm:request_generation_tokens (HISTOGRAM) - Number of generation tokens processed.
+vllm:request_decode_time_seconds (HISTOGRAM) - Histogram of time spent in DECODE phase for request.
+vllm:kv_cache_usage_perc (GAUGE) - KV-cache usage. 1 means 100 percent usage.
+vllm:prefix_cache_queries_created (GAUGE) - Prefix cache queries, in terms of number of queried tokens.
+vllm:external_prefix_cache_queries_created - External prefix cache queries from KV connector cross-instance cache sharing, in terms of n[umber]
+vllm:external_prefix_cache_hits_created - External prefix cache hits from KV connector cross-instance cache sharing, in terms of num[ber]
+vllm:prompt_tokens_total (COUNTER) - Number of prefill tokens processed.
+vllm:request_queue_time_seconds (HISTOGRAM) - Histogram of time spent in WAITING phase for request.
+vllm:external_prefix_cache_queries_total - External prefix cache queries from KV connector cross-instance cache sharing, in terms of n[umber]
+vllm:external_prefix_cache_hits_total - External prefix cache hits from KV connector cross-instance cache sharing, in terms of num[ber]
+vllm:request_success_created (GAUGE) - Count of successfully processed requests.
+vllm:request_inference_time_seconds_created (GAUGE) - Histogram of time spent in RUNNING phase for request.
+vllm:num_requests_waiting (GAUGE) - Number of requests waiting to be processed.
+vllm:mm_cache_hits_total (COUNTER) - Multi-modal cache hits, in terms of number of cached items.
+vllm:mm_cache_queries_total (COUNTER) - Multi-modal cache queries, in terms of number of queried items.
+vllm:request_params_n (HISTOGRAM) - Histogram of the n request parameter.
+vllm:num_requests_running (GAUGE) - Number of requests in model execution batches.
+vllm:engine_sleep_state - Engine sleep state; awake = 0 means engine is sleeping; awake = 1 means engine is awake;
+vllm:request_params_max_tokens (HISTOGRAM) - Histogram of the max_tokens request parameter.
+vllm:request_decode_time_seconds_created (GAUGE) - Histogram of time spent in DECODE phase for request.
+vllm:request_params_n_created (GAUGE) - Histogram of the n request parameter.
+vllm:time_to_first_token_seconds (HISTOGRAM) - Histogram of time to first token in seconds.
+vllm:request_time_per_output_token_seconds (HISTOGRAM) - Histogram of time_per_output_token_seconds per request.
+vllm:e2e_request_latency_seconds_created (GAUGE) - Histogram of e2e request latency in seconds.
+vllm:cache_config_info (GAUGE) - Information of the LLMEngine CacheConfig
+vllm:num_preemptions_created (GAUGE) - Cumulative number of preemption from the engine.
+vllm:request_max_num_generation_tokens_created (GAUGE) - Histogram of maximum number of requested generation tokens.
+vllm:prefix_cache_hits_total (COUNTER) - Prefix cache hits, in terms of number of cached tokens.
+vllm:prefix_cache_hits_created (GAUGE) - Prefix cache hits, in terms of number of cached tokens.
+vllm:time_to_first_token_seconds_created (GAUGE) - Histogram of time to first token in seconds.
+vllm:inter_token_latency_seconds (HISTOGRAM) - Histogram of inter-token latency in seconds.
+vllm:request_queue_time_seconds_created (GAUGE) - Histogram of time spent in WAITING phase for request.
+
