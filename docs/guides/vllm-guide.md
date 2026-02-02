@@ -160,14 +160,6 @@ The following environment variables control vLLM's behavior and can be customize
 HUGGINGFACE_HUB_TOKEN=your_token_here
 ```
 
-### Verify .env Loading
-
-The docker-compose file references these variables. Run the following command to confirm they're loaded:
-
-```bash
-docker compose config
-```
-
 ---
 
 ## Deploying vLLM
@@ -234,6 +226,14 @@ For Prometheus to collect vLLM metrics, statistics logging must remain **enabled
 | `--no-disable-log-stats` | ✅ Enabled    | ✅ Yes            | ⚠️ Explicit (unnecessary) |
 
 **Why this matters:** The `--disable-log-stats` flag disables vLLM's internal statistics collection, which breaks the `/metrics` endpoint that Prometheus depends on.
+
+### Verify .env Loading
+
+The docker-compose file references the variables defined above. Run the following command to confirm they're loaded:
+
+```bash
+docker compose config
+```
 
 ### Create prometheus.yml
 
