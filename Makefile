@@ -1,16 +1,19 @@
 .PHONY: up down logs restart status clean deploy ansible-ping ansible-check ansible-deploy-dry-run
 
+# Default profile - can be overridden via make PROFILE=no-vm
+PROFILE ?= full
+
 # Start the observability stack
 up:
-	cd docker-compose && docker compose --profile full up --build
+	cd docker-compose && docker compose --profile $(PROFILE) up
 
 # Stop the observability stack
 down:
-	cd docker-compose && docker compose --profile full down
+	cd docker-compose && docker compose --profile $(PROFILE) down
 
 # View logs from all services
 logs:
-	cd docker-compose && docker compose logs -f
+	cd docker-compose && docker compose --profile $(PROFILE) logs -f
 
 # View logs from a specific service
 logs-otel:
@@ -24,7 +27,7 @@ logs-victoriametrics:
 
 # Restart the stack
 restart:
-	cd docker-compose && docker compose restart
+	cd docker-compose && docker compose --profile $(PROFILE) restart
 
 # Check status of containers
 status:
@@ -32,24 +35,24 @@ status:
 
 # Clean up containers and volumes
 clean:
-	cd docker-compose && docker compose down -v --remove-orphans
+	cd docker-compose && docker compose --profile $(PROFILE) down -v --remove-orphans
 
 # Build and start (if needed for custom images)
 build:
-	cd docker-compose && docker compose build
+	cd docker-compose && docker compose --profile $(PROFILE) build
 
 # Ansible deployment commands
 deploy:
-	cd playbooks && ansible-playbook deploy.yml
+	cd playbooks && uv run -- ansible-playbook deploy.yml
 
 ansible-ping:
-	cd playbooks && ansible all -m ping
+	cd playbooks && uv run -- ansible all -m ping
 
 ansible-check:
-	cd playbooks && ansible-playbook deploy.yml --syntax-check
+	cd playbooks && uv run -- ansible-playbook deploy.yml --syntax-check
 
 ansible-deploy-dry-run:
-	cd playbooks && ansible-playbook deploy.yml --check --diff
+	cd playbooks && uv run -- ansible-playbook deploy.yml --check --diff
 
 # Show help
 help:
@@ -61,8 +64,6 @@ help:
 	@echo "  logs        - View logs from all services"
 	@echo "  logs-otel   - View logs from OTel Collector"
 	@echo "  logs-prometheus - View logs from Prometheus"
-	@echo "  logs-grafana - View logs from Grafana"
-	@echo "  logs-postgres - View logs from PostgreSQL"
 	@echo "  restart     - Restart the stack"
 	@echo "  status      - Check status of containers"
 	@echo "  clean       - Clean up containers and volumes"
