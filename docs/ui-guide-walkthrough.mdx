@@ -611,109 +611,108 @@ The Configuration page centralizes observability infrastructure connections and 
 
 ## Appendix A - Available Metrics
 List of metrics:
-vllm:prefix_cache_hits_total (COUNTER) - Prefix cache hits, in terms of number of cached tokens.
-vllm:external_prefix_cache_hits_created - External prefix cache hits from KV connector cross-instance cache sharing, in terms of num[ber]
-vllm:request_prefill_time_seconds_created (GAUGE) - Histogram of time spent in PREFILL phase for request.
-vllm:prefix_cache_hits_created (GAUGE) - Prefix cache hits, in terms of number of cached tokens.
-vllm:request_success_created (GAUGE) - Count of successfully processed requests.
-vllm:request_max_num_generation_tokens_created (GAUGE) - Histogram of maximum number of requested generation tokens.
-vllm:request_queue_time_seconds_created (GAUGE) - Histogram of time spent in WAITING phase for request.
-vllm:e2e_request_latency_seconds (HISTOGRAM) - Histogram of e2e request latency in seconds.
-vllm:request_decode_time_seconds_created (GAUGE) - Histogram of time spent in DECODE phase for request.
-vllm:engine_sleep_state - Engine sleep state; awake = 0 means engine is sleeping; awake = 1 means engine is awake;
-vllm:request_prompt_tokens (HISTOGRAM) - Number of prefill tokens processed.
-vllm:inter_token_latency_seconds_created (GAUGE) - Histogram of inter-token latency in seconds.
-vllm:request_inference_time_seconds (HISTOGRAM) - Histogram of time spent in RUNNING phase for request.
-vllm:num_preemptions_total (COUNTER) - Cumulative number of preemption from the engine.
-vllm:time_to_first_token_seconds_created (GAUGE) - Histogram of time to first token in seconds.
-vllm:request_time_per_output_token_seconds (HISTOGRAM) - Histogram of time_per_output_token_seconds per request.
-vllm:prefix_cache_queries_created (GAUGE) - Prefix cache queries, in terms of number of queried tokens.
-vllm:request_prompt_tokens_created (GAUGE) - Number of prefill tokens processed.
-vllm:request_queue_time_seconds (HISTOGRAM) - Histogram of time spent in WAITING phase for request.
-vllm:request_inference_time_seconds_created (GAUGE) - Histogram of time spent in RUNNING phase for request.
-vllm:mm_cache_hits_created (GAUGE) - Multi-modal cache hits, in terms of number of cached items.
-vllm:generation_tokens_total (COUNTER) - Number of generation tokens processed.
-vllm:request_success_total (COUNTER) - Count of successfully processed requests.
-vllm:request_generation_tokens_created (GAUGE) - Number of generation tokens processed.
-vllm:inter_token_latency_seconds (HISTOGRAM) - Histogram of inter-token latency in seconds.
-vllm:cache_config_info (GAUGE) - Information of the LLMEngine CacheConfig
-vllm:iteration_tokens_total (HISTOGRAM) - Histogram of number of tokens per engine_step.
-vllm:request_params_n_created (GAUGE) - Histogram of the n request parameter.
-vllm:mm_cache_hits_total (COUNTER) - Multi-modal cache hits, in terms of number of cached items.
-vllm:request_params_max_tokens (HISTOGRAM) - Histogram of the max_tokens request parameter.
-vllm:request_prefill_time_seconds (HISTOGRAM) - Histogram of time spent in PREFILL phase for request.
-vllm:num_requests_waiting (GAUGE) - Number of requests waiting to be processed.
-vllm:kv_cache_usage_perc (GAUGE) - KV-cache usage. 1 means 100 percent usage.
-vllm:mm_cache_queries_created (GAUGE) - Multi-modal cache queries, in terms of number of queried items.
-vllm:generation_tokens_created (GAUGE) - Number of generation tokens processed.
-vllm:iteration_tokens_total_created (GAUGE) - Histogram of number of tokens per engine_step.
-vllm:request_max_num_generation_tokens (HISTOGRAM) - Histogram of maximum number of requested generation tokens.
-vllm:prefix_cache_queries_total (COUNTER) - Prefix cache queries, in terms of number of queried tokens.
-vllm:request_generation_tokens (HISTOGRAM) - Number of generation tokens processed.
-vllm:num_requests_running (GAUGE) - Number of requests in model execution batches.
-vllm:external_prefix_cache_queries_total - External prefix cache queries from KV connector cross-instance cache sharing, in terms of n[umber]
-vllm:request_params_max_tokens_created (GAUGE) - Histogram of the max_tokens request parameter.
-vllm:mm_cache_queries_total (COUNTER) - Multi-modal cache queries, in terms of number of queried items.
-vllm:request_params_n (HISTOGRAM) - Histogram of the n request parameter.
-vllm:num_preemptions_created (GAUGE) - Cumulative number of preemption from the engine.
-vllm:prompt_tokens_total (COUNTER) - Number of prefill tokens processed.
-vllm:prompt_tokens_created (GAUGE) - Number of prefill tokens processed.
-vllm:external_prefix_cache_queries_created - External prefix cache queries from KV connector cross-instance cache sharing, in terms of n[umber]
-vllm:external_prefix_cache_hits_total - External prefix cache hits from KV connector cross-instance cache sharing, in terms of nu[mber]
-vllm:time_to_first_token_seconds (HISTOGRAM) - Histogram of time to first token in seconds.
-vllm:request_time_per_output_token_seconds_created (GAUGE) - Histogram of time_per_output_token_seconds per request.
-vllm:e2e_request_latency_seconds_created (GAUGE) - Histogram of e2e request latency in seconds.
-vllm:request_decode_time_seconds (HISTOGRAM) - Histogram of time spent in DECODE phase for request.
-vllm:request_time_per_output_token_seconds_created (GAUGE)
-vllm:request_inference_time_seconds (HISTOGRAM) - Histogram of time spent in RUNNING phase for request.
-vllm:num_preemptions_total (COUNTER) - Cumulative number of preemption from the engine.
-vllm:generation_tokens_total (COUNTER) - Number of generation tokens processed.
-vllm:request_max_num_generation_tokens (HISTOGRAM) - Histogram of maximum number of requested generation tokens.
-vllm:inter_token_latency_seconds_created (GAUGE) - Histogram of inter-token latency in seconds.
-vllm:prefix_cache_queries_total (COUNTER) - Prefix cache queries, in terms of number of queried tokens.
-vllm:request_generation_tokens_created (GAUGE) - Number of generation tokens processed.
-vllm:request_prompt_tokens_created (GAUGE) - Number of prefill tokens processed.
-vllm:iteration_tokens_total (HISTOGRAM) - Histogram of number of tokens per engine_step.
-vllm:request_prefill_time_seconds (HISTOGRAM) - Histogram of time spent in PREFILL phase for request.
-vllm:mm_cache_queries_created (GAUGE) - Multi-modal cache queries, in terms of number of queried items.
-vllm:generation_tokens_created (GAUGE) - Number of generation tokens processed.
-vllm:request_success_total (COUNTER) - Count of successfully processed requests.
-vllm:iteration_tokens_total_created (GAUGE) - Histogram of number of tokens per engine_step.
-vllm:e2e_request_latency_seconds (HISTOGRAM) - Histogram of e2e request latency in seconds.
-vllm:mm_cache_hits_created (GAUGE) - Multi-modal cache hits, in terms of number of cached items.
-vllm:prompt_tokens_created (GAUGE) - Number of prefill tokens processed.
-vllm:request_params_max_tokens_created (GAUGE) - Histogram of the max_tokens request parameter.
-vllm:request_prefill_time_seconds_created (GAUGE) - Histogram of time spent in PREFILL phase for request.
-vllm:request_generation_tokens (HISTOGRAM) - Number of generation tokens processed.
-vllm:request_decode_time_seconds (HISTOGRAM) - Histogram of time spent in DECODE phase for request.
-vllm:kv_cache_usage_perc (GAUGE) - KV-cache usage. 1 means 100 percent usage.
-vllm:prefix_cache_queries_created (GAUGE) - Prefix cache queries, in terms of number of queried tokens.
-vllm:external_prefix_cache_queries_created - External prefix cache queries from KV connector cross-instance cache sharing, in terms of n[umber]
-vllm:external_prefix_cache_hits_created - External prefix cache hits from KV connector cross-instance cache sharing, in terms of num[ber]
-vllm:prompt_tokens_total (COUNTER) - Number of prefill tokens processed.
-vllm:request_queue_time_seconds (HISTOGRAM) - Histogram of time spent in WAITING phase for request.
-vllm:external_prefix_cache_queries_total - External prefix cache queries from KV connector cross-instance cache sharing, in terms of n[umber]
-vllm:external_prefix_cache_hits_total - External prefix cache hits from KV connector cross-instance cache sharing, in terms of num[ber]
-vllm:request_success_created (GAUGE) - Count of successfully processed requests.
-vllm:request_inference_time_seconds_created (GAUGE) - Histogram of time spent in RUNNING phase for request.
-vllm:num_requests_waiting (GAUGE) - Number of requests waiting to be processed.
-vllm:mm_cache_hits_total (COUNTER) - Multi-modal cache hits, in terms of number of cached items.
-vllm:mm_cache_queries_total (COUNTER) - Multi-modal cache queries, in terms of number of queried items.
-vllm:request_params_n (HISTOGRAM) - Histogram of the n request parameter.
-vllm:num_requests_running (GAUGE) - Number of requests in model execution batches.
-vllm:engine_sleep_state - Engine sleep state; awake = 0 means engine is sleeping; awake = 1 means engine is awake;
-vllm:request_params_max_tokens (HISTOGRAM) - Histogram of the max_tokens request parameter.
-vllm:request_decode_time_seconds_created (GAUGE) - Histogram of time spent in DECODE phase for request.
-vllm:request_params_n_created (GAUGE) - Histogram of the n request parameter.
-vllm:time_to_first_token_seconds (HISTOGRAM) - Histogram of time to first token in seconds.
-vllm:request_time_per_output_token_seconds (HISTOGRAM) - Histogram of time_per_output_token_seconds per request.
-vllm:e2e_request_latency_seconds_created (GAUGE) - Histogram of e2e request latency in seconds.
-vllm:cache_config_info (GAUGE) - Information of the LLMEngine CacheConfig
-vllm:num_preemptions_created (GAUGE) - Cumulative number of preemption from the engine.
-vllm:request_max_num_generation_tokens_created (GAUGE) - Histogram of maximum number of requested generation tokens.
-vllm:prefix_cache_hits_total (COUNTER) - Prefix cache hits, in terms of number of cached tokens.
-vllm:prefix_cache_hits_created (GAUGE) - Prefix cache hits, in terms of number of cached tokens.
-vllm:time_to_first_token_seconds_created (GAUGE) - Histogram of time to first token in seconds.
-vllm:inter_token_latency_seconds (HISTOGRAM) - Histogram of inter-token latency in seconds.
-vllm:request_queue_time_seconds_created (GAUGE) - Histogram of time spent in WAITING phase for request.
-
+- vllm:prefix_cache_hits_total (COUNTER) - Prefix cache hits, in terms of number of cached tokens. 
+- vllm:external_prefix_cache_hits_created - External prefix cache hits from KV connector cross-instance cache sharing, in terms of number. 
+- vllm:request_prefill_time_seconds_created (GAUGE) - Histogram of time spent in PREFILL phase for request. 
+- vllm:prefix_cache_hits_created (GAUGE) - Prefix cache hits, in terms of number of cached tokens. 
+- vllm:request_success_created (GAUGE) - Count of successfully processed requests. 
+- vllm:request_max_num_generation_tokens_created (GAUGE) - Histogram of maximum number of requested generation tokens. 
+- vllm:request_queue_time_seconds_created (GAUGE) - Histogram of time spent in WAITING phase for request. 
+- vllm:e2e_request_latency_seconds (HISTOGRAM) - Histogram of e2e request latency in seconds. 
+- vllm:request_decode_time_seconds_created (GAUGE) - Histogram of time spent in DECODE phase for request. 
+- vllm:engine_sleep_state - Engine sleep state; awake = 0 means engine is sleeping; awake = 1 means engine is awake.
+- vllm:request_prompt_tokens (HISTOGRAM) - Number of prefill tokens processed. 
+- vllm:inter_token_latency_seconds_created (GAUGE) - Histogram of inter-token latency in seconds. 
+- vllm:request_inference_time_seconds (HISTOGRAM) - Histogram of time spent in RUNNING phase for request. 
+- vllm:num_preemptions_total (COUNTER) - Cumulative number of preemption from the engine. 
+- vllm:time_to_first_token_seconds_created (GAUGE) - Histogram of time to first token in seconds. 
+- vllm:request_time_per_output_token_seconds (HISTOGRAM) - Histogram of time_per_output_token_seconds per request. 
+- vllm:prefix_cache_queries_created (GAUGE) - Prefix cache queries, in terms of number of queried tokens. 
+- vllm:request_prompt_tokens_created (GAUGE) - Number of prefill tokens processed. 
+- vllm:request_queue_time_seconds (HISTOGRAM) - Histogram of time spent in WAITING phase for request. 
+- vllm:request_inference_time_seconds_created (GAUGE) - Histogram of time spent in RUNNING phase for request. 
+- vllm:mm_cache_hits_created (GAUGE) - Multi-modal cache hits, in terms of number of cached items. 
+- vllm:generation_tokens_total (COUNTER) - Number of generation tokens processed. 
+- vllm:request_success_total (COUNTER) - Count of successfully processed requests. 
+- vllm:request_generation_tokens_created (GAUGE) - Number of generation tokens processed. 
+- vllm:inter_token_latency_seconds (HISTOGRAM) - Histogram of inter-token latency in seconds. 
+- vllm:cache_config_info (GAUGE) - Information of the LLMEngine CacheConfig 
+- vllm:iteration_tokens_total (HISTOGRAM) - Histogram of number of tokens per engine_step. 
+- vllm:request_params_n_created (GAUGE) - Histogram of the n request parameter. 
+- vllm:mm_cache_hits_total (COUNTER) - Multi-modal cache hits, in terms of number of cached items. 
+- vllm:request_params_max_tokens (HISTOGRAM) - Histogram of the max_tokens request parameter. 
+- vllm:request_prefill_time_seconds (HISTOGRAM) - Histogram of time spent in PREFILL phase for request. 
+- vllm:num_requests_waiting (GAUGE) - Number of requests waiting to be processed. 
+- vllm:kv_cache_usage_perc (GAUGE) - KV-cache usage. 1 means 100 percent usage. 
+- vllm:mm_cache_queries_created (GAUGE) - Multi-modal cache queries, in terms of number of queried items. 
+- vllm:generation_tokens_created (GAUGE) - Number of generation tokens processed. 
+- vllm:iteration_tokens_total_created (GAUGE) - Histogram of number of tokens per engine_step. 
+- vllm:request_max_num_generation_tokens (HISTOGRAM) - Histogram of maximum number of requested generation tokens. 
+- vllm:prefix_cache_queries_total (COUNTER) - Prefix cache queries, in terms of number of queried tokens. 
+- vllm:request_generation_tokens (HISTOGRAM) - Number of generation tokens processed. 
+- vllm:num_requests_running (GAUGE) - Number of requests in model execution batches. 
+- vllm:external_prefix_cache_queries_total - External prefix cache queries from KV connector cross-instance cache sharing, in terms of number. 
+- vllm:request_params_max_tokens_created (GAUGE) - Histogram of the max_tokens request parameter. 
+- vllm:mm_cache_queries_total (COUNTER) - Multi-modal cache queries, in terms of number of queried items. 
+- vllm:request_params_n (HISTOGRAM) - Histogram of the n request parameter. 
+- vllm:num_preemptions_created (GAUGE) - Cumulative number of preemption from the engine. 
+- vllm:prompt_tokens_total (COUNTER) - Number of prefill tokens processed. 
+- vllm:prompt_tokens_created (GAUGE) - Number of prefill tokens processed. 
+- vllm:external_prefix_cache_queries_created - External prefix cache queries from KV connector cross-instance cache sharing, in terms of number. 
+- vllm:external_prefix_cache_hits_total - External prefix cache hits from KV connector cross-instance cache sharing, in terms of number. 
+- vllm:time_to_first_token_seconds (HISTOGRAM) - Histogram of time to first token in seconds. 
+- vllm:request_time_per_output_token_seconds_created (GAUGE) - Histogram of time_per_output_token_seconds per request. 
+- vllm:e2e_request_latency_seconds_created (GAUGE) - Histogram of e2e request latency in seconds. 
+- vllm:request_decode_time_seconds (HISTOGRAM) - Histogram of time spent in DECODE phase for request. 
+- vllm:request_time_per_output_token_seconds_created (GAUGE) 
+- vllm:request_inference_time_seconds (HISTOGRAM) - Histogram of time spent in RUNNING phase for request. 
+- vllm:num_preemptions_total (COUNTER) - Cumulative number of preemption from the engine. 
+- vllm:generation_tokens_total (COUNTER) - Number of generation tokens processed. 
+- vllm:request_max_num_generation_tokens (HISTOGRAM) - Histogram of maximum number of requested generation tokens. 
+- vllm:inter_token_latency_seconds_created (GAUGE) - Histogram of inter-token latency in seconds. 
+- vllm:prefix_cache_queries_total (COUNTER) - Prefix cache queries, in terms of number of queried tokens. 
+- vllm:request_generation_tokens_created (GAUGE) - Number of generation tokens processed. 
+- vllm:request_prompt_tokens_created (GAUGE) - Number of prefill tokens processed. 
+- vllm:iteration_tokens_total (HISTOGRAM) - Histogram of number of tokens per engine_step. 
+- vllm:request_prefill_time_seconds (HISTOGRAM) - Histogram of time spent in PREFILL phase for request. 
+- vllm:mm_cache_queries_created (GAUGE) - Multi-modal cache queries, in terms of number of queried items. 
+- vllm:generation_tokens_created (GAUGE) - Number of generation tokens processed. 
+- vllm:request_success_total (COUNTER) - Count of successfully processed requests. 
+- vllm:iteration_tokens_total_created (GAUGE) - Histogram of number of tokens per engine_step. 
+- vllm:e2e_request_latency_seconds (HISTOGRAM) - Histogram of e2e request latency in seconds. 
+- vllm:mm_cache_hits_created (GAUGE) - Multi-modal cache hits, in terms of number of cached items. 
+- vllm:prompt_tokens_created (GAUGE) - Number of prefill tokens processed. 
+- vllm:request_params_max_tokens_created (GAUGE) - Histogram of the max_tokens request parameter. 
+- vllm:request_prefill_time_seconds_created (GAUGE) - Histogram of time spent in PREFILL phase for request. 
+- vllm:request_generation_tokens (HISTOGRAM) - Number of generation tokens processed. 
+- vllm:request_decode_time_seconds (HISTOGRAM) - Histogram of time spent in DECODE phase for request. 
+- vllm:kv_cache_usage_perc (GAUGE) - KV-cache usage. 1 means 100 percent usage. 
+- vllm:prefix_cache_queries_created (GAUGE) - Prefix cache queries, in terms of number of queried tokens. 
+- vllm:external_prefix_cache_queries_created - External prefix cache queries from KV connector cross-instance cache sharing, in terms of number. 
+- vllm:external_prefix_cache_hits_created - External prefix cache hits from KV connector cross-instance cache sharing, in terms of number. 
+- vllm:prompt_tokens_total (COUNTER) - Number of prefill tokens processed. 
+- vllm:request_queue_time_seconds (HISTOGRAM) - Histogram of time spent in WAITING phase for request. 
+- vllm:external_prefix_cache_queries_total - External prefix cache queries from KV connector cross-instance cache sharing, in terms of number. 
+- vllm:external_prefix_cache_hits_total - External prefix cache hits from KV connector cross-instance cache sharing, in terms of number. 
+- vllm:request_success_created (GAUGE) - Count of successfully processed requests. 
+- vllm:request_inference_time_seconds_created (GAUGE) - Histogram of time spent in RUNNING phase for request. 
+- vllm:num_requests_waiting (GAUGE) - Number of requests waiting to be processed. 
+- vllm:mm_cache_hits_total (COUNTER) - Multi-modal cache hits, in terms of number of cached items. 
+- vllm:mm_cache_queries_total (COUNTER) - Multi-modal cache queries, in terms of number of queried items. 
+- vllm:request_params_n (HISTOGRAM) - Histogram of the n request parameter. 
+- vllm:num_requests_running (GAUGE) - Number of requests in model execution batches. 
+- vllm:engine_sleep_state - Engine sleep state; awake = 0 means engine is sleeping; awake = 1 means engine is awake. 
+- vllm:request_params_max_tokens (HISTOGRAM) - Histogram of the max_tokens request parameter. 
+- vllm:request_decode_time_seconds_created (GAUGE) - Histogram of time spent in DECODE phase for request. 
+- vllm:request_params_n_created (GAUGE) - Histogram of the n request parameter.
+- vllm:time_to_first_token_seconds (HISTOGRAM) - Histogram of time to first token in seconds. 
+- vllm:request_time_per_output_token_seconds (HISTOGRAM) - Histogram of time_per_output_token_seconds per request. 
+- vllm:e2e_request_latency_seconds_created (GAUGE) - Histogram of e2e request latency in seconds. 
+- vllm:cache_config_info (GAUGE) - Information of the LLMEngine CacheConfig.
+- vllm:num_preemptions_created (GAUGE) - Cumulative number of preemption from the engine. 
+- vllm:request_max_num_generation_tokens_created (GAUGE) - Histogram of maximum number of requested generation tokens. 
+- vllm:prefix_cache_hits_total (COUNTER) - Prefix cache hits, in terms of number of cached tokens. 
+- vllm:prefix_cache_hits_created (GAUGE) - Prefix cache hits, in terms of number of cached tokens. 
+- vllm:time_to_first_token_seconds_created (GAUGE) - Histogram of time to first token in seconds. 
+- vllm:inter_token_latency_seconds (HISTOGRAM) - Histogram of inter-token latency in seconds. 
+- vllm:request_queue_time_seconds_created (GAUGE) - Histogram of time spent in WAITING phase for request. 
