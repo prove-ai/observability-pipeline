@@ -1,4 +1,4 @@
-Generative AI promises to bring vast changes to industries as diverse as education, software engineering, law, healthcare, and marketing. From proof-of-concept deployments we know the technology can work, but fewer than 5% of those deployments make it to production. Crossing the chasm from “compelling prototype” to “real systems delivering real value to end users” requires solving problems that existing tooling wasn't designed to handle–and, until those problems are addressed, the potential of generative AI will remain largely theoretical. 
+Generative AI promises to bring vast changes to industries as diverse as education, software engineering, law, healthcare, and marketing. From proof-of-concept deployments we know the technology can work, but fewer than 5% of those deployments make it to production. Crossing the chasm from “compelling prototype” to “real systems delivering real value to end users” requires solving problems that existing tooling wasn't designed to handle–and, until those problems are addressed, the potential of generative AI will remain largely theoretical.
 
 One factor lurking behind much of this difficulty is the inherently nondeterministic nature of the underlying generative systems. Because the exact same input can produce different outputs, the testing methods that engineers have converged on to cover deterministic software projects aren’t enough in this context, and problems often only become visible when users complain. Customer criticism is often an unreliable quality signal; a minor error on what seems like a straightforward question can trigger harsh feedback, while a poorly-formatted response containing a hard-to-find fact might earn praise. 
 
@@ -36,8 +36,6 @@ Phase 1 addresses the most pressing points of friction AI engineering teams face
 - Deployment complexity
 - Setup time
 - Self-hosting and data sovereignty 
-
-[TRANSITION]
 
 #### Containerized Deployment
 Instead of reinventing observability tooling from the ground up, Prove AI's Phase 1 will deliver a hardened, containerized distribution of OpenTelemetry and Prometheus configured for generative AI models and agents. While neither is AI-specific, they represent best-in-class solutions for telemetry collection and metrics visualization, in addition to being proven, widely adopted, and enterprise-ready. Our approach is to take these industry standard tools and optimize them specifically for the unique observability challenges presented by generative AI and agent-focused systems.
