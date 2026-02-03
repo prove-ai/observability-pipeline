@@ -65,45 +65,55 @@ If you click 'create incident,' you'll be shown a panel that allows you to docum
 
 This is a streamlined way to create incident reports directly from your observability dashboard, automatically linking them to your existing workflow tools.
 
-Configuration 
+## Configuration 
 The Configuration page establishes connections between Prove AI and external monitoring and incident management systems.
+
 Page header: "Connect Prometheus and add destinations for notifications - this is all you need to get Prove AI running."
-Environment Setup
+
+### Environment Setup
 Configure monitoring environment and data source connections.
-Prometheus Connection:
-Status badge: Displays connection state (e.g., "Connected")
+
+Prometheus Connection: Status badge: Displays connection state (e.g., "Connected")
 URL field: Enter Prometheus endpoint (e.g., https://obs-dev.proveai.com:9090)
 Use Basic Auth toggle: Enable if Prometheus requires authentication
-When enabled, displays:
-Username field
-Password field (masked)
+- When enabled, displays:
+     -Username field
+    - Password field (masked)
 Use Proxy toggle: Enable if Prometheus requires proxy connection
+
 Connection status panel: Real-time log displaying:
-Timestamp for each operation
-Test progress messages
-HTTP requests and responses
-Status confirmation
+- Timestamp for each operation
+- Test progress messages
+- HTTP requests and responses
+- Status confirmation
+
 Connection result message: Displays outcome at bottom of panel (e.g., "Successfully connected.")
+
 Action buttons:
-Test connection: Verify Prometheus connectivity
-Save: Store configuration settings
-Getting Started
+- Test connection: Verify Prometheus connectivity
+- Save: Store configuration settings
+
+### Getting Started
 Sidebar panel (right):
-Instructions for installing OTel/OpenLLMetry to emit AI metrics to Prometheus
-Documents section: Link to View Setup Github Repo containing observability pipeline documentation
-Integrations & Notifications
+- Instructions for installing OTel/OpenLLMetry to emit AI metrics to Prometheus
+- Documents section: Link to View Setup Github Repo containing observability pipeline documentation
+
+### Integrations & Notifications
 "We create tickets and send messages with the context your engineers need."
+
 GitHub Integration:
-Status badge: Displays connection state (e.g., "Connected")
-Description: "Opens issues in your GitHub repo."
-Settings button: Configure GitHub integration details
-Disable button (red): Disconnect the integration
+- Status badge: Displays connection state (e.g., "Connected")
+- Description: "Opens issues in your GitHub repo."
+- Settings button: Configure GitHub integration details
+- Disable button (red): Disconnect the integration
+
 Jira Integration:
-Status badge: Displays connection state (e.g., "Not connected")
-Description: "Creates issues in your Jira project."
-Settings button: Configure Jira integration details
-Connect button (white): Establish the integration
-Disable button (red, if connected): Disconnect the integration
+- Status badge: Displays connection state (e.g., "Not connected")
+- Description: "Creates issues in your Jira project."
+- Settings button: Configure Jira integration details
+- Connect button (white): Establish the integration
+- Disable button (red, if connected): Disconnect the integration
+
 The Configuration page centralizes observability infrastructure connections and incident management integrations, enabling automated ticket creation and notification workflows.
 
 
