@@ -39,7 +39,11 @@ v0.1 addresses the most pressing points of friction AI engineering teams face wh
 - Self-hosting and data sovereignty 
 
 #### Containerized Deployment
-Instead of reinventing observability tooling from the ground up, Prove AI's v0.1 will deliver a hardened, containerized distribution of OpenTelemetry and Prometheus configured for generative AI models and agents. While neither is AI-specific, they represent best-in-class solutions for telemetry collection and metrics visualization, in addition to being proven, widely adopted, and enterprise-ready. Our approach is to take these industry standard tools and optimize them specifically for the unique observability challenges presented by generative AI and agent-focused systems.
+Instead of reinventing observability tooling from the ground up, Prove AI's v0.1 will deliver a hardened, containerized distribution of OpenTelemetry and Prometheus configured for generative AI models and agents. The following diagram contains a basic breakdown of the core architecture behind this distribution:
+
+![Containerized Distribution Architecture](../images/containerized-distribution-architecture.png)
+
+While neither OpetTelemetry nor Prometheus is AI-specific, they represent best-in-class solutions for telemetry collection and metrics visualization, in addition to being proven, widely adopted, and enterprise-ready. Our approach is to take these industry standard tools and optimize them specifically for the unique observability challenges presented by generative AI and agent-focused systems.
 
 This curated deployment dramatically reduces setup complexity in several ways. First, it provides preconfigured pipelines and settings suitable for most generative AI collection scenarios, eliminating the hundreds of engineer-hours that go into research and experimentation to determine optimal configurations. Second, containerization ensures dependency and version compatibility are managed automatically rather than requiring manual resolution. Third, the container-based approach provides deployment portability across development, staging, and production environments, whether on-premises or in the cloud.
 
