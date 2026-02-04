@@ -1,7 +1,5 @@
 # Getting Started
 
-[← Back to Observability Pipeline Guide](../index.md)
-
 ## What This Pipeline Does
 
 When deployed with the full deployment profile (i.e., with `full` in the `docker compose` command), this observability pipeline solves a common problem: **how to monitor distributed applications using OpenTelemetry traces**. Instead of instrumenting your application twice (once for traces, once for metrics), this pipeline automatically derives metrics from traces and stores them for long-term analysis.
@@ -336,7 +334,3 @@ curl http://localhost:8000/metrics | grep vllm:request_success_total
 - Verify vLLM is running: `docker ps | grep vllm`
 
 **📖 Full guide with troubleshooting and validation:** [vLLM Observability Guide](vllm-guide.md)
-
----
-
-[← Back to Observability Pipeline Guide](../index.md)
