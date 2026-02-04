@@ -1,7 +1,5 @@
 # vLLM Observability Integration
 
-[← Back to Observability Pipeline Guide](../index.md)
-
 ## Overview
 
 This guide provides detailed instructions for deploying vLLM with GPU acceleration using Docker Compose and configuring Prometheus to scrape vLLM’s built-in metrics.
@@ -571,6 +569,3 @@ vllm:generation_tokens_total
 - **vLLM Documentation**: [https://docs.vllm.ai](https://docs.vllm.ai)
 - **Prometheus Documentation**: [https://prometheus.io/docs/](https://prometheus.io/docs/)
 
----
-
-[← Back to Observability Pipeline Guide](../index.md)
