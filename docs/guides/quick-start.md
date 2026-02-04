@@ -4,7 +4,7 @@
 
 ## What This Pipeline Does
 
-When deployed with the [full deployment profile](deployment-profiles.md#profile-1-full-complete-stack), this observability pipeline solves a common problem: **how to monitor distributed applications using OpenTelemetry traces**. Instead of instrumenting your application twice (once for traces, once for metrics), this pipeline automatically derives metrics from traces and stores them for long-term analysis.
+When deployed with the full deployment profile (i.e., with `full` in the `docker compose` command), this observability pipeline solves a common problem: **how to monitor distributed applications using OpenTelemetry traces**. Instead of instrumenting your application twice (once for traces, once for metrics), this pipeline automatically derives metrics from traces and stores them for long-term analysis.
 
 **At a Glance:**
 
@@ -34,7 +34,7 @@ docker compose version  # Should show Docker Compose 2.0+
 **Clone the repository:**
 
 ```bash
-git clone https://github.com/CasperLabs/observability-pipeline/tree/dev
+git clone https://github.com/prove-ai/observability-pipeline.git
 ```
 
 ### Initial Setup
@@ -86,7 +86,7 @@ Look for these lines:
 
 And uncomment them so Docker Compose will load your `.env` file.
 
-**⚠️ For production:** Edit `.env` to change these credentials before deployment. See the [detailed authentication guide](security.md#authentication) for configuration options, security best practices, and how to switch authentication methods.
+**⚠️ For production:** Edit `.env` to change these credentials before deployment. 
 
 ### Start the Full Stack (Greenfield Setup)
 Whether you went through default or custom configuration mode, you're ready to stand up the observability pipeline.
@@ -154,8 +154,6 @@ Then use the credentials from your `ENVOY_BASIC_AUTH_CREDENTIALS` setting:
 ```bash 
 curl -u username:password http://localhost:9090/api/v1/targets | jq
 ```
-
-See the [security guide](security.md#authentication) for more details.
 
 **Expected output:** Whether you use default or Basic Auth, all targets should be showing `"up"`.
 
@@ -307,7 +305,7 @@ docker compose up -d
 
 4. **Add vLLM to Prometheus** 
 
-Edit `docker-compose/prometheus.yaml` by adding the new target below (this should replace the `- targets: ["garage.proveai.com:18010"]` line that already exists in `prometheus.yaml`):
+Edit `docker-compose/prometheus.yaml` by adding the new target below (this should replace the `- targets: ["existing-target:port"]` line that already exists in `prometheus.yaml`):
 
 ```yaml
 scrape_configs:
@@ -338,14 +336,6 @@ curl http://localhost:8000/metrics | grep vllm:request_success_total
 - Verify vLLM is running: `docker ps | grep vllm`
 
 **📖 Full guide with troubleshooting and validation:** [vLLM Observability Guide](vllm-guide.md)
-
----
-
-### Option 2: Ollama
-
-**Coming soon** - Ollama integration guide
-
-**📖 Full guide:** [Ollama Observability Guide](ollama-guide.md) _(Coming soon)_
 
 ---
 
