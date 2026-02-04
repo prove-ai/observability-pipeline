@@ -1,0 +1,108 @@
+## Dashboard Overview 
+The Prove AI dashboard is an observability platform designed for containerized generative AI workloads. The platform provides monitoring, evaluation, and compliance capabilities for LLM inference services, RAG pipelines, and embedding systems.
+
+The following components are currently available in the dashboard:
+- Dashboard: Customizable metrics visualization and incident management 
+- Configuration: Prometheus integration and notification setup
+
+**Note:** You will see other components which are not accessible by default; contact the Prove AI team to learn how to enhance your compliance monitoring.
+
+## Signing In/Making an Account
+The application is accessible at https://proveai-integration.proveai.com/
+
+You may log in using email and password credentials. To set up a new account, you must use a professional email address (personal email addresses won't work, at present).
+
+## Dashboard 
+The Dashboard provides a customizable interface for monitoring infrastructure and model performance metrics. Users can add individual metrics and create visualizations to track system health and performance trends.
+
+The main elements are described below.
+
+- Time Range Selector (top left): Dropdown menu for selecting the data time window:
+    - Last 24h
+    - Last 7d
+    - Last 30d
+- Refresh Data (top right): Manually refresh dashboard data to display the latest metrics.
+- Create Incident (top right): Open the incident creation panel for documenting issues or outages.
+- Add Metric panels: Empty metric cards for displaying individual metric values or simple visualizations. These provide at-a-glance monitoring for key performance indicators.
+- Add Chart panels: Larger panels for creating complex visualizations including time-series graphs, histograms, and other chart types for analyzing metric trends over time.
+
+### Adding Metrics
+To add a metric to the dashboard:
+
+- Click the + Add Metric button
+- Use the search function to locate the desired metric
+- Select the metric from the results list
+
+The platform supports three primary metric types:
+- Counter: Tracks cumulative values that only increase over time (e.g., total requests, token counts, successfully processed requests)
+- Gauge: Represents current state values that can increase or decrease (e.g., queue depth, active connections, KV-cache usage percentage)
+- Histogram: Provides distribution data for debugging performance issues. Histograms track percentile distributions (p50, p95, p99), which are more operationally relevant than averages for understanding LLM system behavior, particularly for latency and token generation metrics.
+
+### Creating an Incident
+If you click 'create incident,' you'll be shown a panel that allows you to document and track issues or outages. The panel includes:
+
+- Integration selector: Shows which system will receive the incident (in this case, GitHub). You can click "Manage integrations" to configure where incidents are sent.
+- Title field: A text input for a descriptive incident name, with a helpful example placeholder: "p95 latency spiking on vLLM."
+- Date and time pickers: Set to the current date/time (e.g., Jan 21, 2026, 01:09 PM), allowing you to specify when the incident occurred or was detected.
+- Description field: A larger text area for detailed information including what happened, the scope of the issue, suspected causes, steps already taken, and links to relevant traces or logs for investigation.
+- Create Incident button: Submits the incident to your configured integration (like creating a GitHub issue).
+- Cancel button: Closes the panel without creating an incident.
+
+This is a streamlined way to create incident reports directly from your observability dashboard, automatically linking them to your existing workflow tools.
+
+## Configuration 
+The Configuration page establishes connections between Prove AI and external monitoring and incident management systems.
+
+### Environment Setup
+Here, you can configure monitoring environment and data source connections.
+
+**Prometheus Connection** 
+
+Status badge: Displays connection state (e.g., "Connected")
+URL field: Enter Prometheus endpoint (e.g., https://your-prometheus-host:9090). **If you have your own Prometheus instance running, you would put its URL here.**
+
+Use Basic Auth toggle: Enable if Prometheus requires authentication
+- When enabled, displays:
+    - Username field
+    - Password field
+
+Use Proxy toggle: Enable if Prometheus requires proxy connection
+- When enabled, displays:
+    - A radio button with which you can select the protocol (HTTP, HTTPS)
+    - A field to enter the proxy URL (e.g., `proxy.company.com`)
+    - An additional toggle you can enable if your proxy requires authentication  
+        - If you enable proxy authentication, the interface will display:
+            - The proxy username field
+            - The proxy password field
+
+**Connection status panel**
+- Click `Test connection` to run an assessment of your connection
+- Real-time log displaying:
+    - Timestamp for each operation
+    - Test progress messages
+    - HTTP requests and responses
+    - Status confirmation
+
+Connection result message: Displays outcome at bottom of panel (e.g., `Status: healthy`)
+
+Click `Save` to store configuration settings
+
+### Getting Started
+Sidebar panel (right):
+- Documents section: Link to View Setup Github Repo containing observability pipeline documentation, where you can find instructions for installing OTel/OpenLLMetry to emit AI metrics
+
+### Integrations & Notifications
+Here, you can set up infrastructure to create tickets and send messages with the context your engineers need.
+
+GitHub Integration:
+- Status badge: Displays connection state (e.g., "Connected")
+- Settings button: Configure GitHub integration details
+- Disable button (red): Disconnect the integration
+
+Jira Integration:
+- Status badge: Displays connection state (e.g., "Not connected")
+- Settings button: Configure Jira integration details
+- Connect button (white): Establish the integration
+- Disable button (red, if connected): Disconnect the integration
+
+The Configuration page centralizes observability infrastructure connections and incident management integrations, enabling automated ticket creation and notification workflows.
