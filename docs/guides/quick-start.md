@@ -141,7 +141,7 @@ This snippet will use the default API key and should work out of the box:
 curl -H "X-API-Key: placeholder_api_key" http://localhost:9090/api/v1/targets | jq
 ```
 
-For Basic Auth, there are a few preliminary configuration steps that must be completed, because Prometheus authentication depends on your ENVOY_AUTH_METHOD setting. You must:
+For Basic Auth, there are a few preliminary configuration steps that must be completed, because our Prometheus build's authentication depends on your ENVOY_AUTH_METHOD setting. You must:
 
 - Create a `.env` file (or modify the one you created above) with:
   - `ENVOY_AUTH_METHOD=basic-auth`
