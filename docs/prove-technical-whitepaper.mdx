@@ -27,7 +27,9 @@ The Prove AI platform is our solution to this problem, and it will be delivered 
 
 The first iteration, v0.1, establishes the foundational infrastructure, focusing on streamlined deployment, secure telemetry collection, and unified monitoring. The goal is to get teams operating with a basic (but still complete) observability stack in far less time than is typically required.
 
-The second iteration, v1.0, will build on this foundation to deliver what engineering teams ultimately need: actionable remediation that changes observability data into guided fixes and continuous improvement workflows.
+The second iteration, v1.0, will build on this foundation to deliver what engineering teams ultimately need: actionable remediation that changes observability data into guided fixes and continuous improvement workflows. Here's a rough breakdown of what's coming:
+
+![Containerized Distribution Architecture](/images/v0.1-v1.0.png)
 
 In the sections below, we’ll cover these in more detail. And, while this roadmap focuses on our immediate deliverables, the platform's architecture is designed to evolve toward deeper human-machine collaboration and increasingly automated issue resolution—capabilities that become possible once the foundational telemetry and remediation infrastructure is in place
 
@@ -41,7 +43,7 @@ v0.1 addresses the most pressing points of friction AI engineering teams face wh
 #### Containerized Deployment
 Instead of reinventing observability tooling from the ground up, Prove AI's v0.1 will deliver a hardened, containerized distribution of OpenTelemetry and Prometheus configured for generative AI models and agents. The following diagram contains a basic breakdown of the core architecture behind this distribution:
 
-![Containerized Distribution Architecture](/images/containerized-distribution-architecture.png)
+![Containerized Distribution Architecture](/images/customer-vpc.png)
 
 While neither OpenTelemetry nor Prometheus is AI-specific, they represent best-in-class solutions for telemetry collection and metrics visualization, in addition to being proven, widely adopted, and enterprise-ready. Our approach is to take these industry-standard tools and optimize them specifically for the unique observability challenges presented by generative AI and agent-focused systems.
 
@@ -66,6 +68,8 @@ Where v0.1 establishes a foundation in observability, v1.0 makes that foundation
 
 #### From Detection to Diagnosis to Correction
 v1.0 introduces a remediation engine purpose-built for generative AI failure modes. When a problematic output occurs (i.e., a hallucinated fact, an irrelevant retrieval, a coherence breakdown), the system won’t simply flag it; it will trace the complete execution path, guiding you to likely points of failure and resolution paths.
+
+![Containerized Distribution Architecture](/images/detection-diagnosis-correction.png)
 
 This full-context capture is a critical differentiator between traditional observability tools and Prove AI. The former shows you a trace with timestamps and some basic information; the latter will capture the full state of your pipeline: the actual prompts sent, the embeddings retrieved, the model outputs generated, and the evaluation scores computed. At long last, engineers will have everything they need to reconstruct every part of the chain that lead to a specific output, offering unprecedented visibility and a frontier of remediation pathways.
 
