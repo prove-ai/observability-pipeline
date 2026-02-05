@@ -3,9 +3,15 @@
 ## Prerequisites
 
 - Docker and Docker Compose installed
-- **macOS:** Command Line Tools for Xcode
-- **Windows 10+ WSL / Linux:** `build-essential` (Debian-based) or Development Tools (Red Hat-based)
-- (Optional) otel-cli for testing
+- **macOS:** Command Line Tools for Xcode (required for building)
+  ```bash
+  xcode-select --install
+  ```
+- **Windows 10+ WSL / Linux:** Build tools (required for building)
+  - **Debian/Ubuntu:** `sudo apt-get install build-essential`
+  - **Red Hat/Fedora:** `sudo dnf groupinstall "Development Tools"` (or `sudo yum groupinstall "Development Tools"` on older RHEL)
+- (Optional) `make` — for using the Makefile shortcuts
+- (Optional) otel-cli — for testing
 
 ## Architecture
 
