@@ -1,0 +1,30 @@
+name: SCM Mirror
+
+on:
+  workflow_dispatch:
+    inputs:
+      source_branch:
+        description: "Source Branch Name"
+        required: true
+        default: "docs/production-mirror-branch"
+        type: string
+
+jobs:
+  repo-sync:
+    runs-on: ubuntu-latest
+    env:
+      SOURCE_BRANCH: ${{ github.event.inputs.source_branch || 'docs/production-mirror-branch' }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: repo-sync
+        uses: repo-sync/github-sync@v2
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+        with:
+          source_repo: "git@github.com:CasperLabs/observability-pipeline.git"
+          source_branch: ${{ env.SOURCE_BRANCH }}
+          destination_branch: "main"
+          sync_tags: ""
+          github_token: ${{ secrets.PROVEAI_GITHUB_TOKEN }}
