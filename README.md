@@ -1,5 +1,3 @@
-
-
 # Getting Started
 You can find a [quickstart guide](docs/guides/quick-start.md) here. The rest of this document will cover some technical specifics related to setting up and running the observability pipeline.
 
