@@ -643,20 +643,20 @@ global:
 
 ## Privacy Considerations
 
-LiteLLM logs prompts and completions to telemetry systems by default. This may expose sensitive user data in your observability infrastructure.
+Prometheus only receives numeric metrics from LiteLLM (token counts, latencies, error counts, etc.). Prompt and response content is not sent to Prometheus by default.
 
-**To disable prompt and response logging:**
+If you add **OpenTelemetry** (e.g. for distributed tracing), LiteLLM may include message content in traces by default, which can expose sensitive user data.
 
-Add to the `litellm` service in docker-compose.yml:
+**To disable prompt and response logging in OTel traces only:**
+
+Add to the `litellm` service in docker-compose.yml when using OpenTelemetry:
 
 ```yaml
 environment:
   - TRACELOOP_TRACE_CONTENT=false
 ```
 
-This prevents LiteLLM from including message content in traces while preserving token counts, latencies, and other numeric metrics.
-
-**Note:** Similar considerations apply to OpenTelemetry instrumentation if you later migrate to code-based observability.
+This applies only to OpenTelemetry instrumentation: it prevents LiteLLM from including message content in traces while preserving token counts, latencies, and other numeric metrics. It has no effect on the Prometheus metrics described in this guide.
 
 ---
 
