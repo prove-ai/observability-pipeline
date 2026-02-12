@@ -365,7 +365,7 @@ DCGM_FI_DEV_GPU_TEMP{gpu="0",UUID="GPU-...",device="nvidia0"} 62
 
 ## Prometheus Configuration
 
-### Create prometheus.yml
+### Create (or modify) prometheus.yml
 
 Create `prometheus.yml`:
 
