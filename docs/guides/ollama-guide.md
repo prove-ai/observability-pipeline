@@ -4,7 +4,7 @@
 
 This guide provides detailed instructions for deploying Ollama with comprehensive observability using LiteLLM proxy and DCGM exporter. It covers only what is required with minimal complexity.
 
-Ollama provides powerful local LLM inference but exposes zero native metrics. Without instrumentation, you cannot track token usage, request latencies, error rates, or GPU utilization. This creates a critical observability gap for production deployments.
+Ollama provides powerful local LLM inference and [exposes some metrics](https://docs.ollama.com/api/usage) but, without instrumentation, you cannot track token usage, request latencies, error rates, or GPU utilization. This creates a critical observability gap for production deployments.
 
 This guide solves that problem using a proxy-based architecture that requires no application code changes while capturing 90% of the metrics you would get from full OpenTelemetry instrumentation.
 
