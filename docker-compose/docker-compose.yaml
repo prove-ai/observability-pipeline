@@ -27,7 +27,7 @@ services:
       - vm-only
       - prom-only
 
-  # OpenTelemetry Collector - Receives OTLP traces and converts them to Prometheus metrics
+  # OpenTelemetry Collector - This receives OTLP traces and converts them to Prometheus metrics
   otel-collector:
     image: otel/opentelemetry-collector-contrib:0.138.0
     container_name: otel-collector
