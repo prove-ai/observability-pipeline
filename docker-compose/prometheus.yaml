@@ -63,6 +63,20 @@ scrape_configs:
   #       replacement: $1:8000
   #   metrics_path: "/metrics"
 
+  # LiteLLM proxy (when running from docker-compose)
+  - job_name: "litellm"
+    scheme: "http"
+    metrics_path: "/metrics"
+    static_configs:
+      - targets: ["litellm:4000"]
+
+  # DCGM exporter for GPU metrics (when running from docker-compose)
+  - job_name: "dcgm-exporter"
+    scheme: "http"
+    metrics_path: "/metrics"
+    static_configs:
+      - targets: ["dcgm-exporter:9400"]
+
   # Example placeholder for your own exporters / apps
   # Uncomment and adapt if you're NOT using our collector and instead scrape your own services directly.
   # - job_name: "your-services"

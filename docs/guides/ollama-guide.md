@@ -79,11 +79,13 @@ DCGM exporter fills the GPU metrics gap that neither code instrumentation nor Li
 
 **LiteLLM Proxy Metrics:**
 
+[NOTE: I need to check that each of these metrics works as written.]
+
 ```
-litellm_input_tokens_total
-litellm_output_tokens_total
-litellm_request_total_latency_seconds
-litellm_time_to_first_token_seconds
+litellm_input_tokens_metric
+litellm_output_tokens_metric
+litellm_request_total_latency_metric
+litellm_llm_api_time_to_first_token_metric # check
 litellm_deployment_failure_responses
 ```
 
@@ -199,7 +201,7 @@ ollama list
 
 ### Environment Variables
 
-Ollama's resource management is controlled entirely through environment variables. Key settings for production deployments:
+Ollama's resource management is controlled entirely through environment variables. Here are some key settings for production deployments:
 
 | Variable | Description | Default | Common Values |
 |----------|-------------|---------|---------------|
@@ -225,7 +227,7 @@ ollama serve
 
 ### Create Configuration File
 
-Create `litellm_config.yaml`:
+Create `litellm_config.yaml` in the same directory as your docker-compose file (e.g. `docker-compose/litellm_config.yaml` when using this repo's `docker-compose/docker-compose.yaml`):
 
 ```yaml
 model_list:
@@ -235,8 +237,7 @@ model_list:
       api_base: http://host.docker.internal:11434
 
 litellm_settings:
-  success_callback: ["prometheus"]
-  failure_callback: ["prometheus"]
+  callbacks: ["prometheus"]
 ```
 
 **Configuration details:**
@@ -244,11 +245,10 @@ litellm_settings:
 - `model_name`: Alias used by your application
 - `model`: Backend format is `ollama/<model-name>`
 - `api_base`: Ollama endpoint (use `host.docker.internal` for host-based Ollama)
-- `success_callback` and `failure_callback`: Enable Prometheus metrics export
 
-### Create docker-compose.yml
+### Create (or modify) docker-compose.yaml
 
-Create `docker-compose.yml` with LiteLLM, DCGM, and Prometheus services:
+Create `docker-compose.yaml` with LiteLLM, DCGM, and Prometheus services:
 
 ```yaml
 services:
@@ -257,8 +257,6 @@ services:
     container_name: litellm-proxy
     volumes:
       - ./litellm_config.yaml:/app/config.yaml
-    environment:
-      - DATABASE_URL=  # Optional: for persistence
     command: --config /app/config.yaml --port 4000
     ports:
       - "4000:4000"
@@ -280,6 +278,8 @@ services:
       - "9400:9400"
     restart: unless-stopped
 
+  # Only add the prometheus service below if you're creating this file from scratch.
+  # If you already have this repo's docker-compose.yaml, skip this block—it already includes Prometheus.
   prometheus:
     image: prom/prometheus:latest
     container_name: prometheus
@@ -296,10 +296,30 @@ services:
 - DCGM requires GPU passthrough via `deploy.resources.reservations.devices`
 - All services restart automatically on failure
 
+**Using this repo's docker-compose instead?**  
+If you are using this repository's existing `docker-compose/docker-compose.yaml` (and not creating a new file from the snippet above), LiteLLM and DCGM exporter are already defined there behind the **`ollama`** profile. Use that profile in every `docker compose` command in this guide, and start the observability stack first. Examples:
+
+- Start the full stack plus LiteLLM (and optionally DCGM):  
+  `docker compose --profile full --profile ollama up -d`
+- Start only LiteLLM (Prometheus must already be running elsewhere):  
+  `docker compose --profile ollama up -d litellm`
+- Start only DCGM exporter:  
+  `docker compose --profile ollama up -d dcgm-exporter`
+
+Prometheus and scrape configs for LiteLLM/DCGM are already in this repo; no need to add the standalone `prometheus` block or a separate `prometheus.yml` if you use the repo's compose.
+
 ### Start LiteLLM Proxy
+
+If you created a **standalone** compose file from the snippet above:
 
 ```bash
 docker compose up -d litellm
+```
+
+If you're using **this repo's** `docker-compose/docker-compose.yaml`:
+
+```bash
+docker compose --profile ollama up -d litellm
 ```
 
 **Check logs:**
@@ -335,9 +355,8 @@ Neither LiteLLM proxy nor OpenTelemetry instrumentation can access GPU hardware 
 
 DCGM is already included in the `docker-compose.yml` from the previous section. Start it:
 
-```bash
-docker compose up -d dcgm-exporter
-```
+- **Standalone compose:** `docker compose up -d dcgm-exporter`
+- **This repo's compose:** `docker compose --profile ollama up -d dcgm-exporter`
 
 **Check logs:**
 
@@ -392,11 +411,10 @@ scrape_configs:
 
 ### Deploy Prometheus
 
-Prometheus is already included in `docker-compose.yml`. Start it:
+Prometheus is already included in `docker-compose.yml` (or, if using this repo's compose, it's part of the main stack). Start it:
 
-```bash
-docker compose up -d prometheus
-```
+- **Standalone compose:** `docker compose up -d prometheus`
+- **This repo's compose:** Prometheus starts with `docker compose --profile full up -d`; use `--profile full --profile ollama up -d` to run the full stack plus LiteLLM/DCGM so Prometheus can scrape them.
 
 **Verify Prometheus UI:**
 
@@ -645,18 +663,7 @@ global:
 
 Prometheus only receives numeric metrics from LiteLLM (token counts, latencies, error counts, etc.). Prompt and response content is not sent to Prometheus by default.
 
-If you add **OpenTelemetry** (e.g. for distributed tracing), LiteLLM may include message content in traces by default, which can expose sensitive user data.
-
-**To disable prompt and response logging in OTel traces only:**
-
-Add to the `litellm` service in docker-compose.yml when using OpenTelemetry:
-
-```yaml
-environment:
-  - TRACELOOP_TRACE_CONTENT=false
-```
-
-This applies only to OpenTelemetry instrumentation: it prevents LiteLLM from including message content in traces while preserving token counts, latencies, and other numeric metrics. It has no effect on the Prometheus metrics described in this guide.
+If you add **OpenTelemetry** (e.g. for distributed tracing), LiteLLM may include message content in traces by default, which can expose sensitive user data. If you use Traceloop or OpenLLMetry for OTel instrumentation, refer to their documentation for options to disable content in traces.
 
 ---
 
@@ -708,3 +715,9 @@ litellm_deployment_failure_responses            # Error count
 DCGM_FI_DEV_GPU_UTIL                           # GPU utilization %
 DCGM_FI_DEV_FB_USED                            # GPU memory used (MB)
 ```
+
+---
+
+## Notes
+
+- **LiteLLM persistence (optional):** To persist LiteLLM state (e.g. spend tracking, request history), add an `environment` block to the `litellm` service with `DATABASE_URL=<your-connection-string>`.

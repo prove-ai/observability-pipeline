@@ -103,6 +103,46 @@ services:
     profiles:
       - prom-only # prometheus
 
+  # LiteLLM proxy (optional - for Ollama/LLM observability guide)
+  # Only starts with: docker compose --profile ollama ... (or --profile full --profile ollama)
+  litellm:
+    image: ghcr.io/berriai/litellm:main-latest
+    container_name: litellm-proxy
+    volumes:
+      - ./litellm_config.yaml:/app/config.yaml
+    environment:
+      - DATABASE_URL=  # Optional: for persistence
+    command: --config /app/config.yaml --port 4000
+    ports:
+      - "4000:4000"
+    networks:
+      - observability
+    restart: unless-stopped
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    profiles:
+      - ollama
+
+  # DCGM exporter for GPU metrics (optional - requires NVIDIA GPU)
+  # Only starts with: docker compose --profile ollama ...
+  dcgm-exporter:
+    image: nvcr.io/nvidia/k8s/dcgm-exporter:3.1.3-3.1.4-ubuntu20.04
+    container_name: dcgm-exporter
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+    ports:
+      - "9400:9400"
+    networks:
+      - observability
+    restart: unless-stopped
+    profiles:
+      - ollama
+
   # VictoriaMetrics - Long-term storage for Prometheus metrics
   victoriametrics:
     image: victoriametrics/victoria-metrics:latest
