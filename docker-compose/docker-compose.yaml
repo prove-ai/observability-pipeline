@@ -110,8 +110,8 @@ services:
     container_name: litellm-proxy
     volumes:
       - ./litellm_config.yaml:/app/config.yaml
-    environment:
-      - DATABASE_URL=  # Optional: for persistence
+    # Optional: set DATABASE_URL to a postgresql:// URL for persistence (spend tracking, etc.)
+    # Leave unset for proxy-only + Prometheus metrics with no database.
     command: --config /app/config.yaml --port 4000
     ports:
       - "4000:4000"

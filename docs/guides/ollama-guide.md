@@ -4,7 +4,7 @@
 
 This guide provides detailed instructions for deploying Ollama with comprehensive observability using LiteLLM proxy and DCGM exporter. It covers only what is required with minimal complexity.
 
-Ollama provides powerful local LLM inference and [exposes some metrics](https://docs.ollama.com/api/usage) but, without instrumentation, you cannot track token usage, request latencies, error rates, or GPU utilization. This creates a critical observability gap for production deployments.
+Ollama provides powerful local LLM inference and [exposes some metrics](https://docs.ollama.com/api/usage) but, without instrumentation, you cannot track token usage, request latencies, error rates, or GPU utilization. This creates a problematic observability gap for production deployments.
 
 This guide solves that problem using a proxy-based architecture that requires no application code changes while capturing 90% of the metrics you would get from full OpenTelemetry instrumentation.
 
@@ -111,6 +111,20 @@ DCGM_FI_DEV_POWER_USAGE
 - **NVIDIA Driver**: Compatible with your GPU
 - **NVIDIA Container Toolkit**: For GPU passthrough to Docker containers
 
+#### macOS or non-NVIDIA Setups
+
+On macOS (or any machine without an NVIDIA GPU), you can still use this guide for Ollama + LiteLLM + Prometheus. GPU metrics (DCGM) will not be available.
+
+- **Ollama:** Run Ollama on the host (native app; uses Metal on Apple Silicon). Do not run the GPU verification commands below.
+- **Start only the services you need.** Do not run `docker compose --profile ollama up -d` without naming services—that would try to start the DCGM exporter and fail. Instead run:
+
+  ```bash
+  docker compose --profile ollama up -d litellm
+  ```
+  
+  Add `prometheus`, `victoriametrics`, or other services to the list if you use those profiles.
+- **Optional:** In `docker-compose/prometheus.yaml`, comment out the `job_name: "dcgm-exporter"` scrape block to avoid a DOWN target in Prometheus (the pipeline will run with or without this step, it just changes what information you get back from Prometheus).
+
 **Verify GPU setup:**
 
 ```bash
@@ -131,7 +145,7 @@ You can check your versions:
 ```bash
 docker --version
 docker compose version
-ollama --version
+ollama --version # This will fail if you haven't installed ollama; details about that process can be found below.
 ```
 
 ### Network Requirements
@@ -161,7 +175,11 @@ curl -fsSL https://ollama.com/install.sh | sh
 
 **On macOS/Windows:**
 
-Download from https://ollama.com/download
+Download from https://ollama.com/download, or run:
+
+```
+curl -fsSL https://ollama.com/install.sh | sh
+```
 
 **Verify installation:**
 
@@ -170,7 +188,7 @@ ollama --version
 ollama serve
 ```
 
-The server starts on `http://localhost:11434` by default.
+The server starts on `http://localhost:11434` by default. 
 
 ### Pulling Models
 
@@ -182,6 +200,16 @@ Ollama supports hundreds of models from the central registry at ollama.com. Mode
 ollama pull gemma3:27b    # 27B model, outperforms models 2× its size
 ollama pull gemma3:9b     # 9B model, good balance of speed and quality
 ollama pull llama3.2:3b   # 3B model, fastest inference on consumer hardware
+```
+
+If you've run `ollama serve` from the step above and want to pull models now, open a new terminal and run `ollama pull <model>` there; the server handles pulls while it's running. You should expect an output like:
+
+```
+pulling manifest 
+pulling dde5aa3fc5ff: 100% ▕████████████████████████████████████▏ 2.0 GB                         
+verifying sha256 digest 
+writing manifest 
+success 
 ```
 
 **Model size considerations:**
@@ -211,7 +239,9 @@ Ollama's resource management is controlled entirely through environment variable
 | `OLLAMA_MAX_QUEUE` | Request queue depth | 512 | 1024, 2048 |
 | `OLLAMA_FLASH_ATTENTION` | Memory optimization | disabled | enabled (for supported GPUs) |
 
-**To set environment variables on Linux:**
+**To set environment variables (Linux and macOS):**
+
+When you start Ollama from the terminal, set variables in the same shell before running the server:
 
 ```bash
 export OLLAMA_NUM_PARALLEL=4
@@ -219,21 +249,25 @@ export OLLAMA_KEEP_ALIVE=10m
 ollama serve
 ```
 
+These `export` commands do not save the variables to a file—they apply only to that shell and to the `ollama serve` process you start from it. When you close the terminal, they're gone. To change a value, stop the server (Ctrl+C), run the exports again with the new values, then run `ollama serve` again. To have the same variables every time you open a terminal, add the `export` lines to `~/.zshrc` or `~/.bashrc`.
+
+On macOS, if you start Ollama from the app (menu bar) instead of the terminal, environment variables you set in the shell are not used. To use custom settings, run `ollama serve` from a terminal with the exports above, or configure them for the app (e.g. via launchd) if you need the GUI.
+
 **Note:** Parallel requests multiply context window size (4 parallel × 2K context = 8K total memory usage).
 
 ---
 
 ## LiteLLM Proxy Deployment
 
-### Create Configuration File
+### Create (or Modify) Configuration File
 
-Create `litellm_config.yaml` in the same directory as your docker-compose file (e.g. `docker-compose/litellm_config.yaml` when using this repo's `docker-compose/docker-compose.yaml`):
+Create (or modify) a `litellm_config.yaml` file in the same directory as your docker-compose file (e.g. `docker-compose/litellm_config.yaml` when using this repo's `docker-compose/docker-compose.yaml`):
 
 ```yaml
 model_list:
-  - model_name: gemma3-27b
+  - model_name: gemma3-27b # or tinyllama if you're on a Mac and want to quickly test
     litellm_params:
-      model: ollama/gemma3:27b
+      model: ollama/gemma3:27b # or ollama/tinyllama if you're on a Mac and want to quickly test
       api_base: http://host.docker.internal:11434
 
 litellm_settings:
@@ -257,12 +291,18 @@ services:
     container_name: litellm-proxy
     volumes:
       - ./litellm_config.yaml:/app/config.yaml
+    environment:
+      - DATABASE_URL=  # Optional: for persistence
     command: --config /app/config.yaml --port 4000
     ports:
       - "4000:4000"
+    networks:
+      - observability
     restart: unless-stopped
     extra_hosts:
       - "host.docker.internal:host-gateway"
+    profiles:
+      - ollama
 
   dcgm-exporter:
     image: nvcr.io/nvidia/k8s/dcgm-exporter:3.1.3-3.1.4-ubuntu20.04
@@ -276,7 +316,11 @@ services:
               capabilities: [gpu]
     ports:
       - "9400:9400"
+    networks:
+      - observability
     restart: unless-stopped
+    profiles:
+      - ollama
 
   # Only add the prometheus service below if you're creating this file from scratch.
   # If you already have this repo's docker-compose.yaml, skip this block—it already includes Prometheus.
@@ -316,7 +360,7 @@ If you created a **standalone** compose file from the snippet above:
 docker compose up -d litellm
 ```
 
-If you're using **this repo's** `docker-compose/docker-compose.yaml`:
+If you're using **this repo's** `docker-compose/docker-compose.yaml` (runs everything in the `ollama` profile except DCGM—i.e. LiteLLM only):
 
 ```bash
 docker compose --profile ollama up -d litellm
@@ -386,7 +430,9 @@ DCGM_FI_DEV_GPU_TEMP{gpu="0",UUID="GPU-...",device="nvidia0"} 62
 
 ### Create (or modify) prometheus.yml
 
-Create `prometheus.yml`:
+This repository includes an existing `docker-compose/prometheus.yaml` that may differ from the recommendations below (e.g. scrape targets, job names, or other jobs). You may need to make small changes so it matches your setup or merge the relevant scrape configs into the existing file.
+
+Create `prometheus.yml` (or edit the existing one):
 
 ```yaml
 global:
