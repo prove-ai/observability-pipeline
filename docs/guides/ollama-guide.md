@@ -274,7 +274,7 @@ Create (or modify) a `litellm_config.yaml` file in the same directory as your do
 
 ```yaml
 model_list:
-  - model_name: gemma3-27b # or tinyllama if you're on a Mac and want to quickly test
+  - model_name: gemma3-27b # or tinyllama if you're on a Mac and want to test quickly
     litellm_params:
       model: ollama/gemma3:27b # or ollama/tinyllama if you're on a Mac and want to quickly test
       api_base: http://host.docker.internal:11434
