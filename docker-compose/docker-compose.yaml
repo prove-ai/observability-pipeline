@@ -125,8 +125,9 @@ services:
 
   # DCGM exporter for GPU metrics (optional - requires NVIDIA GPU)
   # Only starts with: docker compose --profile ollama ...
+  # Image: nvcr.io 3.x tag no longer exists; use Docker Hub. See https://hub.docker.com/r/nvidia/dcgm-exporter/tags for other tags.
   dcgm-exporter:
-    image: nvcr.io/nvidia/k8s/dcgm-exporter:3.1.3-3.1.4-ubuntu20.04
+    image: nvidia/dcgm-exporter:4.5.2-4.8.1-distroless
     container_name: dcgm-exporter
     deploy:
       resources:

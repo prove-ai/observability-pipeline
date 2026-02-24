@@ -29,7 +29,7 @@ Integration of Ollama with the observability pipeline:
 │ Ollama Server                            │
 │ - Runs on host or in container           │
 │ - OpenAI-compatible API (port 11434)     │
-│ - No native metrics                      │
+│                                          │
 └──────────────────────────────────────────┘
                     ↓
 ┌──────────────────────────────────────────┐
@@ -145,7 +145,7 @@ You can check your versions:
 ```bash
 docker --version
 docker compose version
-ollama --version # This will fail if you haven't installed ollama; details about that process can be found below.
+ollama --version # This will fail if you haven't installed ollama or it's not currently running; details about that process can be found below.
 ```
 
 ### Network Requirements
@@ -158,6 +158,7 @@ ollama --version # This will fail if you haven't installed ollama; details about
 **Network considerations:**
 
 - LiteLLM proxy must reach Ollama (uses `host.docker.internal:11434` if Ollama runs on host)
+- **Host-based Ollama + Docker:** For `host.docker.internal:11434` to work, Ollama on the host must listen on all interfaces, not only localhost. Set `OLLAMA_HOST=0.0.0.0` before starting Ollama (see [Ollama Configuration](#ollama-configuration)).
 - Prometheus scrapes LiteLLM and DCGM using Docker service names
 - All containers must be on the same Docker network
 
@@ -184,11 +185,13 @@ curl -fsSL https://ollama.com/install.sh | sh
 **Verify installation:**
 
 ```bash
-ollama --version
 ollama serve
+ollama --version
 ```
 
-The server starts on `http://localhost:11434` by default. 
+The server starts on `http://localhost:11434` by default.
+
+**If LiteLLM runs in Docker and Ollama on the host:** The config uses `api_base: http://host.docker.internal:11434`. For the container to reach Ollama, Ollama must listen on `0.0.0.0:11434` (all interfaces), not only `127.0.0.1`. Start Ollama with `OLLAMA_HOST=0.0.0.0` (e.g. `OLLAMA_HOST=0.0.0.0 ollama serve`). See the [Environment Variables](#environment-variables) table for `OLLAMA_HOST`. 
 
 ### Pulling Models
 
@@ -233,6 +236,7 @@ Ollama's resource management is controlled entirely through environment variable
 
 | Variable | Description | Default | Common Values |
 |----------|-------------|---------|---------------|
+| `OLLAMA_HOST` | Bind address (host:port) | 127.0.0.1 | `0.0.0.0` (required when LiteLLM in Docker uses `host.docker.internal:11434`) |
 | `OLLAMA_NUM_PARALLEL` | Concurrent request handling | 1 | 4, 8 (requires sufficient memory) |
 | `OLLAMA_MAX_LOADED_MODELS` | Models kept in memory | 1 | 2, 3 (based on GPU capacity) |
 | `OLLAMA_KEEP_ALIVE` | Model unload delay | 5m | 10m, 30m, -1 (never unload) |
@@ -241,7 +245,7 @@ Ollama's resource management is controlled entirely through environment variable
 
 **To set environment variables (Linux and macOS):**
 
-When you start Ollama from the terminal, set variables in the same shell before running the server:
+When you start Ollama from the terminal, set variables in the same shell _before_ running the server:
 
 ```bash
 export OLLAMA_NUM_PARALLEL=4
@@ -249,7 +253,12 @@ export OLLAMA_KEEP_ALIVE=10m
 ollama serve
 ```
 
-These `export` commands do not save the variables to a file—they apply only to that shell and to the `ollama serve` process you start from it. When you close the terminal, they're gone. To change a value, stop the server (Ctrl+C), run the exports again with the new values, then run `ollama serve` again. To have the same variables every time you open a terminal, add the `export` lines to `~/.zshrc` or `~/.bashrc`.
+These `export` commands do not save the variables to a file—they apply only to that shell and to the `ollama serve` process you start from it. When you close the terminal, they're gone. To change a value: 
+- stop the server (Ctrl+C)
+- run the exports again with the new values
+- then run `ollama serve` again.
+
+To have the same variables every time you open a terminal, add the `export` lines to `~/.zshrc` or `~/.bashrc`.
 
 On macOS, if you start Ollama from the app (menu bar) instead of the terminal, environment variables you set in the shell are not used. To use custom settings, run `ollama serve` from a terminal with the exports above, or configure them for the app (e.g. via launchd) if you need the GUI.
 
@@ -278,7 +287,7 @@ litellm_settings:
 
 - `model_name`: Alias used by your application
 - `model`: Backend format is `ollama/<model-name>`
-- `api_base`: Ollama endpoint (use `host.docker.internal` for host-based Ollama)
+- `api_base`: Ollama endpoint (use `host.docker.internal` for host-based Ollama; Ollama must listen on `0.0.0.0:11434`—set `OLLAMA_HOST=0.0.0.0`)
 
 ### Create (or modify) docker-compose.yaml
 
@@ -291,8 +300,11 @@ services:
     container_name: litellm-proxy
     volumes:
       - ./litellm_config.yaml:/app/config.yaml
-    environment:
-      - DATABASE_URL=  # Optional: for persistence
+    
+    # Optional: set DATABASE_URL to a postgresql:// URL for persistence (spend tracking, etc.)
+    
+    # Leave unset for proxy-only + Prometheus metrics with no database.
+    
     command: --config /app/config.yaml --port 4000
     ports:
       - "4000:4000"
@@ -305,7 +317,7 @@ services:
       - ollama
 
   dcgm-exporter:
-    image: nvcr.io/nvidia/k8s/dcgm-exporter:3.1.3-3.1.4-ubuntu20.04
+    image: nvidia/dcgm-exporter:4.5.2-4.8.1-distroless
     container_name: dcgm-exporter
     deploy:
       resources:
@@ -380,6 +392,8 @@ INFO: Uvicorn running on http://0.0.0.0:4000
 ```
 
 **Test the proxy:**
+
+In a new terminal, run: 
 
 ```bash
 curl http://localhost:4000/health
@@ -627,7 +641,7 @@ docker exec -it litellm-proxy curl http://host.docker.internal:11434
 | Issue | Solution |
 |-------|----------|
 | `host.docker.internal` not resolving | Add `extra_hosts` to docker-compose.yml |
-| Ollama not accessible from container | Use host IP instead of `host.docker.internal` |
+| Ollama not accessible from container | Ensure Ollama listens on `0.0.0.0:11434` (`OLLAMA_HOST=0.0.0.0`); or use host IP instead of `host.docker.internal` |
 | Wrong port in config | Update `api_base` in litellm_config.yaml |
 
 **Docker networking note:** The `extra_hosts` section in docker-compose.yml enables container-to-host communication. Without it, `host.docker.internal` won't resolve.
