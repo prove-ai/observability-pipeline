@@ -6,7 +6,7 @@ This guide provides detailed instructions for deploying Ollama with comprehensiv
 
 Ollama provides powerful local LLM inference and [exposes some metrics](https://docs.ollama.com/api/usage) but, without instrumentation, you cannot track token usage, request latencies, error rates, or GPU utilization. This creates a problematic observability gap for production deployments.
 
-This guide solves that problem using a proxy-based architecture that requires no application code changes while capturing 90% of the metrics you would get from full OpenTelemetry instrumentation.
+This guide solves that problem using a proxy-based architecture that requires no application code changes while capturing most of the metrics you would get from full OpenTelemetry instrumentation.
 
 **By the end of this guide, you will have:**
 
@@ -71,15 +71,13 @@ Integration of Ollama with the observability pipeline:
 
 **Why LiteLLM Proxy is recommended:**
 
-LiteLLM provides 90% of instrumentation capabilities without requiring application modifications. It works with 100+ inference backends (Ollama, vLLM, OpenAI, Anthropic, Azure, Bedrock) and exposes unified metrics regardless of which backend you use. This eliminates vendor lock-in at the observability layer and enables meaningful cross-backend comparisons.
+Through LiteLLM, you can get 90% of the benefits of observability instrumentation without requiring application modifications. It works with 100+ inference backends (Ollama, vLLM, OpenAI, Anthropic, Azure, Bedrock) and exposes unified metrics regardless of which backend you use. This eliminates vendor lock-in at the observability layer and enables meaningful cross-backend comparisons.
 
 DCGM exporter fills the GPU metrics gap that neither code instrumentation nor LiteLLM can address, providing hardware-level visibility essential for capacity planning and thermal management.
 
 ### Key Metrics Exposed
 
 **LiteLLM Proxy Metrics:**
-
-[NOTE: I need to check that each of these metrics works as written.]
 
 ```
 litellm_input_tokens_metric
@@ -113,7 +111,7 @@ DCGM_FI_DEV_POWER_USAGE
 
 #### macOS or non-NVIDIA Setups
 
-On macOS (or any machine without an NVIDIA GPU), you can still use this guide for Ollama + LiteLLM + Prometheus. GPU metrics (DCGM) will not be available.
+On macOS (or any machine without an NVIDIA GPU), you can still use this guide for Ollama, LiteLLM, and Prometheus, but GPU metrics (DCGM) will not be available.
 
 - **Ollama:** Run Ollama on the host (native app; uses Metal on Apple Silicon). Do not run the GPU verification commands below.
 - **Start only the services you need.** Do not run `docker compose --profile ollama up -d` without naming services—that would try to start the DCGM exporter and fail. Instead run:
