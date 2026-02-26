@@ -62,7 +62,7 @@ services:
       - "--storage.tsdb.path=/prometheus"
       - "--web.config.file=/etc/prometheus/web.config.yml"
     # env_file is optional - entrypoint scripts use defaults (placeholder_api_key) if not provided
-    # Uncomment the lines below and create a .env file if you want to customize credentials
+    # Uncomment the lines below and create a .env file if you want to your customize credentials
     # env_file:
     #   - ../.env
     volumes:
