@@ -1,0 +1,8 @@
+model_list:
+  - model_name: tinyllama # This is for testing, you can use gemma3-27b for a larger model
+    litellm_params:
+      model: ollama/tinyllama:latest # This is for testing, you can use gemma3-27b for a larger model
+      api_base: http://host.docker.internal:11434
+
+litellm_settings:
+  callbacks: ["prometheus"]
