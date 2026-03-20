@@ -7,6 +7,8 @@ The following components are currently available in the dashboard:
 
 **Note:** You will see other components which are not accessible by default; contact the Prove AI team to learn how to enhance your compliance monitoring.
 
+**Disclaimer**: The visualizations and insights displayed in the dashboard are derived entirely from your connected external telemetry providers (e.g., Prometheus). Prove AI does not verify, modify, or guarantee the accuracy of this source data. Any discrepancies between your actual system performance and the dashboard visualizations should be investigated at the telemetry source. 
+
 ## Signing In/Making an Account
 The application is accessible at https://proveai-integration.proveai.com/
 
@@ -37,6 +39,8 @@ The platform supports three primary metric types:
 - Counter: Tracks cumulative values that only increase over time (e.g., total requests, token counts, successfully processed requests)
 - Gauge: Represents current state values that can increase or decrease (e.g., queue depth, active connections, KV-cache usage percentage)
 - Histogram: Provides distribution data for debugging performance issues. Histograms track percentile distributions (p50, p95, p99), which are more operationally relevant than averages for understanding LLM system behavior, particularly for latency and token generation metrics.
+
+**Note on Accuracy**: All graphs and statistical distributions are subject to the polling intervals of your Prometheus server and network latency. These visualizations may not reflect instantaneous real-time model behavior and should be human-verified before taking operational actions.
 
 ### Creating an Incident
 If you click 'create incident,' you'll be shown a panel that allows you to document and track issues or outages. The panel includes:
@@ -106,3 +110,5 @@ Jira Integration:
 - Disable button (red, if connected): Disconnect the integration
 
 The Configuration page centralizes observability infrastructure connections and incident management integrations, enabling automated ticket creation and notification workflows.
+
+**Integration Notice**: Creating an incident documents operational issues within the dashboard. Linking a GitHub or Jira repository does not grant Prove AI administrative access to your code or ticketing systems beyond the explicitly provided API scope.
